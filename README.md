@@ -4,37 +4,41 @@
 [![Python](https://img.shields.io/badge/python-3.8+-blue)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-87%20passed-brightgreen)]()
 
-The official [OpenClaw](https://github.com/anthropics/openclaw) skill for interacting with [Tenzro Network](https://tenzro.com) — a full blockchain RPC toolkit for AI agents.
+The official [OpenClaw](https://github.com/anthropics/openclaw) skill for interacting with [Tenzro Network](https://tenzro.com) — a full blockchain + multi-chain toolkit for AI agents.
 
 ## Overview
 
-TenzroClaw gives AI agents direct access to 185+ Tenzro blockchain operations through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, and more.
+TenzroClaw gives AI agents direct access to **252 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
 
 **Live testnet:** `https://rpc.tenzro.network`
 
 ## Quick Start
 
 ```bash
-# Check node status
+# Tenzro blockchain
 python3 tools/tenzro_rpc.py node_status
-
-# Create a wallet
 python3 tools/tenzro_rpc.py create_wallet
-
-# Get block height
-python3 tools/tenzro_rpc.py get_block_number
-
-# Register an identity
 python3 tools/tenzro_rpc.py register_identity human Alice
-
-# List AI models
 python3 tools/tenzro_rpc.py list_models
-
-# List tokens
-python3 tools/tenzro_rpc.py list_tokens
-
-# Join as a MicroNode
 python3 tools/tenzro_rpc.py join Alice
+
+# Solana
+python3 tools/tenzro_rpc.py solana_get_slot
+python3 tools/tenzro_rpc.py solana_get_tps
+python3 tools/tenzro_rpc.py solana_resolve_domain toly.sol
+
+# Ethereum
+python3 tools/tenzro_rpc.py eth_get_gas_price_ext
+python3 tools/tenzro_rpc.py eth_resolve_ens vitalik.eth
+python3 tools/tenzro_rpc.py chainlink_get_price ETH/USD
+
+# LayerZero
+python3 tools/tenzro_rpc.py lz_list_chains
+python3 tools/tenzro_rpc.py lz_list_dvns
+
+# Chainlink
+python3 tools/tenzro_rpc.py chainlink_list_feeds
+python3 tools/tenzro_rpc.py ccip_get_supported_chains
 ```
 
 ## Installation
@@ -55,48 +59,81 @@ pip install requests
 
 ## Configuration
 
-Set environment variables to override defaults:
-
 ```bash
-export TENZRO_RPC_URL=https://rpc.tenzro.network    # JSON-RPC endpoint
-export TENZRO_API_URL=https://api.tenzro.network     # Web API endpoint
-export TENZRO_RPC_TIMEOUT=120                         # Request timeout (seconds)
+# Tenzro endpoints
+export TENZRO_RPC_URL=https://rpc.tenzro.network
+export TENZRO_API_URL=https://api.tenzro.network
+export TENZRO_RPC_TIMEOUT=120
+
+# Ecosystem MCP endpoints (optional — defaults to live testnet)
+export SOLANA_MCP_URL=https://solana-mcp.tenzro.network/mcp
+export ETHEREUM_MCP_URL=https://ethereum-mcp.tenzro.network/mcp
+export LAYERZERO_MCP_URL=https://layerzero-mcp.tenzro.network/mcp
+export CHAINLINK_MCP_URL=https://chainlink-mcp.tenzro.network/mcp
+export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 ```
 
-## Capabilities (185 commands)
+## Capabilities (252 commands)
 
-### Wallet & Transactions
+### Tenzro Blockchain (185 commands)
+
+#### Wallet & Transactions
 `create_wallet`, `get_balance`, `send_transaction`, `create_account`, `list_accounts`
 
-### Identity (TDIP)
+#### Identity (TDIP)
 `register_identity`, `resolve_did`, `set_username`, `resolve_username`, `import_identity`, `list_identities`
 
-### AI Models & Inference
+#### AI Models & Inference
 `list_models`, `chat`, `inference_request`, `serve_model`, `stop_model`, `download_model`, `list_model_endpoints`
 
-### Token Registry
+#### Token Registry
 `create_token`, `list_tokens`, `get_token_info`, `get_token_balance`, `wrap_tnzo`, `cross_vm_transfer`, `deploy_contract`
 
-### Task & Agent Marketplace
+#### NFTs
+`create_nft_collection`, `mint_nft`, `transfer_nft`, `get_nft_info`, `list_nft_collections`
+
+#### Task & Agent Marketplace
 `list_tasks`, `post_task`, `get_task`, `cancel_task`, `list_agent_templates`, `register_agent_template`, `spawn_agent_template`
 
-### Staking & Governance
+#### Staking & Governance
 `stake`, `unstake`, `list_proposals`, `vote`, `get_voting_power`, `register_provider`
 
-### Settlement & Payments
+#### Settlement & Payments
 `settle`, `get_settlement`, `create_escrow`, `release_escrow`, `open_payment_channel`, `pay_mpp`, `pay_x402`
 
-### Network & Node
+#### Bridge & Cross-Chain
+`bridge_tokens`, `bridge_quote`, `get_bridge_routes`, `list_bridge_adapters`, `crosschain_mint`, `crosschain_burn`
+
+#### Compliance
+`check_compliance`, `register_compliance`, `freeze_address`
+
+#### Events
+`get_events`, `subscribe_events`, `register_webhook`
+
+#### Network & Node
 `node_status`, `node_info`, `get_block_number`, `get_block`, `peer_count`, `syncing`
 
-### EVM Compatibility
+#### EVM Compatibility
 `eth_block_number`, `eth_get_balance`, `eth_call`, `eth_estimate_gas`, `eth_get_transaction_receipt`, `eth_get_logs`
 
-See [SKILL.md](SKILL.md) for the complete reference with all 185 commands and curl examples.
+### Solana (14 commands)
+`solana_swap`, `solana_get_price`, `solana_stake`, `solana_get_yield`, `solana_get_balance`, `solana_get_token_accounts`, `solana_transfer`, `solana_get_token_info`, `solana_get_nft`, `solana_get_nfts_by_owner`, `solana_get_slot`, `solana_get_tps`, `solana_get_transaction`, `solana_resolve_domain`
+
+### Ethereum (16 commands)
+`eth_get_price_chainlink`, `eth_get_gas_price_ext`, `eth_estimate_gas_ext`, `eth_get_fee_history`, `eth_get_erc20_balance`, `eth_get_tx`, `eth_get_block_info`, `eth_get_receipt`, `eth_resolve_ens`, `eth_lookup_ens`, `eth_call_contract`, `eth_encode_function`, `eth_register_agent_8004`, `eth_lookup_agent_8004`, `eth_get_attestation`
+
+### LayerZero (13 commands)
+`lz_quote_fee`, `lz_send_message`, `lz_track_message`, `lz_oft_quote`, `lz_oft_send`, `lz_list_chains`, `lz_get_chain_rpc`, `lz_list_dvns`, `lz_get_deployments`, `lz_transfer_quote`, `lz_transfer_build`, `lz_stargate_quote`, `lz_stargate_send`
+
+### Chainlink (12 commands)
+`chainlink_get_price`, `chainlink_list_feeds`, `ccip_get_fee`, `ccip_send_message`, `ccip_track_message`, `ccip_get_supported_chains`, `vrf_request_random`, `vrf_get_subscription`, `ds_get_report`, `ds_list_feeds`, `por_get_reserve`, `por_list_feeds`
+
+### Canton (12 commands)
+`canton_submit_command`, `canton_list_contracts`, `canton_get_events`, `canton_get_transaction`, `canton_allocate_party`, `canton_list_parties`, `canton_list_domains_ext`, `canton_get_health`, `canton_get_balance_ext`, `canton_transfer`, `canton_create_asset`, `canton_dvp_settle`
+
+See [SKILL.md](SKILL.md) for the complete reference with all commands and curl examples.
 
 ## Using with OpenClaw
-
-Add to your OpenClaw agent configuration:
 
 ```yaml
 skills:
@@ -124,11 +161,16 @@ Your Agent
     v
 tenzro_rpc.py
     |
-    |-- JSON-RPC POST --> rpc.tenzro.network (blockchain operations)
-    |-- HTTP POST/GET --> api.tenzro.network (verification, faucet)
+    |-- JSON-RPC POST ---------> rpc.tenzro.network    (Tenzro blockchain)
+    |-- HTTP POST/GET ---------> api.tenzro.network    (verification, faucet)
+    |-- MCP Streamable HTTP ---> solana-mcp.tenzro.network   (Solana)
+    |                         -> ethereum-mcp.tenzro.network (Ethereum)
+    |                         -> layerzero-mcp.tenzro.network (LayerZero)
+    |                         -> chainlink-mcp.tenzro.network (Chainlink)
+    |                         -> canton-mcp.tenzro.network   (Canton)
     |
     v
-Tenzro Network (decentralized)
+Tenzro Network (decentralized) + External Chains
 ```
 
 ## Related

@@ -2,9 +2,14 @@
 """TenzroClaw — Tenzro blockchain RPC helper.
 
 Part of the TenzroClaw OpenClaw skill for interacting with the Tenzro Network.
-Wraps Tenzro JSON-RPC and Web API calls into simple functions.
+Wraps Tenzro JSON-RPC, Web API, and ecosystem MCP server calls into simple
+functions.
 
 Requires: pip install requests
+
+Ecosystem MCP servers (Solana, Ethereum, LayerZero, Chainlink, Canton) are
+called via the MCP Streamable HTTP protocol. Each ecosystem function uses
+mcp_tool_call() to initialize a session and invoke a tool.
 
 Usage:
     python tenzro_rpc.py join_network "Alice"
@@ -132,6 +137,30 @@ Usage:
     python tenzro_rpc.py eth_get_block_by_number latest
     python tenzro_rpc.py net_peer_count
     python tenzro_rpc.py net_version
+
+    # Ecosystem MCP tools — Solana
+    python tenzro_rpc.py solana_get_balance <address>
+    python tenzro_rpc.py solana_get_price <token_id>
+    python tenzro_rpc.py solana_swap <input_mint> <output_mint> <amount>
+    python tenzro_rpc.py solana_get_slot
+    python tenzro_rpc.py solana_get_tps
+
+    # Ecosystem MCP tools — Ethereum
+    python tenzro_rpc.py chainlink_get_price ETH/USD
+    python tenzro_rpc.py eth_get_gas_price_ext
+    python tenzro_rpc.py eth_resolve_ens vitalik.eth
+
+    # Ecosystem MCP tools — LayerZero
+    python tenzro_rpc.py lz_list_chains
+    python tenzro_rpc.py lz_quote_fee 30101 30184 0x
+
+    # Ecosystem MCP tools — Chainlink
+    python tenzro_rpc.py ccip_get_supported_chains
+    python tenzro_rpc.py ds_list_feeds
+
+    # Ecosystem MCP tools — Canton
+    python tenzro_rpc.py canton_get_health
+    python tenzro_rpc.py canton_list_parties
 """
 
 import json
@@ -150,6 +179,18 @@ import os
 RPC_URL = os.environ.get("TENZRO_RPC_URL", "https://rpc.tenzro.network")
 API_URL = os.environ.get("TENZRO_API_URL", "https://api.tenzro.network")
 RPC_TIMEOUT = int(os.environ.get("TENZRO_RPC_TIMEOUT", "120"))
+
+# Ecosystem MCP server endpoints
+SOLANA_MCP_URL = os.environ.get(
+    "SOLANA_MCP_URL", "https://solana-mcp.tenzro.network/mcp")
+ETHEREUM_MCP_URL = os.environ.get(
+    "ETHEREUM_MCP_URL", "https://ethereum-mcp.tenzro.network/mcp")
+LAYERZERO_MCP_URL = os.environ.get(
+    "LAYERZERO_MCP_URL", "https://layerzero-mcp.tenzro.network/mcp")
+CHAINLINK_MCP_URL = os.environ.get(
+    "CHAINLINK_MCP_URL", "https://chainlink-mcp.tenzro.network/mcp")
+CANTON_MCP_URL = os.environ.get(
+    "CANTON_MCP_URL", "https://canton-mcp.tenzro.network/mcp")
 
 _request_id = 0
 
@@ -184,6 +225,81 @@ def _api_post(path: str, body: dict) -> dict:
     resp = requests.post(f"{API_URL}{path}", json=body, timeout=30)
     resp.raise_for_status()
     return resp.json()
+
+
+def _mcp_tool_call(mcp_url: str, tool_name: str,
+                   arguments: dict) -> dict:
+    """Call a tool on an ecosystem MCP server via Streamable HTTP.
+
+    Handles the MCP initialize handshake, session tracking, and
+    SSE response parsing automatically.
+    """
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+    }
+    # Step 1: Initialize session
+    init_payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "tenzroclaw", "version": "0.1.0"},
+        },
+    }
+    resp = requests.post(mcp_url, json=init_payload,
+                         headers=headers, timeout=RPC_TIMEOUT)
+    resp.raise_for_status()
+    session_id = resp.headers.get("mcp-session-id", "")
+
+    # Step 2: Call tool
+    tool_payload = {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {"name": tool_name, "arguments": arguments},
+    }
+    if session_id:
+        headers["Mcp-Session-Id"] = session_id
+    resp = requests.post(mcp_url, json=tool_payload,
+                         headers=headers, timeout=RPC_TIMEOUT)
+    resp.raise_for_status()
+
+    # Parse SSE or direct JSON response
+    for line in resp.text.split("\n"):
+        if line.startswith("data:"):
+            try:
+                data = json.loads(line[5:].strip())
+                if "result" in data:
+                    content = data["result"].get("content", [])
+                    if content:
+                        text = content[0].get("text", "{}")
+                        try:
+                            return json.loads(text)
+                        except (json.JSONDecodeError, ValueError):
+                            return {"text": text}
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+    # Fallback: direct JSON response
+    try:
+        body = resp.json()
+        if "result" in body:
+            content = body["result"].get("content", [])
+            if content:
+                text = content[0].get("text", "{}")
+                try:
+                    return json.loads(text)
+                except (json.JSONDecodeError, ValueError):
+                    return {"text": text}
+            return body["result"]
+        if "error" in body:
+            return {"error": body["error"]}
+        return body
+    except (json.JSONDecodeError, ValueError):
+        return {"text": resp.text}
 
 
 # ── Wallet & Balance ──────────────────────────────────────────────
@@ -2428,6 +2544,808 @@ def net_listening() -> dict:
     return _rpc("net_listening")
 
 
+# ══════════════════════════════════════════════════════════════════
+# Ecosystem MCP Tools
+# ══════════════════════════════════════════════════════════════════
+
+
+# ── Solana (via solana-mcp.tenzro.network) ────────────────────────
+
+
+def solana_swap(input_mint: str, output_mint: str, amount: int,
+                slippage_bps: int = 100) -> dict:
+    """Swap tokens on Solana via Jupiter aggregator.
+
+    input_mint: input token mint address
+    output_mint: output token mint address
+    amount: amount in smallest unit (lamports / token decimals)
+    slippage_bps: slippage tolerance in basis points (default 100 = 1%)
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_swap", {
+        "input_mint": input_mint,
+        "output_mint": output_mint,
+        "amount": amount,
+        "slippage_bps": slippage_bps,
+    })
+
+
+def solana_get_price(token_id: str) -> dict:
+    """Get token price on Solana.
+
+    token_id: token mint address or symbol
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_price", {
+        "token_id": token_id,
+    })
+
+
+def solana_stake(amount_sol: float, validator_address: str) -> dict:
+    """Stake SOL to a validator.
+
+    amount_sol: amount of SOL to stake
+    validator_address: validator vote account address
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_stake", {
+        "amount_sol": amount_sol,
+        "validator_address": validator_address,
+    })
+
+
+def solana_get_yield(protocol: str = None) -> dict:
+    """Get Solana staking/DeFi yield information.
+
+    protocol: optional protocol filter
+    """
+    params = {}
+    if protocol:
+        params["protocol"] = protocol
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_yield", params)
+
+
+def solana_get_balance(address: str) -> dict:
+    """Get SOL balance for an address.
+
+    address: Solana public key (base58)
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_balance", {
+        "address": address,
+    })
+
+
+def solana_get_token_accounts(owner_address: str) -> dict:
+    """Get all SPL token accounts for an owner.
+
+    owner_address: Solana public key (base58)
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_token_accounts", {
+        "owner_address": owner_address,
+    })
+
+
+def solana_transfer(from_addr: str, to_addr: str,
+                    amount_lamports: int) -> dict:
+    """Transfer SOL between addresses.
+
+    from_addr: sender public key
+    to_addr: recipient public key
+    amount_lamports: amount in lamports
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_transfer", {
+        "from": from_addr,
+        "to": to_addr,
+        "amount": amount_lamports,
+    })
+
+
+def solana_get_token_info(mint_address: str) -> dict:
+    """Get SPL token metadata by mint address.
+
+    mint_address: token mint address
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_token_info", {
+        "mint_address": mint_address,
+    })
+
+
+def solana_get_nft(mint_address: str) -> dict:
+    """Get NFT metadata via Metaplex DAS API.
+
+    mint_address: NFT mint address
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_nft", {
+        "mint_address": mint_address,
+    })
+
+
+def solana_get_nfts_by_owner(owner_address: str) -> dict:
+    """Get all NFTs owned by an address.
+
+    owner_address: Solana public key (base58)
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_nfts_by_owner", {
+        "owner_address": owner_address,
+    })
+
+
+def solana_get_slot() -> dict:
+    """Get the current Solana slot number."""
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_slot", {})
+
+
+def solana_get_tps() -> dict:
+    """Get current Solana transactions per second."""
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_tps", {})
+
+
+def solana_get_transaction(signature: str) -> dict:
+    """Get a Solana transaction by signature.
+
+    signature: transaction signature (base58)
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_transaction", {
+        "signature": signature,
+    })
+
+
+def solana_resolve_domain(domain: str) -> dict:
+    """Resolve a Bonfida SNS domain to a Solana address.
+
+    domain: SNS domain name (e.g. "tenzro.sol")
+    """
+    return _mcp_tool_call(SOLANA_MCP_URL, "solana_resolve_domain", {
+        "domain": domain,
+    })
+
+
+# ── Ethereum (via ethereum-mcp.tenzro.network) ───────────────────
+
+
+def eth_get_price_chainlink(feed_address: str = None) -> dict:
+    """Get token price from Chainlink data feeds.
+
+    feed_address: optional Chainlink feed address (defaults to ETH/USD)
+    """
+    params = {}
+    if feed_address:
+        params["feed_address"] = feed_address
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_price", params)
+
+
+def eth_get_gas_price_ext() -> dict:
+    """Get current Ethereum gas price from the network."""
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_gas_price", {})
+
+
+def eth_estimate_gas_ext(to: str, data: str = None,
+                         value: str = None) -> dict:
+    """Estimate gas for an Ethereum transaction.
+
+    to: recipient address
+    data: optional calldata (hex)
+    value: optional value in wei (hex)
+    """
+    params = {"to": to}
+    if data:
+        params["data"] = data
+    if value:
+        params["value"] = value
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_estimate_gas", params)
+
+
+def eth_get_fee_history(block_count: int = 10) -> dict:
+    """Get Ethereum fee history for recent blocks.
+
+    block_count: number of blocks to look back
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_fee_history", {
+        "block_count": block_count,
+    })
+
+
+def eth_get_erc20_balance(token_address: str,
+                          owner_address: str) -> dict:
+    """Get ERC-20 token balance for an address.
+
+    token_address: ERC-20 contract address
+    owner_address: wallet address to check
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_token_balance", {
+        "token_address": token_address,
+        "owner_address": owner_address,
+    })
+
+
+def eth_get_tx(tx_hash: str) -> dict:
+    """Get an Ethereum transaction by hash.
+
+    tx_hash: 0x-prefixed transaction hash
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_transaction", {
+        "tx_hash": tx_hash,
+    })
+
+
+def eth_get_block_info(block_number: str = None) -> dict:
+    """Get an Ethereum block by number.
+
+    block_number: block number (hex or decimal) or "latest"
+    """
+    params = {}
+    if block_number:
+        params["block_number"] = block_number
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_block", params)
+
+
+def eth_get_receipt(tx_hash: str) -> dict:
+    """Get an Ethereum transaction receipt.
+
+    tx_hash: 0x-prefixed transaction hash
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_transaction_receipt", {
+        "tx_hash": tx_hash,
+    })
+
+
+def eth_resolve_ens(name: str) -> dict:
+    """Resolve an ENS name to an Ethereum address.
+
+    name: ENS name (e.g. "vitalik.eth")
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_resolve_ens", {
+        "name": name,
+    })
+
+
+def eth_lookup_ens(address: str) -> dict:
+    """Reverse-lookup an ENS name from an Ethereum address.
+
+    address: 0x-prefixed Ethereum address
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_lookup_ens", {
+        "address": address,
+    })
+
+
+def eth_call_contract(to: str, data: str) -> dict:
+    """Execute a read-only contract call on Ethereum.
+
+    to: contract address
+    data: ABI-encoded calldata (hex)
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_call_contract", {
+        "to": to,
+        "data": data,
+    })
+
+
+def eth_encode_function(function_sig: str, args: list) -> dict:
+    """ABI-encode a function call.
+
+    function_sig: function signature (e.g. "transfer(address,uint256)")
+    args: list of argument values
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_encode_function", {
+        "function_sig": function_sig,
+        "args": args,
+    })
+
+
+def eth_register_agent_8004(agent_name: str, capabilities: list,
+                            metadata_uri: str) -> dict:
+    """Register an AI agent via ERC-8004.
+
+    agent_name: agent display name
+    capabilities: list of capability strings
+    metadata_uri: URI pointing to agent metadata
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_register_agent_8004", {
+        "agent_name": agent_name,
+        "capabilities": capabilities,
+        "metadata_uri": metadata_uri,
+    })
+
+
+def eth_lookup_agent_8004(agent_id: str) -> dict:
+    """Look up an AI agent registered via ERC-8004.
+
+    agent_id: on-chain agent ID
+    """
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_lookup_agent_8004", {
+        "agent_id": agent_id,
+    })
+
+
+def eth_get_attestation(schema_id: str, attester: str = None) -> dict:
+    """Get an EAS (Ethereum Attestation Service) attestation.
+
+    schema_id: attestation schema ID
+    attester: optional attester address filter
+    """
+    params = {"schema_id": schema_id}
+    if attester:
+        params["attester"] = attester
+    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_attestation", params)
+
+
+# ── LayerZero (via layerzero-mcp.tenzro.network) ─────────────────
+
+
+def lz_quote_fee(src_eid: int, dst_eid: int, message: str,
+                 options: str = None) -> dict:
+    """Quote LayerZero messaging fee via EndpointV2.quote().
+
+    src_eid: source chain endpoint ID
+    dst_eid: destination chain endpoint ID
+    message: message payload (hex)
+    options: optional TYPE_3 options (hex)
+    """
+    params = {
+        "src_eid": src_eid,
+        "dst_eid": dst_eid,
+        "message": message,
+    }
+    if options:
+        params["options"] = options
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_quote_fee", params)
+
+
+def lz_send_message(src_eid: int, dst_eid: int, receiver: str,
+                    message: str, options: str = None) -> dict:
+    """Build LayerZero EndpointV2.send() calldata.
+
+    src_eid: source chain endpoint ID
+    dst_eid: destination chain endpoint ID
+    receiver: recipient address (bytes32 hex)
+    message: message payload (hex)
+    options: optional TYPE_3 options (hex)
+    """
+    params = {
+        "src_eid": src_eid,
+        "dst_eid": dst_eid,
+        "receiver": receiver,
+        "message": message,
+    }
+    if options:
+        params["options"] = options
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_send_message", params)
+
+
+def lz_track_message(tx_hash: str) -> dict:
+    """Track a LayerZero message by source transaction hash.
+
+    tx_hash: 0x-prefixed transaction hash
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_track_message", {
+        "tx_hash": tx_hash,
+    })
+
+
+def lz_oft_quote(src_eid: int, dst_eid: int, amount: int,
+                 token: str = None) -> dict:
+    """Quote an OFT (Omnichain Fungible Token) transfer.
+
+    src_eid: source chain endpoint ID
+    dst_eid: destination chain endpoint ID
+    amount: amount in shared decimals
+    token: optional OFT contract address
+    """
+    params = {
+        "src_eid": src_eid,
+        "dst_eid": dst_eid,
+        "amount": amount,
+    }
+    if token:
+        params["token"] = token
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_oft_quote", params)
+
+
+def lz_oft_send(src_eid: int, dst_eid: int, amount: int,
+                recipient: str, token: str = None) -> dict:
+    """Build OFT send() calldata with auto fee quoting.
+
+    src_eid: source chain endpoint ID
+    dst_eid: destination chain endpoint ID
+    amount: amount in shared decimals (uint64)
+    recipient: recipient address (bytes32 hex)
+    token: optional OFT contract address
+    """
+    params = {
+        "src_eid": src_eid,
+        "dst_eid": dst_eid,
+        "amount": amount,
+        "recipient": recipient,
+    }
+    if token:
+        params["token"] = token
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_oft_send", params)
+
+
+def lz_list_chains() -> dict:
+    """List all LayerZero-supported chains with endpoint IDs."""
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_list_chains", {})
+
+
+def lz_get_chain_rpc(chain: str) -> dict:
+    """Get RPC URL for a LayerZero-supported chain.
+
+    chain: chain name or endpoint ID
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_get_chain_rpc", {
+        "chain": chain,
+    })
+
+
+def lz_list_dvns(chain: str = None) -> dict:
+    """List LayerZero DVNs (Decentralized Verifier Networks).
+
+    chain: optional chain filter
+    """
+    params = {}
+    if chain:
+        params["chain"] = chain
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_list_dvns", params)
+
+
+def lz_get_deployments(chain: str = None) -> dict:
+    """Get LayerZero contract deployments.
+
+    chain: optional chain filter
+    """
+    params = {}
+    if chain:
+        params["chain"] = chain
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_get_deployments", params)
+
+
+def lz_transfer_quote(src_chain: str, dst_chain: str, token: str,
+                      amount: int) -> dict:
+    """Get a unified cross-chain transfer quote (130+ chains).
+
+    src_chain: source chain name or ID
+    dst_chain: destination chain name or ID
+    token: token symbol or address
+    amount: transfer amount
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_transfer_quote", {
+        "src_chain": src_chain,
+        "dst_chain": dst_chain,
+        "token": token,
+        "amount": amount,
+    })
+
+
+def lz_transfer_build(quote_id: str) -> dict:
+    """Build signable transaction steps from a transfer quote.
+
+    quote_id: quote ID returned by lz_transfer_quote
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_transfer_build", {
+        "quote_id": quote_id,
+    })
+
+
+def lz_stargate_quote(src_chain: str, dst_chain: str, token: str,
+                      amount: int) -> dict:
+    """Quote a Stargate V2 native bridge transfer.
+
+    src_chain: source chain name
+    dst_chain: destination chain name
+    token: token symbol (ETH, USDC, USDT)
+    amount: amount to bridge
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_stargate_quote", {
+        "src_chain": src_chain,
+        "dst_chain": dst_chain,
+        "token": token,
+        "amount": amount,
+    })
+
+
+def lz_stargate_send(src_chain: str, dst_chain: str, token: str,
+                     amount: int, recipient: str) -> dict:
+    """Build Stargate V2 sendToken() calldata with auto fee.
+
+    src_chain: source chain name
+    dst_chain: destination chain name
+    token: token symbol (ETH, USDC, USDT)
+    amount: amount to bridge
+    recipient: recipient address
+    """
+    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_stargate_send", {
+        "src_chain": src_chain,
+        "dst_chain": dst_chain,
+        "token": token,
+        "amount": amount,
+        "recipient": recipient,
+    })
+
+
+# ── Chainlink (via chainlink-mcp.tenzro.network) ─────────────────
+
+
+def chainlink_get_price(pair: str = "ETH/USD") -> dict:
+    """Get price from Chainlink AggregatorV3 data feed.
+
+    pair: price pair (e.g. "ETH/USD", "BTC/USD")
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "chainlink_get_price", {
+        "pair": pair,
+    })
+
+
+def chainlink_list_feeds(chain: str = "ethereum") -> dict:
+    """List available Chainlink price feeds.
+
+    chain: chain name (default "ethereum")
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "chainlink_list_feeds", {
+        "chain": chain,
+    })
+
+
+def ccip_get_fee(src_chain: str, dst_chain: str,
+                 data_size: int = 0) -> dict:
+    """Get CCIP messaging fee via Router.getFee().
+
+    src_chain: source chain name
+    dst_chain: destination chain name
+    data_size: payload size in bytes
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_get_fee", {
+        "src_chain": src_chain,
+        "dst_chain": dst_chain,
+        "data_size": data_size,
+    })
+
+
+def ccip_send_message(src_chain: str, dst_chain: str,
+                      receiver: str, data: str) -> dict:
+    """Build CCIP Router.ccipSend() calldata.
+
+    src_chain: source chain name
+    dst_chain: destination chain name
+    receiver: recipient address
+    data: message payload (hex)
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_send_message", {
+        "src_chain": src_chain,
+        "dst_chain": dst_chain,
+        "receiver": receiver,
+        "data": data,
+    })
+
+
+def ccip_track_message(message_id: str) -> dict:
+    """Track a CCIP message by ID.
+
+    message_id: CCIP message ID
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_track_message", {
+        "message_id": message_id,
+    })
+
+
+def ccip_get_supported_chains() -> dict:
+    """List chains supported by Chainlink CCIP."""
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_get_supported_chains",
+                          {})
+
+
+def vrf_request_random(num_words: int = 1) -> dict:
+    """Build VRF v2.5 requestRandomWords() calldata.
+
+    num_words: number of random words to request
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "vrf_request_random", {
+        "num_words": num_words,
+    })
+
+
+def vrf_get_subscription(sub_id: str) -> dict:
+    """Get VRF subscription details.
+
+    sub_id: subscription ID
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "vrf_get_subscription", {
+        "sub_id": sub_id,
+    })
+
+
+def ds_get_report(feed_id: str) -> dict:
+    """Get a Chainlink Data Streams report.
+
+    feed_id: data stream feed ID
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ds_get_report", {
+        "feed_id": feed_id,
+    })
+
+
+def ds_list_feeds() -> dict:
+    """List available Chainlink Data Streams feeds."""
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "ds_list_feeds", {})
+
+
+def por_get_reserve(feed_address: str) -> dict:
+    """Get Proof of Reserve data from a Chainlink PoR feed.
+
+    feed_address: PoR feed contract address
+    """
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "por_get_reserve", {
+        "feed_address": feed_address,
+    })
+
+
+def por_list_feeds() -> dict:
+    """List available Chainlink Proof of Reserve feeds."""
+    return _mcp_tool_call(CHAINLINK_MCP_URL, "por_list_feeds", {})
+
+
+# ── Canton (via canton-mcp.tenzro.network) ────────────────────────
+
+
+def canton_submit_command(command_type: str, template_id: str,
+                          party: str, payload: dict = None) -> dict:
+    """Submit a DAML command via Canton JSON Ledger API v2.
+
+    command_type: create | exercise
+    template_id: DAML template ID
+    party: acting party
+    payload: command payload
+    """
+    params = {
+        "command_type": command_type,
+        "template_id": template_id,
+        "party": party,
+    }
+    if payload:
+        params["payload"] = payload
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_submit_command", params)
+
+
+def canton_list_contracts(party: str = None,
+                          template_id: str = None) -> dict:
+    """List active DAML contracts.
+
+    party: optional party filter
+    template_id: optional template filter
+    """
+    params = {}
+    if party:
+        params["party"] = party
+    if template_id:
+        params["template_id"] = template_id
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_contracts", params)
+
+
+def canton_get_events(contract_id: str) -> dict:
+    """Get events for a DAML contract.
+
+    contract_id: DAML contract ID
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_events", {
+        "contract_id": contract_id,
+    })
+
+
+def canton_get_transaction(tx_id: str) -> dict:
+    """Get a Canton transaction by ID.
+
+    tx_id: transaction ID
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_transaction", {
+        "tx_id": tx_id,
+    })
+
+
+def canton_allocate_party(party_name: str) -> dict:
+    """Allocate a new Canton party.
+
+    party_name: display name for the party
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_allocate_party", {
+        "party_name": party_name,
+    })
+
+
+def canton_list_parties() -> dict:
+    """List all Canton parties."""
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_parties", {})
+
+
+def canton_list_domains_ext() -> dict:
+    """List Canton synchronizer domains (via MCP)."""
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_domains", {})
+
+
+def canton_get_health() -> dict:
+    """Get Canton participant health status."""
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_health", {})
+
+
+def canton_get_balance_ext(party: str, token: str = None) -> dict:
+    """Get CIP-56 token balance on Canton.
+
+    party: Canton party identifier
+    token: optional token filter
+    """
+    params = {"party": party}
+    if token:
+        params["token"] = token
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_balance", params)
+
+
+def canton_transfer(from_party: str, to_party: str, amount: str,
+                    token: str = "TNZO") -> dict:
+    """Transfer tokens on Canton.
+
+    from_party: sender party
+    to_party: recipient party
+    amount: transfer amount (DAML Decimal string)
+    token: token symbol (default TNZO)
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_transfer", {
+        "from_party": from_party,
+        "to_party": to_party,
+        "amount": amount,
+        "token": token,
+    })
+
+
+def canton_create_asset(party: str, asset_type: str,
+                        amount: str) -> dict:
+    """Create a tokenized asset on Canton.
+
+    party: issuing party
+    asset_type: type of asset
+    amount: asset amount (DAML Decimal string)
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_create_asset", {
+        "party": party,
+        "asset_type": asset_type,
+        "amount": amount,
+    })
+
+
+def canton_dvp_settle(buyer: str, seller: str, asset_id: str,
+                      payment_amount: str) -> dict:
+    """Execute DvP (Delivery versus Payment) settlement on Canton.
+
+    buyer: buyer party
+    seller: seller party
+    asset_id: asset contract ID
+    payment_amount: payment amount (DAML Decimal string)
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_dvp_settle", {
+        "buyer": buyer,
+        "seller": seller,
+        "asset_id": asset_id,
+        "payment_amount": payment_amount,
+    })
+
+
+def canton_upload_dar(dar_path: str) -> dict:
+    """Upload a DAR (DAML Archive) to Canton.
+
+    dar_path: path or URL to the DAR file
+    """
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_upload_dar", {
+        "dar_path": dar_path,
+    })
+
+
+def canton_get_fee_schedule(domain: str = None) -> dict:
+    """Get Canton fee schedule for a synchronizer domain.
+
+    domain: optional domain ID
+    """
+    params = {}
+    if domain:
+        params["domain"] = domain
+    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_fee_schedule",
+                          params)
+
+
 # ── CLI ───────────────────────────────────────────────────────────
 
 COMMANDS = {
@@ -2810,6 +3728,160 @@ COMMANDS = {
     ),
     "list_webhooks": lambda args: list_webhooks(),
     "delete_webhook": lambda args: delete_webhook(args[0]),
+    # ── Ecosystem: Solana ──
+    "solana_swap": lambda args: solana_swap(
+        args[0], args[1], int(args[2]),
+        int(args[3]) if len(args) > 3 else 100,
+    ),
+    "solana_get_price": lambda args: solana_get_price(args[0]),
+    "solana_stake": lambda args: solana_stake(float(args[0]), args[1]),
+    "solana_get_yield": lambda args: solana_get_yield(
+        args[0] if args else None,
+    ),
+    "solana_get_balance": lambda args: solana_get_balance(args[0]),
+    "solana_get_token_accounts": lambda args: solana_get_token_accounts(
+        args[0],
+    ),
+    "solana_transfer": lambda args: solana_transfer(
+        args[0], args[1], int(args[2]),
+    ),
+    "solana_get_token_info": lambda args: solana_get_token_info(args[0]),
+    "solana_get_nft": lambda args: solana_get_nft(args[0]),
+    "solana_get_nfts_by_owner": lambda args: solana_get_nfts_by_owner(
+        args[0],
+    ),
+    "solana_get_slot": lambda args: solana_get_slot(),
+    "solana_get_tps": lambda args: solana_get_tps(),
+    "solana_get_transaction": lambda args: solana_get_transaction(args[0]),
+    "solana_resolve_domain": lambda args: solana_resolve_domain(args[0]),
+    # ── Ecosystem: Ethereum ──
+    "eth_get_price_chainlink": lambda args: eth_get_price_chainlink(
+        args[0] if args else None,
+    ),
+    "eth_get_gas_price_ext": lambda args: eth_get_gas_price_ext(),
+    "eth_estimate_gas_ext": lambda args: eth_estimate_gas_ext(
+        args[0],
+        args[1] if len(args) > 1 else None,
+        args[2] if len(args) > 2 else None,
+    ),
+    "eth_get_fee_history": lambda args: eth_get_fee_history(
+        int(args[0]) if args else 10,
+    ),
+    "eth_get_erc20_balance": lambda args: eth_get_erc20_balance(
+        args[0], args[1],
+    ),
+    "eth_get_tx": lambda args: eth_get_tx(args[0]),
+    "eth_get_block_info": lambda args: eth_get_block_info(
+        args[0] if args else None,
+    ),
+    "eth_get_receipt": lambda args: eth_get_receipt(args[0]),
+    "eth_resolve_ens": lambda args: eth_resolve_ens(args[0]),
+    "eth_lookup_ens": lambda args: eth_lookup_ens(args[0]),
+    "eth_call_contract": lambda args: eth_call_contract(args[0], args[1]),
+    "eth_encode_function": lambda args: eth_encode_function(
+        args[0], json.loads(args[1]) if len(args) > 1 else [],
+    ),
+    "eth_register_agent_8004": lambda args: eth_register_agent_8004(
+        args[0],
+        args[1].split(",") if len(args) > 1 else [],
+        args[2] if len(args) > 2 else "",
+    ),
+    "eth_lookup_agent_8004": lambda args: eth_lookup_agent_8004(args[0]),
+    "eth_get_attestation": lambda args: eth_get_attestation(
+        args[0], args[1] if len(args) > 1 else None,
+    ),
+    # ── Ecosystem: LayerZero ──
+    "lz_quote_fee": lambda args: lz_quote_fee(
+        int(args[0]), int(args[1]), args[2],
+        args[3] if len(args) > 3 else None,
+    ),
+    "lz_send_message": lambda args: lz_send_message(
+        int(args[0]), int(args[1]), args[2], args[3],
+        args[4] if len(args) > 4 else None,
+    ),
+    "lz_track_message": lambda args: lz_track_message(args[0]),
+    "lz_oft_quote": lambda args: lz_oft_quote(
+        int(args[0]), int(args[1]), int(args[2]),
+        args[3] if len(args) > 3 else None,
+    ),
+    "lz_oft_send": lambda args: lz_oft_send(
+        int(args[0]), int(args[1]), int(args[2]), args[3],
+        args[4] if len(args) > 4 else None,
+    ),
+    "lz_list_chains": lambda args: lz_list_chains(),
+    "lz_get_chain_rpc": lambda args: lz_get_chain_rpc(args[0]),
+    "lz_list_dvns": lambda args: lz_list_dvns(
+        args[0] if args else None,
+    ),
+    "lz_get_deployments": lambda args: lz_get_deployments(
+        args[0] if args else None,
+    ),
+    "lz_transfer_quote": lambda args: lz_transfer_quote(
+        args[0], args[1], args[2], int(args[3]),
+    ),
+    "lz_transfer_build": lambda args: lz_transfer_build(args[0]),
+    "lz_stargate_quote": lambda args: lz_stargate_quote(
+        args[0], args[1], args[2], int(args[3]),
+    ),
+    "lz_stargate_send": lambda args: lz_stargate_send(
+        args[0], args[1], args[2], int(args[3]), args[4],
+    ),
+    # ── Ecosystem: Chainlink ──
+    "chainlink_get_price": lambda args: chainlink_get_price(
+        args[0] if args else "ETH/USD",
+    ),
+    "chainlink_list_feeds": lambda args: chainlink_list_feeds(
+        args[0] if args else "ethereum",
+    ),
+    "ccip_get_fee": lambda args: ccip_get_fee(
+        args[0], args[1],
+        int(args[2]) if len(args) > 2 else 0,
+    ),
+    "ccip_send_message": lambda args: ccip_send_message(
+        args[0], args[1], args[2], args[3],
+    ),
+    "ccip_track_message": lambda args: ccip_track_message(args[0]),
+    "ccip_get_supported_chains": lambda args: ccip_get_supported_chains(),
+    "vrf_request_random": lambda args: vrf_request_random(
+        int(args[0]) if args else 1,
+    ),
+    "vrf_get_subscription": lambda args: vrf_get_subscription(args[0]),
+    "ds_get_report": lambda args: ds_get_report(args[0]),
+    "ds_list_feeds": lambda args: ds_list_feeds(),
+    "por_get_reserve": lambda args: por_get_reserve(args[0]),
+    "por_list_feeds": lambda args: por_list_feeds(),
+    # ── Ecosystem: Canton ──
+    "canton_submit_command": lambda args: canton_submit_command(
+        args[0], args[1], args[2],
+        json.loads(args[3]) if len(args) > 3 else None,
+    ),
+    "canton_list_contracts_ext": lambda args: canton_list_contracts(
+        args[0] if args else None,
+        args[1] if len(args) > 1 else None,
+    ),
+    "canton_get_events": lambda args: canton_get_events(args[0]),
+    "canton_get_transaction": lambda args: canton_get_transaction(args[0]),
+    "canton_allocate_party": lambda args: canton_allocate_party(args[0]),
+    "canton_list_parties": lambda args: canton_list_parties(),
+    "canton_list_domains_ext": lambda args: canton_list_domains_ext(),
+    "canton_get_health": lambda args: canton_get_health(),
+    "canton_get_balance_ext": lambda args: canton_get_balance_ext(
+        args[0], args[1] if len(args) > 1 else None,
+    ),
+    "canton_transfer": lambda args: canton_transfer(
+        args[0], args[1], args[2],
+        args[3] if len(args) > 3 else "TNZO",
+    ),
+    "canton_create_asset": lambda args: canton_create_asset(
+        args[0], args[1], args[2],
+    ),
+    "canton_dvp_settle": lambda args: canton_dvp_settle(
+        args[0], args[1], args[2], args[3],
+    ),
+    "canton_upload_dar": lambda args: canton_upload_dar(args[0]),
+    "canton_get_fee_schedule": lambda args: canton_get_fee_schedule(
+        args[0] if args else None,
+    ),
 }
 
 
