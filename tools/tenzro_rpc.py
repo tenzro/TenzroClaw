@@ -3390,6 +3390,285 @@ def canton_get_fee_schedule(domain: str = None) -> dict:
                           params)
 
 
+# ── Crypto ────────────────────────────────────────────────────────
+
+
+def sign_message(private_key: str, message_hex: str,
+                 key_type: str = "ed25519") -> dict:
+    """Sign a message with a private key (Ed25519 or Secp256k1)."""
+    return _rpc("tenzro_signMessage", {
+        "private_key": private_key,
+        "message_hex": message_hex,
+        "key_type": key_type,
+    })
+
+
+def verify_signature(public_key: str, message_hex: str,
+                     signature_hex: str) -> dict:
+    """Verify a cryptographic signature against a public key."""
+    return _rpc("tenzro_verifySignature", {
+        "public_key": public_key,
+        "message_hex": message_hex,
+        "signature_hex": signature_hex,
+    })
+
+
+def encrypt_data(key_hex: str, plaintext_hex: str) -> dict:
+    """Encrypt data with AES-256-GCM. Returns ciphertext + nonce."""
+    return _rpc("tenzro_encrypt", {
+        "key_hex": key_hex,
+        "plaintext_hex": plaintext_hex,
+    })
+
+
+def decrypt_data(key_hex: str, ciphertext_hex: str,
+                 nonce_hex: str) -> dict:
+    """Decrypt AES-256-GCM ciphertext with key and nonce."""
+    return _rpc("tenzro_decrypt", {
+        "key_hex": key_hex,
+        "ciphertext_hex": ciphertext_hex,
+        "nonce_hex": nonce_hex,
+    })
+
+
+def derive_key(password: str) -> dict:
+    """Derive a 256-bit key from a password using Argon2id."""
+    return _rpc("tenzro_deriveKey", {"password": password})
+
+
+def generate_keypair(key_type: str = "ed25519") -> dict:
+    """Generate a new cryptographic keypair (Ed25519 or Secp256k1)."""
+    return _rpc("tenzro_generateKeypair", {"key_type": key_type})
+
+
+def hash_sha256(data_hex: str) -> dict:
+    """Compute SHA-256 hash of hex-encoded data."""
+    return _rpc("tenzro_hashSha256", {"data_hex": data_hex})
+
+
+def hash_keccak256(data_hex: str) -> dict:
+    """Compute Keccak-256 hash of hex-encoded data."""
+    return _rpc("tenzro_hashKeccak256", {"data_hex": data_hex})
+
+
+def x25519_key_exchange(private_key_hex: str,
+                        public_key_hex: str) -> dict:
+    """Perform X25519 Diffie-Hellman key exchange."""
+    return _rpc("tenzro_x25519KeyExchange", {
+        "private_key_hex": private_key_hex,
+        "public_key_hex": public_key_hex,
+    })
+
+
+# ── TEE ──────────────────────────────────────────────────────────
+
+
+def detect_tee() -> dict:
+    """Detect available TEE hardware on this node."""
+    return _rpc("tenzro_detectTee", {})
+
+
+def get_tee_attestation(tee_type: str = None) -> dict:
+    """Generate a TEE attestation report."""
+    params = {}
+    if tee_type:
+        params["tee_type"] = tee_type
+    return _rpc("tenzro_getAttestation", params)
+
+
+def verify_tee_attestation(attestation: str, tee_type: str) -> dict:
+    """Verify a TEE attestation report."""
+    return _rpc("tenzro_verifyTeeAttestation", {
+        "attestation": attestation,
+        "tee_type": tee_type,
+    })
+
+
+def seal_data(data_hex: str, key_id: str) -> dict:
+    """Seal (encrypt) data within the TEE enclave."""
+    return _rpc("tenzro_sealData", {
+        "data_hex": data_hex,
+        "key_id": key_id,
+    })
+
+
+def unseal_data(sealed_hex: str, key_id: str) -> dict:
+    """Unseal (decrypt) TEE-sealed data."""
+    return _rpc("tenzro_unsealData", {
+        "sealed_hex": sealed_hex,
+        "key_id": key_id,
+    })
+
+
+def list_tee_providers() -> dict:
+    """List all registered TEE providers on the network."""
+    return _rpc("tenzro_listTeeProviders", {})
+
+
+# ── ZK ───────────────────────────────────────────────────────────
+
+
+def create_zk_proof(circuit_type: str, private_inputs: list,
+                    public_inputs: list) -> dict:
+    """Create a zero-knowledge proof for a circuit."""
+    return _rpc("tenzro_createZkProof", {
+        "circuit_type": circuit_type,
+        "private_inputs": private_inputs,
+        "public_inputs": public_inputs,
+    })
+
+
+def generate_proving_key(circuit_type: str) -> dict:
+    """Generate a proving key for a ZK circuit type."""
+    return _rpc("tenzro_generateProvingKey", {
+        "circuit_type": circuit_type,
+    })
+
+
+def list_zk_circuits() -> dict:
+    """List all available ZK circuits."""
+    return _rpc("tenzro_listCircuits", {})
+
+
+# ── Custody ──────────────────────────────────────────────────────
+
+
+def create_mpc_wallet_advanced(threshold: int = 2,
+                               total_shares: int = 3,
+                               key_type: str = "ed25519") -> dict:
+    """Create an MPC threshold wallet with custom config."""
+    return _rpc("tenzro_createMpcWallet", {
+        "threshold": threshold,
+        "total_shares": total_shares,
+        "key_type": key_type,
+    })
+
+
+def export_keystore(wallet_id: str, password: str) -> dict:
+    """Export a wallet as an encrypted keystore JSON."""
+    return _rpc("tenzro_exportKeystore", {
+        "wallet_id": wallet_id,
+        "password": password,
+    })
+
+
+def import_keystore(keystore_json: str, password: str) -> dict:
+    """Import a wallet from an encrypted keystore JSON."""
+    return _rpc("tenzro_importKeystore", {
+        "keystore_json": keystore_json,
+        "password": password,
+    })
+
+
+def get_key_shares(wallet_id: str) -> dict:
+    """Get key share metadata for an MPC wallet."""
+    return _rpc("tenzro_getKeyShares", {"wallet_id": wallet_id})
+
+
+def rotate_keys(wallet_id: str) -> dict:
+    """Rotate key shares of an MPC wallet."""
+    return _rpc("tenzro_rotateKeys", {"wallet_id": wallet_id})
+
+
+def set_spending_limits(wallet_id: str, daily_limit: float,
+                        per_tx_limit: float) -> dict:
+    """Set spending limits for a wallet."""
+    return _rpc("tenzro_setSpendingLimits", {
+        "wallet_id": wallet_id,
+        "daily_limit": daily_limit,
+        "per_tx_limit": per_tx_limit,
+    })
+
+
+def get_spending_limits(wallet_id: str) -> dict:
+    """Get current spending limits for a wallet."""
+    return _rpc("tenzro_getSpendingLimits", {"wallet_id": wallet_id})
+
+
+def authorize_session(wallet_id: str, duration_secs: int,
+                      operations: list) -> dict:
+    """Authorize a temporary wallet session with allowed operations."""
+    return _rpc("tenzro_authorizeSession", {
+        "wallet_id": wallet_id,
+        "duration_secs": duration_secs,
+        "operations": operations,
+    })
+
+
+def revoke_session(session_id: str) -> dict:
+    """Revoke an active wallet session."""
+    return _rpc("tenzro_revokeSession", {"session_id": session_id})
+
+
+# ── App / Paymaster ──────────────────────────────────────────────
+
+
+def register_app(name: str, master_wallet_address: str) -> dict:
+    """Register a new application with a master wallet."""
+    return _rpc("tenzro_registerApp", {
+        "name": name,
+        "master_wallet_address": master_wallet_address,
+    })
+
+
+def create_user_wallet(app_id: str, label: str,
+                       initial_funding: float = None) -> dict:
+    """Create a user wallet under an application."""
+    params = {"app_id": app_id, "label": label}
+    if initial_funding is not None:
+        params["initial_funding"] = initial_funding
+    return _rpc("tenzro_createUserWallet", params)
+
+
+def fund_user_wallet(master_address: str, user_address: str,
+                     amount: float) -> dict:
+    """Fund a user wallet from the app master wallet."""
+    return _rpc("tenzro_fundUserWallet", {
+        "master_address": master_address,
+        "user_address": user_address,
+        "amount": amount,
+    })
+
+
+def list_user_wallets(app_id: str) -> dict:
+    """List all user wallets for an application."""
+    return _rpc("tenzro_listUserWallets", {"app_id": app_id})
+
+
+def sponsor_transaction(master_address: str, to: str,
+                        amount: float) -> dict:
+    """Sponsor a transaction using the paymaster wallet."""
+    return _rpc("tenzro_sponsorTransaction", {
+        "master_address": master_address,
+        "to": to,
+        "amount": amount,
+    })
+
+
+def get_usage_stats(app_id: str) -> dict:
+    """Get usage statistics for an application."""
+    return _rpc("tenzro_getUsageStats", {"app_id": app_id})
+
+
+# ── Contract ABI ─────────────────────────────────────────────────
+
+
+def encode_function(function_sig: str, args: list = None) -> dict:
+    """ABI-encode a function call (e.g. 'transfer(address,uint256)')."""
+    return _rpc("tenzro_encodeFunction", {
+        "function_sig": function_sig,
+        "args": args or [],
+    })
+
+
+def decode_result(data_hex: str, output_types: list) -> dict:
+    """ABI-decode contract return data."""
+    return _rpc("tenzro_decodeResult", {
+        "data_hex": data_hex,
+        "output_types": output_types,
+    })
+
+
 # ── CLI ───────────────────────────────────────────────────────────
 
 COMMANDS = {
@@ -3932,6 +4211,79 @@ COMMANDS = {
     "debridge_get_instructions": lambda args: debridge_get_instructions(),
     "debridge_create_tx": lambda args: debridge_create_tx(args[0], args[1], args[2], args[3], args[4], args[5]),
     "debridge_same_chain_swap": lambda args: debridge_same_chain_swap(args[0], args[1], args[2], args[3]),
+    # ── Crypto ──
+    "sign_message": lambda args: sign_message(
+        args[0], args[1], args[2] if len(args) > 2 else "ed25519",
+    ),
+    "verify_signature": lambda args: verify_signature(args[0], args[1], args[2]),
+    "encrypt_data": lambda args: encrypt_data(args[0], args[1]),
+    "decrypt_data": lambda args: decrypt_data(args[0], args[1], args[2]),
+    "derive_key": lambda args: derive_key(args[0]),
+    "generate_keypair": lambda args: generate_keypair(
+        args[0] if args else "ed25519",
+    ),
+    "hash_sha256": lambda args: hash_sha256(args[0]),
+    "hash_keccak256": lambda args: hash_keccak256(args[0]),
+    "x25519_key_exchange": lambda args: x25519_key_exchange(args[0], args[1]),
+    # ── TEE ──
+    "detect_tee": lambda args: detect_tee(),
+    "get_tee_attestation": lambda args: get_tee_attestation(
+        args[0] if args else None,
+    ),
+    "verify_tee_attestation": lambda args: verify_tee_attestation(args[0], args[1]),
+    "seal_data": lambda args: seal_data(args[0], args[1]),
+    "unseal_data": lambda args: unseal_data(args[0], args[1]),
+    "list_tee_providers": lambda args: list_tee_providers(),
+    # ── ZK ──
+    "create_zk_proof": lambda args: create_zk_proof(
+        args[0],
+        json.loads(args[1]) if len(args) > 1 else [],
+        json.loads(args[2]) if len(args) > 2 else [],
+    ),
+    "generate_proving_key": lambda args: generate_proving_key(args[0]),
+    "list_zk_circuits": lambda args: list_zk_circuits(),
+    # ── Custody ──
+    "create_mpc_wallet_advanced": lambda args: create_mpc_wallet_advanced(
+        int(args[0]) if args else 2,
+        int(args[1]) if len(args) > 1 else 3,
+        args[2] if len(args) > 2 else "ed25519",
+    ),
+    "export_keystore": lambda args: export_keystore(args[0], args[1]),
+    "import_keystore": lambda args: import_keystore(args[0], args[1]),
+    "get_key_shares": lambda args: get_key_shares(args[0]),
+    "rotate_keys": lambda args: rotate_keys(args[0]),
+    "set_spending_limits": lambda args: set_spending_limits(
+        args[0], float(args[1]), float(args[2]),
+    ),
+    "get_spending_limits": lambda args: get_spending_limits(args[0]),
+    "authorize_session": lambda args: authorize_session(
+        args[0], int(args[1]),
+        args[2].split(",") if len(args) > 2 else [],
+    ),
+    "revoke_session": lambda args: revoke_session(args[0]),
+    # ── App / Paymaster ──
+    "register_app": lambda args: register_app(args[0], args[1]),
+    "create_user_wallet": lambda args: create_user_wallet(
+        args[0], args[1],
+        float(args[2]) if len(args) > 2 else None,
+    ),
+    "fund_user_wallet": lambda args: fund_user_wallet(
+        args[0], args[1], float(args[2]),
+    ),
+    "list_user_wallets": lambda args: list_user_wallets(args[0]),
+    "sponsor_transaction": lambda args: sponsor_transaction(
+        args[0], args[1], float(args[2]),
+    ),
+    "get_usage_stats": lambda args: get_usage_stats(args[0]),
+    # ── Contract ABI ──
+    "encode_function": lambda args: encode_function(
+        args[0],
+        json.loads(args[1]) if len(args) > 1 else [],
+    ),
+    "decode_result": lambda args: decode_result(
+        args[0],
+        json.loads(args[1]) if len(args) > 1 else [],
+    ),
 }
 
 
