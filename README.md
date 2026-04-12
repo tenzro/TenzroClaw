@@ -8,7 +8,7 @@ The official [OpenClaw](https://github.com/anthropics/openclaw) skill for intera
 
 ## Overview
 
-TenzroClaw gives AI agents direct access to **252 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
+TenzroClaw gives AI agents direct access to **262 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
 
 **Live testnet:** `https://rpc.tenzro.network`
 
@@ -73,9 +73,9 @@ export CHAINLINK_MCP_URL=https://chainlink-mcp.tenzro.network/mcp
 export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 ```
 
-## Capabilities (252 commands)
+## Capabilities (262 commands)
 
-### Tenzro Blockchain (185 commands)
+### Tenzro Blockchain (190 commands)
 
 #### Wallet & Transactions
 `create_wallet`, `get_balance`, `send_transaction`, `create_account`, `list_accounts`
@@ -103,6 +103,9 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 
 #### Bridge & Cross-Chain
 `bridge_tokens`, `bridge_quote`, `get_bridge_routes`, `list_bridge_adapters`, `crosschain_mint`, `crosschain_burn`
+
+#### deBridge (5 commands)
+`debridge_search_tokens`, `debridge_get_chains`, `debridge_get_instructions`, `debridge_create_tx`, `debridge_same_chain_swap`
 
 #### Compliance
 `check_compliance`, `register_compliance`, `freeze_address`
@@ -168,6 +171,7 @@ tenzro_rpc.py
     |                         -> layerzero-mcp.tenzro.network (LayerZero)
     |                         -> chainlink-mcp.tenzro.network (Chainlink)
     |                         -> canton-mcp.tenzro.network   (Canton)
+    |                         -> lifi-mcp.tenzro.network     (LI.FI)
     |
     v
 Tenzro Network (decentralized) + External Chains
@@ -180,6 +184,7 @@ Tenzro Network (decentralized) + External Chains
 | Tenzro Network | [tenzro.com](https://tenzro.com) |
 | MCP Server | [github.com/tenzro/tenzro-mcp-server](https://github.com/tenzro/tenzro-mcp-server) |
 | A2A Server | [github.com/tenzro/tenzro-a2a-server](https://github.com/tenzro/tenzro-a2a-server) |
+| LI.FI MCP | `lifi-mcp.tenzro.network/mcp` |
 | JSON-RPC | `https://rpc.tenzro.network` |
 | Web API | `https://api.tenzro.network` |
 
