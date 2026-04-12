@@ -1271,6 +1271,50 @@ def bridge_with_hook(from_chain: str, to_chain: str, token: str,
     })
 
 
+# ── deBridge Cross-Chain ────────────────────────────────────────
+
+
+def debridge_search_tokens(query, chain_id=None):
+    """Search for tokens on deBridge DLN."""
+    params = {"query": query}
+    if chain_id:
+        params["chain_id"] = int(chain_id)
+    return _rpc("tenzro_debridgeSearchTokens", params)
+
+
+def debridge_get_chains():
+    """List all chains supported by deBridge DLN."""
+    return _rpc("tenzro_debridgeGetChains", {})
+
+
+def debridge_get_instructions():
+    """Get deBridge operational instructions."""
+    return _rpc("tenzro_debridgeGetInstructions", {})
+
+
+def debridge_create_tx(src_chain, dst_chain, src_token, dst_token,
+                       amount, recipient):
+    """Create a cross-chain transaction via deBridge DLN."""
+    return _rpc("tenzro_debridgeCreateTx", {
+        "src_chain_id": int(src_chain),
+        "dst_chain_id": int(dst_chain),
+        "src_token": src_token,
+        "dst_token": dst_token,
+        "amount": amount,
+        "recipient": recipient,
+    })
+
+
+def debridge_same_chain_swap(chain_id, token_in, token_out, amount):
+    """Same-chain token swap via deBridge."""
+    return _rpc("tenzro_debridgeSameChainSwap", {
+        "chain_id": int(chain_id),
+        "token_in": token_in,
+        "token_out": token_out,
+        "amount": amount,
+    })
+
+
 # ── ERC-7802 Crosschain Token ───────────────────────────────────
 
 
@@ -3882,6 +3926,12 @@ COMMANDS = {
     "canton_get_fee_schedule": lambda args: canton_get_fee_schedule(
         args[0] if args else None,
     ),
+    # ── Ecosystem: deBridge ──
+    "debridge_search_tokens": lambda args: debridge_search_tokens(args[0], args[1] if len(args) > 1 else None),
+    "debridge_get_chains": lambda args: debridge_get_chains(),
+    "debridge_get_instructions": lambda args: debridge_get_instructions(),
+    "debridge_create_tx": lambda args: debridge_create_tx(args[0], args[1], args[2], args[3], args[4], args[5]),
+    "debridge_same_chain_swap": lambda args: debridge_same_chain_swap(args[0], args[1], args[2], args[3]),
 }
 
 
