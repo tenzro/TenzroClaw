@@ -338,11 +338,11 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_joinAsMicroNode",
-    "params": [{
+    "params": {
       "display_name": "Alice",
       "origin": "cli",
       "participant_type": "human"
-    }],
+    },
     "id": 1
   }'
 ```
@@ -382,7 +382,7 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_setUsername",
-    "params": [{"did": "did:tenzro:human:<uuid>", "username": "alice"}],
+    "params": {"did": "did:tenzro:human:<uuid>", "username": "alice"},
     "id": 1
   }'
 ```
@@ -417,7 +417,7 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_resolveUsername",
-    "params": [{"username": "alice"}],
+    "params": {"username": "alice"},
     "id": 1
   }'
 ```
@@ -1568,11 +1568,11 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_spawnAgent",
-    "params": [{
+    "params": {
       "parent_id": "<parent-agent-uuid>",
       "name": "data-analyst",
       "capabilities": ["data", "nlp"]
-    }],
+    },
     "id": 1
   }'
 ```
@@ -1598,11 +1598,11 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_runAgentTask",
-    "params": [{
+    "params": {
       "agent_id": "<agent-uuid>",
       "task": "Analyze the latest network stats and summarize key metrics",
       "inference_url": "http://localhost:8080/v1/chat/completions"
-    }],
+    },
     "id": 1
   }'
 ```
@@ -1627,7 +1627,7 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_createSwarm",
-    "params": [{
+    "params": {
       "orchestrator_id": "<orchestrator-uuid>",
       "members": [
         {"name": "researcher", "capabilities": ["nlp", "data"]},
@@ -1637,7 +1637,7 @@ curl -X POST https://rpc.tenzro.network \
       "max_members": 10,
       "task_timeout_secs": 300,
       "parallel": true
-    }],
+    },
     "id": 1
   }'
 ```
@@ -1660,7 +1660,7 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_getSwarmStatus",
-    "params": [{"swarm_id": "<swarm-uuid>"}],
+    "params": {"swarm_id": "<swarm-uuid>"},
     "id": 1
   }'
 ```
@@ -1691,7 +1691,7 @@ curl -X POST https://rpc.tenzro.network \
   -d '{
     "jsonrpc": "2.0",
     "method": "tenzro_terminateSwarm",
-    "params": [{"swarm_id": "<swarm-uuid>"}],
+    "params": {"swarm_id": "<swarm-uuid>"},
     "id": 1
   }'
 ```
