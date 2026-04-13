@@ -8,7 +8,7 @@ The official [OpenClaw](https://github.com/anthropics/openclaw) skill for intera
 
 ## Overview
 
-TenzroClaw gives AI agents direct access to **297 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
+TenzroClaw gives AI agents direct access to **301 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
 
 **Live testnet:** `https://rpc.tenzro.network`
 
@@ -21,6 +21,12 @@ python3 tools/tenzro_rpc.py create_wallet
 python3 tools/tenzro_rpc.py register_identity human Alice
 python3 tools/tenzro_rpc.py list_models
 python3 tools/tenzro_rpc.py join Alice
+
+# Onboarding keys
+python3 tools/tenzro_rpc.py issue_onboarding_key "my-agent" did:tenzro:machine:... 0xaddress machine
+python3 tools/tenzro_rpc.py list_onboarding_keys
+python3 tools/tenzro_rpc.py validate_onboarding_key tenzro_...
+python3 tools/tenzro_rpc.py revoke_onboarding_key did:tenzro:machine:...
 
 # Solana
 python3 tools/tenzro_rpc.py solana_get_slot
@@ -73,9 +79,9 @@ export CHAINLINK_MCP_URL=https://chainlink-mcp.tenzro.network/mcp
 export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 ```
 
-## Capabilities (297 commands)
+## Capabilities (301 commands)
 
-### Tenzro Blockchain (225 commands)
+### Tenzro Blockchain (229 commands)
 
 #### Wallet & Transactions
 `create_wallet`, `get_balance`, `send_transaction`, `create_account`, `list_accounts`
@@ -100,6 +106,9 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 
 #### Settlement & Payments
 `settle`, `get_settlement`, `create_escrow`, `release_escrow`, `open_payment_channel`, `pay_mpp`, `pay_x402`
+
+#### Onboarding Keys
+`issue_onboarding_key`, `list_onboarding_keys`, `revoke_onboarding_key`, `validate_onboarding_key`
 
 #### Bridge & Cross-Chain
 `bridge_tokens`, `bridge_quote`, `get_bridge_routes`, `list_bridge_adapters`, `crosschain_mint`, `crosschain_burn`

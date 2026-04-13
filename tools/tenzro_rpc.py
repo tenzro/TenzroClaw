@@ -161,6 +161,12 @@ Usage:
     # Ecosystem MCP tools — Canton
     python tenzro_rpc.py canton_get_health
     python tenzro_rpc.py canton_list_parties
+
+    # Onboarding keys
+    python tenzro_rpc.py issue_onboarding_key "my-agent" did:tenzro:machine:... 0xaddress machine
+    python tenzro_rpc.py list_onboarding_keys
+    python tenzro_rpc.py validate_onboarding_key tenzro_...
+    python tenzro_rpc.py revoke_onboarding_key did:tenzro:machine:...
 """
 
 import json
@@ -3726,6 +3732,30 @@ def decode_result(data_hex: str, output_types: list) -> dict:
     })
 
 
+# ── Onboarding Keys ──────────────────────────────────────────────
+
+def issue_onboarding_key(name, did, address, identity_type="machine"):
+    """Issue an onboarding key for an agent."""
+    return _rpc("tenzro_issueOnboardingKey", {
+        "name": name, "did": did, "address": address, "identity_type": identity_type
+    })
+
+
+def list_onboarding_keys():
+    """List all onboarding keys."""
+    return _rpc("tenzro_listOnboardingKeys", {})
+
+
+def revoke_onboarding_key(did_or_hash):
+    """Revoke an onboarding key by DID or hash."""
+    return _rpc("tenzro_revokeOnboardingKey", {"did": did_or_hash})
+
+
+def validate_onboarding_key(key):
+    """Validate an onboarding key."""
+    return _rpc("tenzro_validateOnboardingKey", {"key": key})
+
+
 # ── CLI ───────────────────────────────────────────────────────────
 
 COMMANDS = {
@@ -4341,6 +4371,11 @@ COMMANDS = {
         args[0],
         json.loads(args[1]) if len(args) > 1 else [],
     ),
+    # ── Onboarding Keys ──
+    "issue_onboarding_key": lambda args: issue_onboarding_key(args[0], args[1], args[2], args[3] if len(args) > 3 else "machine"),
+    "list_onboarding_keys": lambda args: list_onboarding_keys(),
+    "revoke_onboarding_key": lambda args: revoke_onboarding_key(args[0]),
+    "validate_onboarding_key": lambda args: validate_onboarding_key(args[0]),
 }
 
 
