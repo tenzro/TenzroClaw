@@ -8,7 +8,7 @@ The official [OpenClaw](https://github.com/anthropics/openclaw) skill for intera
 
 ## Overview
 
-TenzroClaw gives AI agents direct access to **301 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
+TenzroClaw gives AI agents direct access to **303 commands** across the Tenzro blockchain and 5 ecosystem chains (Solana, Ethereum, LayerZero, Chainlink, Canton) through a single Python script. Agents can create wallets, send transactions, manage identities, trade on marketplaces, deploy contracts, bridge tokens, swap on Jupiter/1inch, read Chainlink price feeds, and more.
 
 **Live testnet:** `https://rpc.tenzro.network`
 
@@ -79,9 +79,9 @@ export CHAINLINK_MCP_URL=https://chainlink-mcp.tenzro.network/mcp
 export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 ```
 
-## Capabilities (301 commands)
+## Capabilities (303 commands)
 
-### Tenzro Blockchain (229 commands)
+### Tenzro Blockchain (231 commands)
 
 #### Wallet & Transactions
 `create_wallet`, `get_balance`, `send_transaction`, `create_account`, `list_accounts`
@@ -126,7 +126,7 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 `node_status`, `node_info`, `get_block_number`, `get_block`, `peer_count`, `syncing`
 
 #### Cryptography
-`sign_message`, `verify_signature`, `encrypt_data`, `decrypt_data`, `derive_key`, `generate_keypair`, `hash_sha256`, `hash_keccak256`, `x25519_key_exchange`
+`sign_message`, `verify_signature`, `encrypt_data`, `decrypt_data`, `derive_key`, `generate_keypair`, `hash_sha256`, `hash_keccak256`, `x25519_key_exchange`, `generate_vrf_proof`, `verify_vrf_proof` (RFC 9381 ECVRF-EDWARDS25519-SHA512-TAI)
 
 #### TEE Security
 `detect_tee`, `get_tee_attestation`, `verify_tee_attestation`, `seal_data`, `unseal_data`, `list_tee_providers`
