@@ -68,11 +68,29 @@ class TestWallet(unittest.TestCase):
 
     @patch("tenzro_rpc.requests.post")
     def test_send_transaction(self, mock_post):
-        mock_post.return_value = _mock_rpc_response(
-            "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        # Three RPC calls: eth_getTransactionCount, eth_chainId,
+        # tenzro_signAndSendTransaction (server-side signing path).
+        mock_post.side_effect = [
+            _mock_rpc_response("0x0"),
+            _mock_rpc_response("0x539"),
+            _mock_rpc_response(
+                "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+            ),
+        ]
+        result = tenzro_rpc.send_transaction(
+            "0xfrom", "0xto", 10**18,
+            private_key="0x" + "11" * 32,
         )
-        result = tenzro_rpc.send_transaction("0xfrom", "0xto", 10**18)
         self.assertTrue(result.startswith("0x"))
+
+    @patch("tenzro_rpc.requests.post")
+    def test_send_transaction_requires_private_key(self, mock_post):
+        mock_post.side_effect = [
+            _mock_rpc_response("0x0"),
+            _mock_rpc_response("0x539"),
+        ]
+        result = tenzro_rpc.send_transaction("0xfrom", "0xto", 10**18)
+        self.assertIn("error", result)
 
     @patch("tenzro_rpc.requests.post")
     def test_create_mpc_wallet(self, mock_post):
@@ -1004,9 +1022,281 @@ class TestCLIDispatch(unittest.TestCase):
             # Events & Webhooks
             "get_events", "get_event_status",
             "register_webhook", "list_webhooks", "delete_webhook",
+            # AP2 (Agent Payments Protocol)
+            "ap2_protocol_info", "ap2_verify_mandate",
+            "ap2_validate_mandate_pair", "ap2_create_session",
+            "ap2_authorize_payment", "ap2_execute_payment",
+            "ap2_cancel_session", "ap2_get_session",
+            "ap2_list_agent_sessions",
+            # ERC-8004 Trustless Agents
+            "erc8004_derive_agent_id", "erc8004_encode_register",
+            "erc8004_encode_get_agent", "erc8004_decode_get_agent",
+            "erc8004_encode_feedback",
+            "erc8004_encode_request_validation",
+            "erc8004_encode_submit_validation",
+            # Wormhole
+            "wormhole_chain_id", "wormhole_parse_vaa_id",
+            "wormhole_bridge",
+            # CCT pool registry
+            "cct_list_pools", "cct_get_pool",
         ]
         for cmd in expected:
             self.assertIn(cmd, tenzro_rpc.COMMANDS, f"Missing command: {cmd}")
+
+
+class TestAp2(unittest.TestCase):
+    """Tests for AP2 (Agent Payments Protocol) wrappers."""
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_protocol_info(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "protocol": "ap2",
+            "version": "0.1",
+            "supported_vdc_types": ["intent", "cart", "payment"],
+        })
+        result = tenzro_rpc.ap2_protocol_info()
+        self.assertEqual(result["protocol"], "ap2")
+        # Verify JSON-RPC method name
+        args, kwargs = mock_post.call_args
+        self.assertEqual(kwargs["json"]["method"], "tenzro_ap2ProtocolInfo")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_verify_mandate(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"valid": True})
+        vdc = {
+            "type": "intent",
+            "issuer": "did:tenzro:human:alice",
+            "subject": "did:tenzro:machine:agent-1",
+            "payload": {"max_amount": 1000},
+            "signature": "0xabcd",
+        }
+        result = tenzro_rpc.ap2_verify_mandate(vdc)
+        self.assertTrue(result["valid"])
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_ap2VerifyMandate"
+        )
+        self.assertEqual(kwargs["json"]["params"]["vdc"], vdc)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_validate_mandate_pair(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "valid": True, "matched_subject": True,
+        })
+        intent = {"type": "intent"}
+        cart = {"type": "cart"}
+        result = tenzro_rpc.ap2_validate_mandate_pair(intent, cart)
+        self.assertTrue(result["valid"])
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_ap2ValidateMandatePair"
+        )
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_create_session(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "session_id": "sess-123",
+            "status": "active",
+        })
+        result = tenzro_rpc.ap2_create_session(
+            "did:tenzro:machine:agent-1",
+            "did:tenzro:machine:provider-1",
+            "inference",
+            1000,
+            "TNZO",
+        )
+        self.assertEqual(result["session_id"], "sess-123")
+        args, kwargs = mock_post.call_args
+        params = kwargs["json"]["params"]
+        self.assertEqual(params["max_amount"], 1000)
+        self.assertEqual(params["asset"], "TNZO")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_authorize_payment(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "authorization_id": "auth-456",
+        })
+        result = tenzro_rpc.ap2_authorize_payment("sess-123", 100)
+        self.assertEqual(result["authorization_id"], "auth-456")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_execute_payment(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "tx_hash": "0xexec",
+        })
+        result = tenzro_rpc.ap2_execute_payment("sess-123", "auth-456")
+        self.assertEqual(result["tx_hash"], "0xexec")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_cancel_session(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"status": "cancelled"})
+        result = tenzro_rpc.ap2_cancel_session("sess-123")
+        self.assertEqual(result["status"], "cancelled")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_get_session(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "session_id": "sess-123",
+            "spent": 450,
+        })
+        result = tenzro_rpc.ap2_get_session("sess-123")
+        self.assertEqual(result["spent"], 450)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_list_agent_sessions(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "sessions": [{"session_id": "sess-123"}],
+        })
+        result = tenzro_rpc.ap2_list_agent_sessions(
+            "did:tenzro:machine:agent-1"
+        )
+        self.assertEqual(len(result["sessions"]), 1)
+
+
+class TestErc8004(unittest.TestCase):
+    """Tests for ERC-8004 Trustless Agents Registry wrappers."""
+
+    @patch("tenzro_rpc.requests.post")
+    def test_derive_agent_id(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "agent_id": "0xdeadbeef",
+        })
+        result = tenzro_rpc.erc8004_derive_agent_id(
+            "0xowner", "0xsalt"
+        )
+        self.assertEqual(result["agent_id"], "0xdeadbeef")
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_erc8004DeriveAgentId"
+        )
+
+    @patch("tenzro_rpc.requests.post")
+    def test_encode_register(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "calldata": "0xabcdef",
+        })
+        result = tenzro_rpc.erc8004_encode_register(
+            "0xagent", "ipfs://Qm...", "0xowner"
+        )
+        self.assertTrue(result["calldata"].startswith("0x"))
+
+    @patch("tenzro_rpc.requests.post")
+    def test_encode_get_agent(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"calldata": "0x123"})
+        result = tenzro_rpc.erc8004_encode_get_agent("0xagent")
+        self.assertIn("calldata", result)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_decode_get_agent(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "agent_id": "0xagent",
+            "owner": "0xowner",
+            "registration_data_uri": "ipfs://Qm...",
+        })
+        result = tenzro_rpc.erc8004_decode_get_agent("0xreturndata")
+        self.assertEqual(result["owner"], "0xowner")
+
+    @patch("tenzro_rpc.requests.post")
+    def test_encode_feedback(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"calldata": "0xfeed"})
+        result = tenzro_rpc.erc8004_encode_feedback(
+            "0xagent", 95, "0xauth", "ipfs://feedback"
+        )
+        self.assertIn("calldata", result)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(kwargs["json"]["params"]["score"], 95)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_encode_request_validation(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"calldata": "0xreq"})
+        result = tenzro_rpc.erc8004_encode_request_validation(
+            "0xagent", "0xvalidator", "ipfs://req", "0xdatahash"
+        )
+        self.assertIn("calldata", result)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_encode_submit_validation(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({"calldata": "0xsub"})
+        result = tenzro_rpc.erc8004_encode_submit_validation(
+            "0xdatahash", 1, "ipfs://resp", "tag"
+        )
+        self.assertIn("calldata", result)
+
+
+class TestWormhole(unittest.TestCase):
+    """Tests for Wormhole cross-chain wrappers."""
+
+    @patch("tenzro_rpc.requests.post")
+    def test_chain_id(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "chain": "ethereum",
+            "wormhole_chain_id": 2,
+        })
+        result = tenzro_rpc.wormhole_chain_id("ethereum")
+        self.assertEqual(result["wormhole_chain_id"], 2)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_wormholeChainId"
+        )
+
+    @patch("tenzro_rpc.requests.post")
+    def test_parse_vaa_id(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "emitter_chain": 2,
+            "emitter_address": "0xemitter",
+            "sequence": 42,
+        })
+        result = tenzro_rpc.wormhole_parse_vaa_id(
+            "2/0xemitter/42"
+        )
+        self.assertEqual(result["sequence"], 42)
+
+    @patch("tenzro_rpc.requests.post")
+    def test_bridge(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "vaa_id": "1/0xabc/100",
+            "status": "submitted",
+        })
+        result = tenzro_rpc.wormhole_bridge(
+            "tenzro", "ethereum", "TNZO",
+            1000000000000000000, "0xsender", "0xrecipient",
+        )
+        self.assertEqual(result["status"], "submitted")
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_wormholeBridge"
+        )
+
+
+class TestCct(unittest.TestCase):
+    """Tests for Chainlink CCT pool registry wrappers."""
+
+    @patch("tenzro_rpc.requests.post")
+    def test_list_pools(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "pools": [
+                {"chain": "ethereum", "pool": "0xpool1", "type": "burn_mint"},
+                {"chain": "base", "pool": "0xpool2", "type": "lock_release"},
+            ],
+        })
+        result = tenzro_rpc.cct_list_pools()
+        self.assertEqual(len(result["pools"]), 2)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_cctListPools"
+        )
+
+    @patch("tenzro_rpc.requests.post")
+    def test_get_pool(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "chain": "ethereum",
+            "pool": "0xpool1",
+            "type": "burn_mint",
+            "rate_limit": {"capacity": 1000, "refill_rate": 10},
+        })
+        result = tenzro_rpc.cct_get_pool("ethereum")
+        self.assertEqual(result["pool"], "0xpool1")
+        self.assertEqual(result["type"], "burn_mint")
 
 
 if __name__ == "__main__":

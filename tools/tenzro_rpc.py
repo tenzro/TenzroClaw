@@ -336,8 +336,15 @@ def send_transaction(from_addr: str, to_addr: str, value: int,
                      gas_limit: int = 21000, gas_price: int = 1_000_000_000) -> dict:
     """Send a TNZO transfer transaction.
 
-    If private_key is provided, the transaction is signed automatically.
-    Otherwise, the node must have the key (e.g., for MPC wallets).
+    If private_key is provided, the server signs the transaction using
+    tenzro_signAndSendTransaction in a single atomic RPC call. This avoids
+    any client-side hashing (the server computes Transaction::hash() with
+    the canonical preimage including timestamp).
+
+    If no private_key is provided, the transaction must be pre-signed by
+    the caller; in that case the caller is responsible for supplying
+    signature, public_key, and timestamp fields matching the server's
+    Transaction::hash() preimage.
     """
     # Get nonce and chain ID
     nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
@@ -346,7 +353,51 @@ def send_transaction(from_addr: str, to_addr: str, value: int,
     chain_id_result = _rpc("eth_chainId", [])
     chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
 
-    tx = {
+    if private_key:
+        # Server-side signing: single atomic sign + submit call
+        return _rpc("tenzro_signAndSendTransaction", {
+            "from": from_addr,
+            "to": to_addr,
+            "value": value,
+            "gas_limit": gas_limit,
+            "gas_price": gas_price,
+            "nonce": nonce,
+            "chain_id": chain_id,
+            "private_key": private_key,
+        })
+
+    # No private key — require caller to submit via eth_sendRawTransaction
+    # with their own signature, public_key, and timestamp.
+    return {
+        "error": (
+            "send_transaction requires private_key for automatic signing. "
+            "For pre-signed submission, call eth_sendRawTransaction directly "
+            "with signature, public_key, and timestamp fields."
+        )
+    }
+
+
+def sign_transaction(from_addr: str, to_addr: str, value: int,
+                     private_key: str,
+                     gas_limit: int = 21000,
+                     gas_price: int = 1_000_000_000,
+                     nonce: int = None,
+                     chain_id: int = None) -> dict:
+    """Sign a transaction server-side without submitting it.
+
+    Returns a dict with signature, public_key, timestamp, tx_hash so the
+    caller can later submit via eth_sendRawTransaction. Useful for offline
+    flows or when batching multiple signed transactions.
+    """
+    if nonce is None:
+        nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
+        nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
+
+    if chain_id is None:
+        chain_id_result = _rpc("eth_chainId", [])
+        chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
+
+    return _rpc("tenzro_signTransaction", {
         "from": from_addr,
         "to": to_addr,
         "value": value,
@@ -354,41 +405,26 @@ def send_transaction(from_addr: str, to_addr: str, value: int,
         "gas_price": gas_price,
         "nonce": nonce,
         "chain_id": chain_id,
-    }
-
-    # If private key provided, sign first then send
-    if private_key:
-        sign_result = _rpc("tenzro_signMessage", {
-            "private_key": private_key,
-            "message_hex": "0x" + json.dumps(tx, separators=(",", ":")).encode().hex(),
-            "key_type": "ed25519",
-        })
-        if "signature" in sign_result:
-            tx["signature"] = sign_result["signature"]
-            tx["public_key"] = sign_result.get("public_key", "")
-
-    return _rpc("eth_sendRawTransaction", tx)
+        "private_key": private_key,
+    })
 
 
-def sign_and_send(private_key: str, to_addr: str, amount_tnzo: float) -> dict:
+def sign_and_send(private_key: str, from_addr: str, to_addr: str,
+                  amount_tnzo: float) -> dict:
     """Sign and send a TNZO transfer in one call.
 
     Args:
         private_key: Hex-encoded Ed25519 private key (from wallet creation)
+        from_addr: Sender hex address (must correspond to private_key)
         to_addr: Recipient hex address
         amount_tnzo: Amount in TNZO (e.g., 1.5 for 1.5 TNZO)
 
     Returns:
         Transaction result with tx_hash
     """
-    # Derive sender address from private key
-    keypair = generate_keypair("ed25519")
-    # For now, use the private key to get the corresponding public key
-    sender = _rpc("tenzro_generateKeypair", {"key_type": "ed25519"})
-
     value_wei = int(amount_tnzo * 1_000_000_000_000_000_000)
     return send_transaction(
-        from_addr=to_addr,  # placeholder — real impl needs key derivation
+        from_addr=from_addr,
         to_addr=to_addr,
         value=value_wei,
         private_key=private_key,
@@ -3539,14 +3575,6 @@ def get_tee_attestation(tee_type: str = None) -> dict:
     return _rpc("tenzro_getAttestation", params)
 
 
-def verify_tee_attestation(attestation: str, tee_type: str) -> dict:
-    """Verify a TEE attestation report."""
-    return _rpc("tenzro_verifyTeeAttestation", {
-        "attestation": attestation,
-        "tee_type": tee_type,
-    })
-
-
 def seal_data(data_hex: str, key_id: str) -> dict:
     """Seal (encrypt) data within the TEE enclave."""
     return _rpc("tenzro_sealData", {
@@ -3754,6 +3782,176 @@ def revoke_onboarding_key(did_or_hash):
 def validate_onboarding_key(key):
     """Validate an onboarding key."""
     return _rpc("tenzro_validateOnboardingKey", {"key": key})
+
+
+# ── AP2 (Agent Payments Protocol) ────────────────────────────────
+
+
+def ap2_protocol_info() -> dict:
+    """Return AP2 protocol identifiers and supported VDC types."""
+    return _rpc("tenzro_ap2ProtocolInfo", {})
+
+
+def ap2_verify_mandate(vdc: dict) -> dict:
+    """Verify a single AP2 Verifiable Digital Credential envelope."""
+    return _rpc("tenzro_ap2VerifyMandate", {"vdc": vdc})
+
+
+def ap2_validate_mandate_pair(intent_vdc: dict, cart_vdc: dict) -> dict:
+    """Validate that an Intent and Cart VDC pair are consistent."""
+    return _rpc("tenzro_ap2ValidateMandatePair", {
+        "intent_vdc": intent_vdc,
+        "cart_vdc": cart_vdc,
+    })
+
+
+def ap2_create_session(agent_did: str, provider_did: str, service: str,
+                       max_amount: int, asset: str = "TNZO") -> dict:
+    """Create a new AP2 session authorizing the agent to pay the provider."""
+    return _rpc("tenzro_ap2CreateSession", {
+        "agent_did": agent_did,
+        "provider_did": provider_did,
+        "service": service,
+        "max_amount": max_amount,
+        "asset": asset,
+    })
+
+
+def ap2_authorize_payment(session_id: str, amount: int) -> dict:
+    """Request a payment authorization under an existing AP2 session."""
+    return _rpc("tenzro_ap2AuthorizePayment", {
+        "session_id": session_id,
+        "amount": amount,
+    })
+
+
+def ap2_execute_payment(session_id: str, authorization_id: str) -> dict:
+    """Execute a previously-authorized AP2 payment."""
+    return _rpc("tenzro_ap2ExecutePayment", {
+        "session_id": session_id,
+        "authorization_id": authorization_id,
+    })
+
+
+def ap2_cancel_session(session_id: str) -> dict:
+    """Cancel an AP2 session, revoking remaining authorizations."""
+    return _rpc("tenzro_ap2CancelSession", {"session_id": session_id})
+
+
+def ap2_get_session(session_id: str) -> dict:
+    """Fetch AP2 session state."""
+    return _rpc("tenzro_ap2GetSession", {"session_id": session_id})
+
+
+def ap2_list_agent_sessions(agent_did: str) -> dict:
+    """List all AP2 sessions for an agent DID."""
+    return _rpc("tenzro_ap2ListAgentSessions", {"agent_did": agent_did})
+
+
+# ── ERC-8004 (Trustless Agents Registry) ─────────────────────────
+
+
+def erc8004_derive_agent_id(owner: str, salt: str) -> dict:
+    """Derive deterministic ERC-8004 AgentId from owner + salt."""
+    return _rpc("tenzro_erc8004DeriveAgentId", {
+        "owner": owner,
+        "salt": salt,
+    })
+
+
+def erc8004_encode_register(agent_id: str, registration_data_uri: str,
+                            owner: str) -> dict:
+    """Encode calldata for ERC-8004 register(agentId, uri, owner)."""
+    return _rpc("tenzro_erc8004EncodeRegister", {
+        "agent_id": agent_id,
+        "registration_data_uri": registration_data_uri,
+        "owner": owner,
+    })
+
+
+def erc8004_encode_get_agent(agent_id: str) -> dict:
+    """Encode calldata for ERC-8004 getAgent(agentId)."""
+    return _rpc("tenzro_erc8004EncodeGetAgent", {"agent_id": agent_id})
+
+
+def erc8004_decode_get_agent(returndata: str) -> dict:
+    """Decode getAgent() returndata into an Agent struct."""
+    return _rpc("tenzro_erc8004DecodeGetAgent", {"returndata": returndata})
+
+
+def erc8004_encode_feedback(agent_id: str, score: int,
+                            feedback_auth_id: str,
+                            feedback_uri: str) -> dict:
+    """Encode calldata for ERC-8004 reputation feedback submission."""
+    return _rpc("tenzro_erc8004EncodeFeedback", {
+        "agent_id": agent_id,
+        "score": score,
+        "feedback_auth_id": feedback_auth_id,
+        "feedback_uri": feedback_uri,
+    })
+
+
+def erc8004_encode_request_validation(agent_id: str, validator_id: str,
+                                       request_uri: str,
+                                       data_hash: str) -> dict:
+    """Encode calldata for ERC-8004 requestValidation()."""
+    return _rpc("tenzro_erc8004EncodeRequestValidation", {
+        "agent_id": agent_id,
+        "validator_id": validator_id,
+        "request_uri": request_uri,
+        "data_hash": data_hash,
+    })
+
+
+def erc8004_encode_submit_validation(data_hash: str, response: int,
+                                      response_uri: str,
+                                      tag: str = "") -> dict:
+    """Encode calldata for ERC-8004 submitValidation()."""
+    return _rpc("tenzro_erc8004EncodeSubmitValidation", {
+        "data_hash": data_hash,
+        "response": response,
+        "response_uri": response_uri,
+        "tag": tag,
+    })
+
+
+# ── Wormhole (Cross-Chain Bridge) ────────────────────────────────
+
+
+def wormhole_chain_id(chain: str) -> dict:
+    """Look up the Wormhole chain id for a chain name (e.g. 'ethereum')."""
+    return _rpc("tenzro_wormholeChainId", {"chain": chain})
+
+
+def wormhole_parse_vaa_id(vaa_id: str) -> dict:
+    """Parse a Wormhole VAA id (chain/emitter/sequence) into components."""
+    return _rpc("tenzro_wormholeParseVaaId", {"vaa_id": vaa_id})
+
+
+def wormhole_bridge(source_chain: str, dest_chain: str, asset: str,
+                    amount: int, sender: str, recipient: str) -> dict:
+    """Execute a Wormhole cross-chain bridge transfer."""
+    return _rpc("tenzro_wormholeBridge", {
+        "source_chain": source_chain,
+        "dest_chain": dest_chain,
+        "asset": asset,
+        "amount": amount,
+        "sender": sender,
+        "recipient": recipient,
+    })
+
+
+# ── CCT (Chainlink Cross-Chain Token) Pool Registry ──────────────
+
+
+def cct_list_pools() -> dict:
+    """List all registered TNZO CCT pools across chains."""
+    return _rpc("tenzro_cctListPools", {})
+
+
+def cct_get_pool(chain: str) -> dict:
+    """Get CCT pool details for a specific chain."""
+    return _rpc("tenzro_cctGetPool", {"chain": chain})
 
 
 # ── CLI ───────────────────────────────────────────────────────────
@@ -4376,6 +4574,51 @@ COMMANDS = {
     "list_onboarding_keys": lambda args: list_onboarding_keys(),
     "revoke_onboarding_key": lambda args: revoke_onboarding_key(args[0]),
     "validate_onboarding_key": lambda args: validate_onboarding_key(args[0]),
+    # ── AP2 (Agent Payments Protocol) ──
+    "ap2_protocol_info": lambda args: ap2_protocol_info(),
+    "ap2_verify_mandate": lambda args: ap2_verify_mandate(json.loads(args[0])),
+    "ap2_validate_mandate_pair": lambda args: ap2_validate_mandate_pair(
+        json.loads(args[0]), json.loads(args[1]),
+    ),
+    "ap2_create_session": lambda args: ap2_create_session(
+        args[0], args[1], args[2], int(args[3]),
+        args[4] if len(args) > 4 else "TNZO",
+    ),
+    "ap2_authorize_payment": lambda args: ap2_authorize_payment(
+        args[0], int(args[1]),
+    ),
+    "ap2_execute_payment": lambda args: ap2_execute_payment(args[0], args[1]),
+    "ap2_cancel_session": lambda args: ap2_cancel_session(args[0]),
+    "ap2_get_session": lambda args: ap2_get_session(args[0]),
+    "ap2_list_agent_sessions": lambda args: ap2_list_agent_sessions(args[0]),
+    # ── ERC-8004 (Trustless Agents Registry) ──
+    "erc8004_derive_agent_id": lambda args: erc8004_derive_agent_id(
+        args[0], args[1],
+    ),
+    "erc8004_encode_register": lambda args: erc8004_encode_register(
+        args[0], args[1], args[2],
+    ),
+    "erc8004_encode_get_agent": lambda args: erc8004_encode_get_agent(args[0]),
+    "erc8004_decode_get_agent": lambda args: erc8004_decode_get_agent(args[0]),
+    "erc8004_encode_feedback": lambda args: erc8004_encode_feedback(
+        args[0], int(args[1]), args[2], args[3],
+    ),
+    "erc8004_encode_request_validation": lambda args: erc8004_encode_request_validation(
+        args[0], args[1], args[2], args[3],
+    ),
+    "erc8004_encode_submit_validation": lambda args: erc8004_encode_submit_validation(
+        args[0], int(args[1]), args[2],
+        args[3] if len(args) > 3 else "",
+    ),
+    # ── Wormhole ──
+    "wormhole_chain_id": lambda args: wormhole_chain_id(args[0]),
+    "wormhole_parse_vaa_id": lambda args: wormhole_parse_vaa_id(args[0]),
+    "wormhole_bridge": lambda args: wormhole_bridge(
+        args[0], args[1], args[2], int(args[3]), args[4], args[5],
+    ),
+    # ── CCT (Chainlink Cross-Chain Token) ──
+    "cct_list_pools": lambda args: cct_list_pools(),
+    "cct_get_pool": lambda args: cct_get_pool(args[0]),
 }
 
 
