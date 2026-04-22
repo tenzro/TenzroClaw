@@ -25,7 +25,7 @@ Usage:
     python tenzro_rpc.py chain_id
     python tenzro_rpc.py chat gemma4-9b "What is Tenzro?"
     python tenzro_rpc.py list_model_endpoints
-    python tenzro_rpc.py create_payment x402 /api/inference 100 USDC 0xrecipient
+    python tenzro_rpc.py create_payment x402 /inference 100 USDC 0xrecipient
     python tenzro_rpc.py verify_payment <challenge_id> x402 <payer_did> 0xpayer 100 USDC 0xsig
     python tenzro_rpc.py set_delegation did:tenzro:machine:... 10000000 100000000
     python tenzro_rpc.py post_task "Review code" "Review this Rust code" code_review 50000000000000000000
@@ -725,7 +725,7 @@ def create_payment_challenge(protocol: str, resource: str, amount: int,
     """Create a payment challenge (MPP, x402, or native).
 
     protocol: mpp | x402 | native
-    resource: the resource path being paid for (e.g. /api/inference)
+    resource: the resource path being paid for (e.g. /inference)
     amount: payment amount in smallest unit
     asset: TNZO, USDC, etc.
     recipient: payee address (required for x402/native)
@@ -3966,7 +3966,12 @@ COMMANDS = {
     "create_mpc_wallet": lambda args: create_mpc_wallet(),
     "get_balance": lambda args: get_balance(args[0]),
     "balance": lambda args: get_balance(args[0]),
-    "send": lambda args: send_transaction(args[0], args[1], int(args[2])),
+    "send": lambda args: send_transaction(
+        args[0],
+        args[1],
+        int(args[2]),
+        private_key=args[3] if len(args) > 3 else None,
+    ),
     "faucet": lambda args: request_faucet(args[0]),
     # Node Status
     "status": lambda args: get_status(),

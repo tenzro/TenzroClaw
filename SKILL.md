@@ -41,7 +41,7 @@ You can interact with the Tenzro blockchain network using its JSON-RPC, Web API,
 |---------|-----|-------------|
 | JSON-RPC | `https://rpc.tenzro.network` | EVM-compatible JSON-RPC (port 8545) |
 | Web API | `https://api.tenzro.network` | REST verification and status API (port 8080) |
-| Faucet | `https://api.tenzro.network/api/faucet` | Testnet TNZO token faucet |
+| Faucet | `https://api.tenzro.network/faucet` | Testnet TNZO token faucet |
 | MCP | `https://mcp.tenzro.network/mcp` | Model Context Protocol server (port 3001) |
 | A2A | `https://a2a.tenzro.network` | Agent-to-Agent protocol (port 3002) |
 
@@ -502,7 +502,7 @@ curl -X POST https://rpc.tenzro.network \
     "method": "tenzro_createPaymentChallenge",
     "params": {
       "protocol": "x402",
-      "resource": "/api/inference",
+      "resource": "/inference",
       "amount": 100,
       "asset": "USDC",
       "recipient": "0x<recipient_address>"
@@ -518,7 +518,7 @@ curl -X POST https://rpc.tenzro.network \
   "result": {
     "challenge_id": "<uuid>",
     "protocol": "x402",
-    "resource": "/api/inference",
+    "resource": "/inference",
     "amount": 100,
     "asset": "USDC",
     "recipient": "0x<recipient_address>",
@@ -621,7 +621,7 @@ curl -X POST https://rpc.tenzro.network \
     "jsonrpc": "2.0",
     "method": "tenzro_chat",
     "params": {
-      "model": "<model_id_or_instance_id>",
+      "model_id": "<model_id_or_instance_id>",
       "message": "Explain zero-knowledge proofs in one paragraph.",
       "temperature": 0.7,
       "max_tokens": 512
@@ -629,6 +629,10 @@ curl -X POST https://rpc.tenzro.network \
     "id": 1
   }'
 ```
+
+> The identifier key accepts both `model_id` (Tenzro canonical) and `model`
+> (OpenAI/MCP-style). The MCP `chat_completion` tool mirrors the same
+> flexibility. Clients may use whichever spelling is idiomatic for their stack.
 
 **Response:**
 ```json
@@ -1092,7 +1096,7 @@ print(result["address"])  # deployed contract address
 ### Node Status
 
 ```bash
-curl https://api.tenzro.network/api/status
+curl https://api.tenzro.network/status
 ```
 
 **Response:**
@@ -1110,7 +1114,7 @@ curl https://api.tenzro.network/api/status
 ### Health Check
 
 ```bash
-curl https://api.tenzro.network/api/health
+curl https://api.tenzro.network/health
 ```
 
 ### Request Testnet Tokens
@@ -1118,7 +1122,7 @@ curl https://api.tenzro.network/api/health
 Request 100 TNZO from the faucet (rate-limited to one request per address every 24 hours).
 
 ```bash
-curl -X POST https://api.tenzro.network/api/faucet \
+curl -X POST https://api.tenzro.network/faucet \
   -H "Content-Type: application/json" \
   -d '{"address": "0x<your_address>"}'
 ```
@@ -1136,7 +1140,7 @@ curl -X POST https://api.tenzro.network/api/faucet \
 ### Verify ZK Proof
 
 ```bash
-curl -X POST https://api.tenzro.network/api/verify/zk-proof \
+curl -X POST https://api.tenzro.network/verify/zk-proof \
   -H "Content-Type: application/json" \
   -d '{
     "proof_bytes": "<hex>",
@@ -1150,7 +1154,7 @@ Supported proof types: `groth16`, `plonk`, `halo2`, `stark`.
 ### Verify TEE Attestation
 
 ```bash
-curl -X POST https://api.tenzro.network/api/verify/tee-attestation \
+curl -X POST https://api.tenzro.network/verify/tee-attestation \
   -H "Content-Type: application/json" \
   -d '{
     "vendor": "intel_tdx",
@@ -1163,7 +1167,7 @@ Supported vendors: `intel_tdx`, `amd_sev_snp`, `aws_nitro`.
 ### Verify Transaction Signature
 
 ```bash
-curl -X POST https://api.tenzro.network/api/verify/transaction \
+curl -X POST https://api.tenzro.network/verify/transaction \
   -H "Content-Type: application/json" \
   -d '{
     "tx_hash": "<hex>",
@@ -1175,7 +1179,7 @@ curl -X POST https://api.tenzro.network/api/verify/transaction \
 ### Verify Settlement Receipt
 
 ```bash
-curl -X POST https://api.tenzro.network/api/verify/settlement \
+curl -X POST https://api.tenzro.network/verify/settlement \
   -H "Content-Type: application/json" \
   -d '{
     "receipt_id": "<id>",
@@ -1189,7 +1193,7 @@ curl -X POST https://api.tenzro.network/api/verify/settlement \
 ### Verify Inference Result
 
 ```bash
-curl -X POST https://api.tenzro.network/api/verify/inference \
+curl -X POST https://api.tenzro.network/verify/inference \
   -H "Content-Type: application/json" \
   -d '{
     "model_id": "<model>",
@@ -1716,7 +1720,7 @@ The fastest way to get started on the Tenzro Network — no prior setup required
 
 1. Call `tenzro_joinAsMicroNode` with a display name
 2. Receive a TDIP DID, MPC wallet address, 10 network capabilities, and chain ID
-3. Optionally call `POST /api/faucet` to get 100 testnet TNZO
+3. Optionally call `POST /faucet` to get 100 testnet TNZO
 4. Start using all network features immediately
 
 ```python
@@ -1737,14 +1741,14 @@ Falls back to `tenzro_participate` on older nodes.
 ### 1. Create wallet and get testnet tokens
 
 1. Call `tenzro_createAccount` to get an address and keypair
-2. Call `POST /api/faucet` with the address to get 100 TNZO
+2. Call `POST /faucet` with the address to get 100 TNZO
 3. Call `tenzro_getBalance` to confirm the balance
 
 ### 2. Register identity and send payment
 
 1. Call `tenzro_registerIdentity` with a display name
 2. Call `tenzro_createAccount` for a keypair
-3. Call `POST /api/faucet` for testnet tokens
+3. Call `POST /faucet` for testnet tokens
 4. Call `eth_sendRawTransaction` to send TNZO
 
 ### 3. Create agent with delegation scope
@@ -1774,7 +1778,7 @@ Falls back to `tenzro_participate` on older nodes.
 
 ### 7. Verify a proof
 
-1. Call `POST /api/verify/zk-proof` with proof data
+1. Call `POST /verify/zk-proof` with proof data
 2. Check `valid` field in the response
 
 ### 8. Create a token and transfer across VMs
