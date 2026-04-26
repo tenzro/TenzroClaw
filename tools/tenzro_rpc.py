@@ -101,8 +101,9 @@ Usage:
     python tenzro_rpc.py get_transaction_history 0x<address>
     python tenzro_rpc.py settle '{"service_type":"inference",...}'
     python tenzro_rpc.py get_settlement <settlement_id>
-    python tenzro_rpc.py create_escrow 0xdepositor 0xbeneficiary 1000000000000000000
-    python tenzro_rpc.py release_escrow <escrow_id>
+    python tenzro_rpc.py create_escrow 0xpayer 0xpayee 1000000000000000000
+    python tenzro_rpc.py release_escrow 0xpayer <escrow_id_hex>
+    python tenzro_rpc.py refund_escrow 0xpayer <escrow_id_hex>
     python tenzro_rpc.py open_payment_channel 0xpartyA 0xpartyB 1000000000000000000
     python tenzro_rpc.py close_payment_channel <channel_id>
     python tenzro_rpc.py inference_request gemma4-9b "What is Tenzro?"
@@ -162,11 +163,12 @@ Usage:
     python tenzro_rpc.py canton_get_health
     python tenzro_rpc.py canton_list_parties
 
-    # Onboarding keys
-    python tenzro_rpc.py issue_onboarding_key "my-agent" did:tenzro:machine:... 0xaddress machine
-    python tenzro_rpc.py list_onboarding_keys
-    python tenzro_rpc.py validate_onboarding_key tenzro_...
-    python tenzro_rpc.py revoke_onboarding_key did:tenzro:machine:...
+    # OAuth 2.1 + DPoP onboarding
+    python tenzro_rpc.py onboard_human "Alice"
+    python tenzro_rpc.py onboard_delegated_agent did:tenzro:human:... '["inference"]' '{}'
+    python tenzro_rpc.py onboard_autonomous_agent 0xbond_funding_address
+    python tenzro_rpc.py revoke_jwt <jti> "lost device"
+    python tenzro_rpc.py revoke_did did:tenzro:human:... "lost device"
 """
 
 import json
@@ -202,7 +204,14 @@ _request_id = 0
 
 
 def _rpc(method: str, params: Any = None) -> dict:
-    """Send a JSON-RPC 2.0 request to Tenzro."""
+    """Send a JSON-RPC 2.0 request to Tenzro.
+
+    Auth-sensitive RPCs (signing, escrow, settlement) require an OAuth/DPoP
+    bearer JWT. Set the TENZRO_BEARER_JWT environment variable to your
+    issued JWT and TENZRO_DPOP_PROOF to a fresh DPoP proof header value.
+    The server validates both before invoking the auth-mediated signing
+    path. Public RPCs (balance, status, block reads) work without auth.
+    """
     global _request_id
     _request_id += 1
     payload = {
@@ -211,7 +220,15 @@ def _rpc(method: str, params: Any = None) -> dict:
         "params": params if params is not None else {},
         "id": _request_id,
     }
-    resp = requests.post(RPC_URL, json=payload, timeout=RPC_TIMEOUT)
+    headers = {"Content-Type": "application/json"}
+    bearer = os.environ.get("TENZRO_BEARER_JWT")
+    if bearer:
+        headers["Authorization"] = f"DPoP {bearer}"
+    dpop = os.environ.get("TENZRO_DPOP_PROOF")
+    if dpop:
+        headers["DPoP"] = dpop
+    resp = requests.post(RPC_URL, json=payload, headers=headers,
+                         timeout=RPC_TIMEOUT)
     resp.raise_for_status()
     data = resp.json()
     if "error" in data:
@@ -332,62 +349,49 @@ def get_balance(address: str) -> dict:
 
 
 def send_transaction(from_addr: str, to_addr: str, value: int,
-                     private_key: str = None,
-                     gas_limit: int = 21000, gas_price: int = 1_000_000_000) -> dict:
-    """Send a TNZO transfer transaction.
+                     gas_limit: int = 21000,
+                     gas_price: int = 1_000_000_000) -> dict:
+    """Send a TNZO transfer transaction via ambient OAuth/DPoP auth.
 
-    If private_key is provided, the server signs the transaction using
-    tenzro_signAndSendTransaction in a single atomic RPC call. This avoids
-    any client-side hashing (the server computes Transaction::hash() with
-    the canonical preimage including timestamp).
+    The server looks up the wallet bound to the bearer DID (set
+    TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF environment variables) and
+    signs the transaction on its behalf using the auth-mediated signing
+    path. The legacy private_key inline-signing parameter has been
+    removed — private keys never travel over the wire.
 
-    If no private_key is provided, the transaction must be pre-signed by
-    the caller; in that case the caller is responsible for supplying
-    signature, public_key, and timestamp fields matching the server's
-    Transaction::hash() preimage.
+    For offline / pre-signed flows, build the Transaction::hash() locally,
+    sign with your own Ed25519 key, and submit via
+    eth_sendRawTransaction with explicit signature + public_key + timestamp.
     """
-    # Get nonce and chain ID
     nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
     nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
 
     chain_id_result = _rpc("eth_chainId", [])
     chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
 
-    if private_key:
-        # Server-side signing: single atomic sign + submit call
-        return _rpc("tenzro_signAndSendTransaction", {
-            "from": from_addr,
-            "to": to_addr,
-            "value": value,
-            "gas_limit": gas_limit,
-            "gas_price": gas_price,
-            "nonce": nonce,
-            "chain_id": chain_id,
-            "private_key": private_key,
-        })
-
-    # No private key — require caller to submit via eth_sendRawTransaction
-    # with their own signature, public_key, and timestamp.
-    return {
-        "error": (
-            "send_transaction requires private_key for automatic signing. "
-            "For pre-signed submission, call eth_sendRawTransaction directly "
-            "with signature, public_key, and timestamp fields."
-        )
-    }
+    return _rpc("tenzro_signAndSendTransaction", {
+        "from": from_addr,
+        "to": to_addr,
+        "value": value,
+        "gas_limit": gas_limit,
+        "gas_price": gas_price,
+        "nonce": nonce,
+        "chain_id": chain_id,
+    })
 
 
 def sign_transaction(from_addr: str, to_addr: str, value: int,
-                     private_key: str,
                      gas_limit: int = 21000,
                      gas_price: int = 1_000_000_000,
                      nonce: int = None,
                      chain_id: int = None) -> dict:
     """Sign a transaction server-side without submitting it.
 
-    Returns a dict with signature, public_key, timestamp, tx_hash so the
-    caller can later submit via eth_sendRawTransaction. Useful for offline
-    flows or when batching multiple signed transactions.
+    Uses ambient OAuth/DPoP auth — the bearer JWT identifies which wallet
+    the server should use to sign. Returns a dict with signature,
+    public_key, timestamp, tx_hash so the caller can later submit via
+    eth_sendRawTransaction. Useful for offline flows or when batching
+    multiple signed transactions.
     """
     if nonce is None:
         nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
@@ -405,17 +409,18 @@ def sign_transaction(from_addr: str, to_addr: str, value: int,
         "gas_price": gas_price,
         "nonce": nonce,
         "chain_id": chain_id,
-        "private_key": private_key,
     })
 
 
-def sign_and_send(private_key: str, from_addr: str, to_addr: str,
+def sign_and_send(from_addr: str, to_addr: str,
                   amount_tnzo: float) -> dict:
     """Sign and send a TNZO transfer in one call.
 
+    Uses ambient OAuth/DPoP auth (TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF
+    env vars) — no private key required.
+
     Args:
-        private_key: Hex-encoded Ed25519 private key (from wallet creation)
-        from_addr: Sender hex address (must correspond to private_key)
+        from_addr: Sender hex address (must match the bearer's wallet)
         to_addr: Recipient hex address
         amount_tnzo: Amount in TNZO (e.g., 1.5 for 1.5 TNZO)
 
@@ -427,7 +432,6 @@ def sign_and_send(private_key: str, from_addr: str, to_addr: str,
         from_addr=from_addr,
         to_addr=to_addr,
         value=value_wei,
-        private_key=private_key,
     )
 
 
@@ -2199,35 +2203,161 @@ def get_settlement(settlement_id: str) -> dict:
     return _rpc("tenzro_getSettlement", {"settlement_id": settlement_id})
 
 
-def create_escrow(depositor: str, beneficiary: str, amount_wei: int,
-                  release_conditions: dict = None) -> dict:
-    """Create an escrow for a payment.
+def _release_conditions_payload(kind: str) -> dict:
+    """Map a short release-condition keyword to the on-chain ReleaseConditions enum payload."""
+    k = (kind or "timeout").lower()
+    if k == "timeout":
+        return {"type": "Timeout"}
+    if k in ("provider", "provider_signature"):
+        return {"type": "ProviderSignature"}
+    if k in ("consumer", "consumer_signature"):
+        return {"type": "ConsumerSignature"}
+    if k in ("both", "both_signatures"):
+        return {"type": "BothSignatures"}
+    if k in ("verifier", "verifier_signature"):
+        return {"type": "VerifierSignature"}
+    if k == "custom":
+        return {"type": "Custom", "data": ""}
+    raise ValueError(
+        f"unsupported release condition '{kind}': use timeout|provider|consumer|both|verifier|custom"
+    )
 
-    depositor: depositor address
-    beneficiary: beneficiary address
-    amount_wei: escrow amount in wei
-    release_conditions: optional release conditions dict
+
+def _fetch_nonce_and_chain_id(address: str) -> tuple:
+    """Best-effort nonce + chain_id lookup. Returns (0, 1337) on failure."""
+    try:
+        nonce_hex = _rpc("eth_getTransactionCount", [address, "latest"])
+        nonce = int(nonce_hex.replace("0x", ""), 16) if isinstance(nonce_hex, str) else 0
+    except Exception:
+        nonce = 0
+    try:
+        chain_id_hex = _rpc("eth_chainId", [])
+        chain_id = int(chain_id_hex.replace("0x", ""), 16) if isinstance(chain_id_hex, str) else 1337
+    except Exception:
+        chain_id = 1337
+    return nonce, chain_id
+
+
+def create_escrow(payer: str, payee: str, amount_wei: int,
+                  asset_id: str = "TNZO", expires_at_ms: int = 0,
+                  release_conditions: str = "timeout") -> dict:
+    """Create an on-chain escrow via signed CreateEscrow transaction.
+
+    Uses ambient OAuth/DPoP auth (TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF
+    env vars) — the server looks up the wallet bound to the bearer DID
+    and signs on its behalf. The bearer's wallet address must equal `payer`.
+
+    The escrow_id is derived deterministically by the VM as
+    SHA-256("tenzro/escrow/id/v1" || payer || nonce_le); funds are locked at a
+    vault address derived from that id. Only the original payer can release or
+    refund.
+
+    payer: payer address (must match the bearer's wallet)
+    payee: payee address (recipient on successful release)
+    amount_wei: amount to lock in escrow (smallest unit; 1 TNZO = 10^18 wei)
+    asset_id: asset identifier (default "TNZO")
+    expires_at_ms: unix timestamp in milliseconds when the escrow expires (0 = never)
+    release_conditions: one of timeout|provider|consumer|both|verifier|custom
+
+    Returns the JSON-RPC result of tenzro_signAndSendTransaction (typically a tx_hash).
     """
-    params = {
-        "depositor": depositor,
-        "beneficiary": beneficiary,
-        "amount": amount_wei,
+    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
+    tx_type = {
+        "type": "CreateEscrow",
+        "data": {
+            "payee": payee,
+            "amount": str(amount_wei),
+            "asset_id": asset_id,
+            "expires_at": expires_at_ms,
+            "release_conditions": _release_conditions_payload(release_conditions),
+        },
     }
-    if release_conditions:
-        params["release_conditions"] = release_conditions
-    return _rpc("tenzro_createEscrow", params)
+    params = {
+        "from": payer,
+        "to": payee,
+        "value": 0,
+        "gas_limit": 75000,
+        "gas_price": 1_000_000_000,
+        "nonce": nonce,
+        "chain_id": chain_id,
+        "tx_type": tx_type,
+    }
+    return _rpc("tenzro_signAndSendTransaction", params)
 
 
-def release_escrow(escrow_id: str, proof: dict = None) -> dict:
-    """Release an escrow, optionally with proof.
+def release_escrow(payer: str, escrow_id_hex: str,
+                   proof_data_hex: str = "") -> dict:
+    """Release an escrow to the payee via signed ReleaseEscrow transaction.
 
-    escrow_id: escrow to release
-    proof: optional proof data for conditional release
+    Uses ambient OAuth/DPoP auth — the bearer JWT must belong to the
+    original payer; the VM rejects releases from any other address.
+
+    payer: payer address (must match the bearer's wallet)
+    escrow_id_hex: 32-byte escrow id (hex, with or without 0x)
+    proof_data_hex: optional proof bytes (hex)
     """
-    params = {"escrow_id": escrow_id}
-    if proof:
-        params["proof"] = proof
-    return _rpc("tenzro_releaseEscrow", params)
+    escrow_id_bytes = list(bytes.fromhex(escrow_id_hex.replace("0x", "")))
+    if len(escrow_id_bytes) != 32:
+        raise ValueError(f"escrow_id must be 32 bytes, got {len(escrow_id_bytes)}")
+    proof_bytes = list(bytes.fromhex(proof_data_hex.replace("0x", ""))) if proof_data_hex else []
+
+    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
+    tx_type = {
+        "type": "ReleaseEscrow",
+        "data": {
+            "escrow_id": escrow_id_bytes,
+            "proof": {
+                "proof_type": "Timeout",
+                "proof_data": proof_bytes,
+                "signatures": [],
+            },
+        },
+    }
+    params = {
+        "from": payer,
+        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "value": 0,
+        "gas_limit": 60000,
+        "gas_price": 1_000_000_000,
+        "nonce": nonce,
+        "chain_id": chain_id,
+        "tx_type": tx_type,
+    }
+    return _rpc("tenzro_signAndSendTransaction", params)
+
+
+def refund_escrow(payer: str, escrow_id_hex: str) -> dict:
+    """Refund an escrow back to the payer via signed RefundEscrow transaction.
+
+    Uses ambient OAuth/DPoP auth. Only the original payer can submit this,
+    AND the escrow must be expired (or use Timeout/Custom release conditions).
+    """
+    escrow_id_bytes = list(bytes.fromhex(escrow_id_hex.replace("0x", "")))
+    if len(escrow_id_bytes) != 32:
+        raise ValueError(f"escrow_id must be 32 bytes, got {len(escrow_id_bytes)}")
+
+    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
+    tx_type = {
+        "type": "RefundEscrow",
+        "data": {"escrow_id": escrow_id_bytes},
+    }
+    params = {
+        "from": payer,
+        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "value": 0,
+        "gas_limit": 50000,
+        "gas_price": 1_000_000_000,
+        "nonce": nonce,
+        "chain_id": chain_id,
+        "tx_type": tx_type,
+    }
+    return _rpc("tenzro_signAndSendTransaction", params)
+
+
+def get_escrow(escrow_id_hex: str) -> dict:
+    """Inspect an escrow record by its 32-byte id (hex)."""
+    eid = escrow_id_hex if escrow_id_hex.startswith("0x") else "0x" + escrow_id_hex
+    return _rpc("tenzro_getEscrow", {"escrow_id": eid})
 
 
 def open_payment_channel(party_a: str, party_b: str,
@@ -3760,28 +3890,65 @@ def decode_result(data_hex: str, output_types: list) -> dict:
     })
 
 
-# ── Onboarding Keys ──────────────────────────────────────────────
+# ── OAuth 2.1 + DPoP Onboarding ──────────────────────────────────
 
-def issue_onboarding_key(name, did, address, identity_type="machine"):
-    """Issue an onboarding key for an agent."""
-    return _rpc("tenzro_issueOnboardingKey", {
-        "name": name, "did": did, "address": address, "identity_type": identity_type
+def onboard_human(display_name, dpop_jkt=None):
+    """Onboard a new human — provisions a TDIP DID + MPC wallet, returns
+    a DPoP-bound OAuth 2.1 access token."""
+    params = {"display_name": display_name}
+    if dpop_jkt:
+        params["dpop_jkt"] = dpop_jkt
+    return _rpc("tenzro_onboardHuman", params)
+
+
+def onboard_delegated_agent(controller_did, capabilities, delegation_scope, dpop_jkt=None):
+    """Onboard an agent that acts on behalf of `controller_did`. Inherits the
+    controller's act-chain; revoking the controller cascades."""
+    if isinstance(capabilities, str):
+        capabilities = json.loads(capabilities)
+    if isinstance(delegation_scope, str):
+        delegation_scope = json.loads(delegation_scope)
+    params = {
+        "controller_did": controller_did,
+        "capabilities": capabilities,
+        "delegation_scope": delegation_scope,
+    }
+    if dpop_jkt:
+        params["dpop_jkt"] = dpop_jkt
+    return _rpc("tenzro_onboardDelegatedAgent", params)
+
+
+def onboard_autonomous_agent(bond_funding_address, dpop_jkt=None):
+    """Onboard a fully autonomous agent — requires a slashable TNZO bond
+    posted at `bond_funding_address`."""
+    params = {"bond_funding_address": bond_funding_address}
+    if dpop_jkt:
+        params["dpop_jkt"] = dpop_jkt
+    return _rpc("tenzro_onboardAutonomousAgent", params)
+
+
+def revoke_jwt(jti, reason="revoked"):
+    """Revoke a single JWT by its `jti` claim."""
+    return _rpc("tenzro_revokeJwt", {"jti": jti, "reason": reason})
+
+
+def revoke_did(did, reason="revoked"):
+    """Revoke an entire identity by DID — cascades through the act-chain."""
+    return _rpc("tenzro_revokeDid", {"did": did, "reason": reason})
+
+
+def list_pending_approvals(approver_did):
+    """List approvals in `Pending` status for the given approver DID."""
+    return _rpc("tenzro_listPendingApprovals", {"approver_did": approver_did})
+
+
+def decide_approval(approval_id, decision, approver_did):
+    """Decide a pending approval — `decision` is `"approved"` or `"denied"`."""
+    return _rpc("tenzro_decideApproval", {
+        "approval_id": approval_id,
+        "decision": decision,
+        "approver_did": approver_did,
     })
-
-
-def list_onboarding_keys():
-    """List all onboarding keys."""
-    return _rpc("tenzro_listOnboardingKeys", {})
-
-
-def revoke_onboarding_key(did_or_hash):
-    """Revoke an onboarding key by DID or hash."""
-    return _rpc("tenzro_revokeOnboardingKey", {"did": did_or_hash})
-
-
-def validate_onboarding_key(key):
-    """Validate an onboarding key."""
-    return _rpc("tenzro_validateOnboardingKey", {"key": key})
 
 
 # ── AP2 (Agent Payments Protocol) ────────────────────────────────
@@ -3970,7 +4137,6 @@ COMMANDS = {
         args[0],
         args[1],
         int(args[2]),
-        private_key=args[3] if len(args) > 3 else None,
     ),
     "faucet": lambda args: request_faucet(args[0]),
     # Node Status
@@ -4255,8 +4421,22 @@ COMMANDS = {
     # Settlement (Extended)
     "settle": lambda args: settle(json.loads(args[0]) if args else {}),
     "get_settlement": lambda args: get_settlement(args[0]),
-    "create_escrow": lambda args: create_escrow(args[0], args[1], int(args[2])),
-    "release_escrow": lambda args: release_escrow(args[0]),
+    # create_escrow: payer payee amount_wei [asset] [expires_at_ms] [release]
+    # (uses ambient OAuth/DPoP — set TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF)
+    "create_escrow": lambda args: create_escrow(
+        args[0], args[1], int(args[2]),
+        args[3] if len(args) > 3 else "TNZO",
+        int(args[4]) if len(args) > 4 else 0,
+        args[5] if len(args) > 5 else "timeout",
+    ),
+    # release_escrow: payer escrow_id_hex [proof_data_hex]
+    "release_escrow": lambda args: release_escrow(
+        args[0], args[1], args[2] if len(args) > 2 else "",
+    ),
+    # refund_escrow: payer escrow_id_hex
+    "refund_escrow": lambda args: refund_escrow(args[0], args[1]),
+    # get_escrow: escrow_id_hex
+    "get_escrow": lambda args: get_escrow(args[0]),
     "open_payment_channel": lambda args: open_payment_channel(
         args[0], args[1], int(args[2]),
     ),
@@ -4574,11 +4754,14 @@ COMMANDS = {
         args[0],
         json.loads(args[1]) if len(args) > 1 else [],
     ),
-    # ── Onboarding Keys ──
-    "issue_onboarding_key": lambda args: issue_onboarding_key(args[0], args[1], args[2], args[3] if len(args) > 3 else "machine"),
-    "list_onboarding_keys": lambda args: list_onboarding_keys(),
-    "revoke_onboarding_key": lambda args: revoke_onboarding_key(args[0]),
-    "validate_onboarding_key": lambda args: validate_onboarding_key(args[0]),
+    # ── OAuth 2.1 + DPoP Onboarding ──
+    "onboard_human": lambda args: onboard_human(args[0], args[1] if len(args) > 1 else None),
+    "onboard_delegated_agent": lambda args: onboard_delegated_agent(args[0], args[1], args[2], args[3] if len(args) > 3 else None),
+    "onboard_autonomous_agent": lambda args: onboard_autonomous_agent(args[0], args[1] if len(args) > 1 else None),
+    "revoke_jwt": lambda args: revoke_jwt(args[0], args[1] if len(args) > 1 else "revoked"),
+    "revoke_did": lambda args: revoke_did(args[0], args[1] if len(args) > 1 else "revoked"),
+    "list_pending_approvals": lambda args: list_pending_approvals(args[0]),
+    "decide_approval": lambda args: decide_approval(args[0], args[1], args[2]),
     # ── AP2 (Agent Payments Protocol) ──
     "ap2_protocol_info": lambda args: ap2_protocol_info(),
     "ap2_verify_mandate": lambda args: ap2_verify_mandate(json.loads(args[0])),

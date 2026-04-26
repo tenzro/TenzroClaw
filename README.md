@@ -89,7 +89,7 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 
 **Staking & Governance:** `stake`, `unstake`, `list_proposals`, `vote`, `get_voting_power`, `register_provider`
 
-**Settlement & Payments:** `settle`, `get_settlement`, `create_escrow`, `release_escrow`, `open_payment_channel`, `pay_mpp`, `pay_x402`
+**Settlement & Payments:** `settle`, `get_settlement`, `create_escrow`, `release_escrow`, `refund_escrow`, `get_escrow`, `open_payment_channel`, `pay_mpp`, `pay_x402` — escrow `create`/`release`/`refund` are signed `CreateEscrow`/`ReleaseEscrow`/`RefundEscrow` transactions submitted via `tenzro_signAndSendTransaction` (consensus-mediated, payer-only authorization)
 
 **Bridge & Cross-Chain:** `bridge_tokens`, `bridge_quote`, `get_bridge_routes`, `list_bridge_adapters`
 
