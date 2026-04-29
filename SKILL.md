@@ -53,7 +53,28 @@ For local development, replace the hostnames with `localhost` and use the ports 
 
 ## Authentication
 
-No authentication is required for read operations. Write operations (transactions) require a valid Ed25519 or Secp256k1 signature.
+Read operations (block lookups, balances, agent cards, etc.) need no authentication.
+
+Write operations use **OAuth 2.1 + DPoP** (RFC 6749 successor + RFC 9449) on top of Ed25519/Secp256k1 transaction signatures. Onboarding mints an HS256 JWT access token (1h TTL) and an opaque refresh token (30d TTL); the access token is sent as `Authorization: Bearer <token>` and, when DPoP-bound, accompanied by a fresh DPoP proof in the `DPoP` header signed by the holder key whose RFC 7638 thumbprint (`jkt`) was supplied at onboarding.
+
+### Onboarding RPCs
+
+- `tenzro_onboardHuman` — provisions a `did:tenzro:human:*` identity, MPC wallet, and access + refresh tokens.
+- `tenzro_onboardDelegatedAgent` — issues an agent identity bound to a controller DID with a delegation scope.
+- `tenzro_onboardAutonomousAgent` — issues a fully autonomous agent identity backed by a TNZO bond.
+- `tenzro_participate` — convenience one-call human onboarding (used by CLI/desktop); returns the same session bundle.
+
+Each call returns `{ identity, wallet, access_token, refresh_token, expires_in, refresh_token_expires_in, dpop_bound, authorization_details, ... }`.
+
+### Refresh and bridge RPCs
+
+- `tenzro_refreshToken` — exchange a refresh token for a new access token (refresh tokens are not rotated).
+- `tenzro_linkWalletForAuth` — mint a fresh access + refresh token pair against an existing MPC wallet (e.g. one created via `tenzro_createWallet` or `tenzro_importIdentity`).
+- `tenzro_revokeJwt` / `tenzro_revokeDid` — revoke a single JWT by `jti` or cascade-invalidate every JWT minted under a DID.
+
+The `dpop_jkt` parameter on every onboarding/refresh/link call is the RFC 7638 SHA-256 thumbprint of the holder's Ed25519 public key. Pass it to bind the issued token to that key — every subsequent privileged call must then carry a DPoP proof signed by the same key. **Strongly recommended.**
+
+When operating from MCP/SDK/CLI clients, call `tenzro auth refresh` (or `tenzro auth link-wallet`) to keep the locally cached token current; the CLI persists the latest tokens to `~/.tenzro/config.json`.
 
 ---
 

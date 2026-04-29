@@ -3928,6 +3928,41 @@ def onboard_autonomous_agent(bond_funding_address, dpop_jkt=None):
     return _rpc("tenzro_onboardAutonomousAgent", params)
 
 
+def refresh_token(refresh_token_value, dpop_jkt=None):
+    """Exchange an opaque refresh token for a fresh access JWT.
+
+    Mirrors OAuth 2.1 ``grant_type=refresh_token``. The refresh token is
+    re-usable until its absolute 30-day expiry (no rotation in V1). Pass
+    ``dpop_jkt`` to upgrade a previously-unbound session to DPoP-bound,
+    or to rotate the bound key.
+    """
+    params = {"refresh_token": refresh_token_value}
+    if dpop_jkt:
+        params["dpop_jkt"] = dpop_jkt
+    return _rpc("tenzro_refreshToken", params)
+
+
+def link_wallet_for_auth(wallet_id, dpop_jkt=None, display_name=None, ttl_secs=None):
+    """Bind an existing MPC wallet to a fresh self-custody TDIP identity
+    and mint an access JWT scoped for self-custody.
+
+    Bridges ``tenzro_createWallet`` (which only returns ``wallet_id`` +
+    ``address``) to the auth-mediated signing path: callers who created
+    a wallet first can later obtain an access token bound to that
+    wallet by passing back ``wallet_id`` plus an optional DPoP key
+    thumbprint. Returns the same envelope as ``onboard_human``
+    (``access_token`` + ``refresh_token`` + ``dpop_bound``).
+    """
+    params = {"wallet_id": wallet_id}
+    if dpop_jkt:
+        params["dpop_jkt"] = dpop_jkt
+    if display_name:
+        params["display_name"] = display_name
+    if ttl_secs:
+        params["ttl_secs"] = ttl_secs
+    return _rpc("tenzro_linkWalletForAuth", params)
+
+
 def revoke_jwt(jti, reason="revoked"):
     """Revoke a single JWT by its `jti` claim."""
     return _rpc("tenzro_revokeJwt", {"jti": jti, "reason": reason})
@@ -4929,6 +4964,13 @@ COMMANDS = {
     "onboard_human": lambda args: onboard_human(args[0], args[1] if len(args) > 1 else None),
     "onboard_delegated_agent": lambda args: onboard_delegated_agent(args[0], args[1], args[2], args[3] if len(args) > 3 else None),
     "onboard_autonomous_agent": lambda args: onboard_autonomous_agent(args[0], args[1] if len(args) > 1 else None),
+    "refresh_token": lambda args: refresh_token(args[0], args[1] if len(args) > 1 else None),
+    "link_wallet_for_auth": lambda args: link_wallet_for_auth(
+        args[0],
+        args[1] if len(args) > 1 else None,
+        args[2] if len(args) > 2 else None,
+        int(args[3]) if len(args) > 3 else None,
+    ),
     "revoke_jwt": lambda args: revoke_jwt(args[0], args[1] if len(args) > 1 else "revoked"),
     "revoke_did": lambda args: revoke_did(args[0], args[1] if len(args) > 1 else "revoked"),
     "list_pending_approvals": lambda args: list_pending_approvals(args[0]),
