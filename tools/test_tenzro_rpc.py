@@ -69,28 +69,19 @@ class TestWallet(unittest.TestCase):
     @patch("tenzro_rpc.requests.post")
     def test_send_transaction(self, mock_post):
         # Three RPC calls: eth_getTransactionCount, eth_chainId,
-        # tenzro_signAndSendTransaction (server-side signing path).
+        # tenzro_signAndSendTransaction (server-side hybrid-signing path).
+        # The server identifies the signing wallet from the ambient
+        # DPoP-bound JWT — no private key travels over the wire.
         mock_post.side_effect = [
             _mock_rpc_response("0x0"),
             _mock_rpc_response("0x539"),
             _mock_rpc_response(
-                "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
             ),
         ]
-        result = tenzro_rpc.send_transaction(
-            "0xfrom", "0xto", 10**18,
-            private_key="0x" + "11" * 32,
-        )
-        self.assertTrue(result.startswith("0x"))
-
-    @patch("tenzro_rpc.requests.post")
-    def test_send_transaction_requires_private_key(self, mock_post):
-        mock_post.side_effect = [
-            _mock_rpc_response("0x0"),
-            _mock_rpc_response("0x539"),
-        ]
         result = tenzro_rpc.send_transaction("0xfrom", "0xto", 10**18)
-        self.assertIn("error", result)
+        # Server returns the bare 64-char hex tx hash.
+        self.assertEqual(len(result), 64)
 
     @patch("tenzro_rpc.requests.post")
     def test_create_mpc_wallet(self, mock_post):
@@ -201,9 +192,10 @@ class TestVerification(unittest.TestCase):
     def test_verify_zk_proof(self, mock_post):
         mock_post.return_value = _mock_api_response({
             "valid": True,
-            "proof_type": "groth16",
+            "circuit_id": "inference",
+            "proof_system": "plonky3",
         })
-        result = tenzro_rpc.verify_zk_proof("0xproof", [1, 2, 3])
+        result = tenzro_rpc.verify_zk_proof("0xproof", ["0x01000000"], "inference")
         self.assertTrue(result["valid"])
 
     @patch("tenzro_rpc.requests.post")

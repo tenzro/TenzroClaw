@@ -1145,11 +1145,11 @@ curl -X POST https://api.tenzro.network/verify/zk-proof \
   -d '{
     "proof_bytes": "<hex>",
     "public_inputs": ["<hex>"],
-    "proof_type": "groth16"
+    "circuit_id": "inference"
   }'
 ```
 
-Supported proof types: `groth16`, `plonk`, `halo2`, `stark`.
+Tenzro uses Plonky3 STARKs over the KoalaBear field as its sole ZK proof system. `circuit_id` is required and must be one of `inference`, `settlement`, `identity`. Public inputs are 4-byte little-endian KoalaBear field-element chunks.
 
 ### Verify TEE Attestation
 
@@ -1898,7 +1898,7 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 - `list_bridge_adapters` — List registered adapters (LayerZero, Chainlink CCIP, deBridge, Canton)
 
 **Verification:**
-- `verify_zk_proof` — Verify Groth16, PlonK, or STARK proof with public inputs
+- `verify_zk_proof` — Verify Plonky3 STARK proof over the KoalaBear field; requires `circuit_id` ∈ {inference, settlement, identity} and 4-byte LE field-chunk public inputs
 
 **Staking & Providers:**
 - `stake_tokens` — Stake TNZO tokens as Validator, ModelProvider, or TeeProvider

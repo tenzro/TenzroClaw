@@ -355,13 +355,11 @@ def send_transaction(from_addr: str, to_addr: str, value: int,
 
     The server looks up the wallet bound to the bearer DID (set
     TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF environment variables) and
-    signs the transaction on its behalf using the auth-mediated signing
-    path. The legacy private_key inline-signing parameter has been
-    removed — private keys never travel over the wire.
-
-    For offline / pre-signed flows, build the Transaction::hash() locally,
-    sign with your own Ed25519 key, and submit via
-    eth_sendRawTransaction with explicit signature + public_key + timestamp.
+    signs the transaction on its behalf via tenzro_signAndSendTransaction
+    — the node constructs the canonical Transaction::hash() preimage
+    including the PQ public key, signs both Ed25519 and ML-DSA-65 legs,
+    verifies them, and submits atomically. Private keys never travel
+    over the wire.
     """
     nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
     nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
@@ -388,10 +386,11 @@ def sign_transaction(from_addr: str, to_addr: str, value: int,
     """Sign a transaction server-side without submitting it.
 
     Uses ambient OAuth/DPoP auth — the bearer JWT identifies which wallet
-    the server should use to sign. Returns a dict with signature,
-    public_key, timestamp, tx_hash so the caller can later submit via
-    eth_sendRawTransaction. Useful for offline flows or when batching
-    multiple signed transactions.
+    the server should use to sign. Returns a dict with the classical
+    Ed25519 signature + public_key, the ML-DSA-65 pq_signature +
+    pq_public_key, the server-canonical timestamp, and the resulting
+    tx_hash. The caller can later submit by passing those fields to
+    eth_sendRawTransaction unchanged.
     """
     if nonce is None:
         nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
@@ -554,12 +553,16 @@ def resolve_username(username: str) -> dict:
 
 
 def verify_zk_proof(proof_bytes: str, public_inputs: list,
-                    proof_type: str = "groth16") -> dict:
-    """Verify a ZK proof via Web API."""
+                    circuit_id: str) -> dict:
+    """Verify a Plonky3 STARK proof over KoalaBear via Web API.
+
+    circuit_id: one of "inference", "settlement", "identity"
+    public_inputs: list of hex-encoded 4-byte little-endian KoalaBear chunks
+    """
     return _api_post("/verify/zk-proof", {
         "proof_bytes": proof_bytes,
         "public_inputs": public_inputs,
-        "proof_type": proof_type,
+        "circuit_id": circuit_id,
     })
 
 
@@ -3729,21 +3732,18 @@ def list_tee_providers() -> dict:
 # ── ZK ───────────────────────────────────────────────────────────
 
 
-def create_zk_proof(circuit_type: str, private_inputs: list,
-                    public_inputs: list) -> dict:
-    """Create a zero-knowledge proof for a circuit."""
-    return _rpc("tenzro_createZkProof", {
-        "circuit_type": circuit_type,
-        "private_inputs": private_inputs,
-        "public_inputs": public_inputs,
-    })
+def create_zk_proof(circuit_id: str, witness: dict) -> dict:
+    """Create a Plonky3 STARK proof over KoalaBear.
 
-
-def generate_proving_key(circuit_type: str) -> dict:
-    """Generate a proving key for a ZK circuit type."""
-    return _rpc("tenzro_generateProvingKey", {
-        "circuit_type": circuit_type,
-    })
+    circuit_id: one of "inference", "settlement", "identity"
+    witness: circuit-specific witness fields (numeric values), e.g.
+        - inference: {model_checksum, input_checksum, computed_output}
+        - settlement: {payer_balance, service_proof, nonce, prev_nonce, amount}
+        - identity: {private_key, capabilities, capability_blinding,
+                     actual_reputation, minimum_reputation}
+    """
+    params = {"circuit_id": circuit_id, **witness}
+    return _rpc("tenzro_createZkProof", params)
 
 
 def list_zk_circuits() -> dict:
@@ -4121,6 +4121,175 @@ def cct_get_pool(chain: str) -> dict:
     return _rpc("tenzro_cctGetPool", {"chain": chain})
 
 
+# ── Multi-modal inference (wave 1) ────────────────────────────────
+#
+# Wraps the JSON-RPC surface added by Layer A. Each modality follows
+# the same shape: list catalog (curated entries), list (loaded models),
+# load/unload, and the inference verb itself.
+
+# Forecast (timeseries) -------------------------------------------------
+
+def list_forecast_catalog() -> dict:
+    """List the curated timeseries forecast model catalog."""
+    return _rpc("tenzro_listForecastCatalog", {})
+
+
+def list_forecast_models() -> dict:
+    """List timeseries forecast models currently loaded on this node."""
+    return _rpc("tenzro_listForecastModels", {})
+
+
+def forecast(model_id: str, series: list, horizon: int,
+             quantiles: list = None) -> dict:
+    """Run a probabilistic forecast on the given series."""
+    params = {"model_id": model_id, "series": series, "horizon": horizon}
+    if quantiles is not None:
+        params["quantiles"] = quantiles
+    return _rpc("tenzro_forecast", params)
+
+
+# Vision embeddings -----------------------------------------------------
+
+def list_vision_catalog() -> dict:
+    """List the curated vision encoder catalog."""
+    return _rpc("tenzro_listVisionCatalog", {})
+
+
+def list_vision_models() -> dict:
+    """List vision encoders currently loaded on this node."""
+    return _rpc("tenzro_listVisionModels", {})
+
+
+def vision_embed(model_id: str, image_b64: str,
+                 normalize: bool = True) -> dict:
+    """Embed a base64-encoded image with the named vision encoder."""
+    return _rpc("tenzro_visionEmbed", {
+        "model_id": model_id,
+        "image_b64": image_b64,
+        "normalize": normalize,
+    })
+
+
+def vision_similarity(model_id: str, image_b64: str, text: str) -> dict:
+    """Cosine similarity between an image embedding and a text prompt."""
+    return _rpc("tenzro_visionSimilarity", {
+        "model_id": model_id,
+        "image_b64": image_b64,
+        "text": text,
+    })
+
+
+# Text embeddings -------------------------------------------------------
+
+def list_text_embedding_catalog() -> dict:
+    """List the curated text embedding catalog (Qwen3-Embedding, EmbeddingGemma, BGE-M3, ...)."""
+    return _rpc("tenzro_listTextEmbeddingCatalog", {})
+
+
+def list_text_embedding_models() -> dict:
+    """List text embedding models currently loaded on this node."""
+    return _rpc("tenzro_listTextEmbeddingModels", {})
+
+
+def text_embed(model_id: str, inputs: list,
+               requested_dim: int = None) -> dict:
+    """Embed a batch of strings; optional Matryoshka truncation."""
+    params = {"model_id": model_id, "inputs": inputs}
+    if requested_dim is not None:
+        params["requested_dim"] = requested_dim
+    return _rpc("tenzro_textEmbed", params)
+
+
+# Segmentation ----------------------------------------------------------
+
+def list_segmentation_catalog() -> dict:
+    """List the curated segmentation catalog (SAM 3, SAM 2, EdgeSAM, MobileSAM)."""
+    return _rpc("tenzro_listSegmentationCatalog", {})
+
+
+def list_segmentation_models() -> dict:
+    """List segmentation models currently loaded on this node."""
+    return _rpc("tenzro_listSegmentationModels", {})
+
+
+def segment(model_id: str, image_b64: str, prompts: list) -> dict:
+    """Run promptable segmentation. Prompts: [{"type":"point",...} | {"type":"box",...}, ...]."""
+    return _rpc("tenzro_segment", {
+        "model_id": model_id,
+        "image_b64": image_b64,
+        "prompts": prompts,
+    })
+
+
+# Detection -------------------------------------------------------------
+
+def list_detection_catalog() -> dict:
+    """List the curated detection catalog (RF-DETR, D-FINE)."""
+    return _rpc("tenzro_listDetectionCatalog", {})
+
+
+def list_detection_models() -> dict:
+    """List detection models currently loaded on this node."""
+    return _rpc("tenzro_listDetectionModels", {})
+
+
+def detect(model_id: str, image_b64: str,
+           score_threshold: float = 0.5) -> dict:
+    """Run object detection on the given image."""
+    return _rpc("tenzro_detect", {
+        "model_id": model_id,
+        "image_b64": image_b64,
+        "score_threshold": score_threshold,
+    })
+
+
+# Audio (ASR) -----------------------------------------------------------
+
+def list_audio_catalog() -> dict:
+    """List the curated ASR catalog (Moonshine, Distil-Whisper, Whisper-turbo, Parakeet, Canary)."""
+    return _rpc("tenzro_listAudioCatalog", {})
+
+
+def list_audio_models() -> dict:
+    """List audio models currently loaded on this node."""
+    return _rpc("tenzro_listAudioModels", {})
+
+
+def transcribe(model_id: str, audio_b64: str, language: str = None,
+               timestamps: bool = False) -> dict:
+    """Transcribe a base64-encoded audio buffer."""
+    params = {
+        "model_id": model_id,
+        "audio_b64": audio_b64,
+        "timestamps": timestamps,
+    }
+    if language is not None:
+        params["language"] = language
+    return _rpc("tenzro_transcribe", params)
+
+
+# Video -----------------------------------------------------------------
+
+def list_video_catalog() -> dict:
+    """List the curated video catalog (empty in wave 1 — license/export gap)."""
+    return _rpc("tenzro_listVideoCatalog", {})
+
+
+def list_video_models() -> dict:
+    """List video models currently loaded on this node."""
+    return _rpc("tenzro_listVideoModels", {})
+
+
+def video_embed(model_id: str, video_b64: str,
+                frame_stride: int = 30) -> dict:
+    """Embed a base64-encoded video clip."""
+    return _rpc("tenzro_videoEmbed", {
+        "model_id": model_id,
+        "video_b64": video_b64,
+        "frame_stride": frame_stride,
+    })
+
+
 # ── CLI ───────────────────────────────────────────────────────────
 
 COMMANDS = {
@@ -4153,7 +4322,11 @@ COMMANDS = {
     "set_username": lambda args: set_username(args[0], args[1]),
     "resolve_username": lambda args: resolve_username(args[0]),
     # Verification
-    "verify_zk_proof": lambda args: verify_zk_proof(args[0], args[1:]),
+    "verify_zk_proof": lambda args: verify_zk_proof(
+        args[0],
+        json.loads(args[1]) if len(args) > 1 else [],
+        args[2],
+    ),
     "verify_transaction": lambda args: verify_transaction(args[0], args[1], args[2]),
     "verify_settlement": lambda args: verify_settlement(args[0], args[1], args[2]),
     "verify_inference": lambda args: verify_inference(args[0], args[1], args[2]),
@@ -4707,10 +4880,8 @@ COMMANDS = {
     # ── ZK ──
     "create_zk_proof": lambda args: create_zk_proof(
         args[0],
-        json.loads(args[1]) if len(args) > 1 else [],
-        json.loads(args[2]) if len(args) > 2 else [],
+        json.loads(args[1]) if len(args) > 1 else {},
     ),
-    "generate_proving_key": lambda args: generate_proving_key(args[0]),
     "list_zk_circuits": lambda args: list_zk_circuits(),
     # ── Custody ──
     "create_mpc_wallet_advanced": lambda args: create_mpc_wallet_advanced(
@@ -4807,6 +4978,51 @@ COMMANDS = {
     # ── CCT (Chainlink Cross-Chain Token) ──
     "cct_list_pools": lambda args: cct_list_pools(),
     "cct_get_pool": lambda args: cct_get_pool(args[0]),
+    # ── Multi-modal: forecast / vision / text-embed / segment / detect / transcribe / video ──
+    "list_forecast_catalog": lambda args: list_forecast_catalog(),
+    "list_forecast_models": lambda args: list_forecast_models(),
+    "forecast": lambda args: forecast(
+        args[0],
+        json.loads(args[1]),
+        int(args[2]),
+        json.loads(args[3]) if len(args) > 3 else None,
+    ),
+    "list_vision_catalog": lambda args: list_vision_catalog(),
+    "list_vision_models": lambda args: list_vision_models(),
+    "vision_embed": lambda args: vision_embed(
+        args[0], args[1],
+        args[2].lower() != "false" if len(args) > 2 else True,
+    ),
+    "vision_similarity": lambda args: vision_similarity(args[0], args[1], args[2]),
+    "list_text_embedding_catalog": lambda args: list_text_embedding_catalog(),
+    "list_text_embedding_models": lambda args: list_text_embedding_models(),
+    "text_embed": lambda args: text_embed(
+        args[0],
+        json.loads(args[1]),
+        int(args[2]) if len(args) > 2 else None,
+    ),
+    "list_segmentation_catalog": lambda args: list_segmentation_catalog(),
+    "list_segmentation_models": lambda args: list_segmentation_models(),
+    "segment": lambda args: segment(args[0], args[1], json.loads(args[2])),
+    "list_detection_catalog": lambda args: list_detection_catalog(),
+    "list_detection_models": lambda args: list_detection_models(),
+    "detect": lambda args: detect(
+        args[0], args[1],
+        float(args[2]) if len(args) > 2 else 0.5,
+    ),
+    "list_audio_catalog": lambda args: list_audio_catalog(),
+    "list_audio_models": lambda args: list_audio_models(),
+    "transcribe": lambda args: transcribe(
+        args[0], args[1],
+        args[2] if len(args) > 2 else None,
+        args[3].lower() == "true" if len(args) > 3 else False,
+    ),
+    "list_video_catalog": lambda args: list_video_catalog(),
+    "list_video_models": lambda args: list_video_models(),
+    "video_embed": lambda args: video_embed(
+        args[0], args[1],
+        int(args[2]) if len(args) > 2 else 30,
+    ),
 }
 
 

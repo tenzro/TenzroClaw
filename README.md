@@ -83,6 +83,15 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 
 **AI Models & Inference:** `list_models`, `chat`, `inference_request`, `serve_model`, `stop_model`, `download_model`, `list_model_endpoints`
 
+**Multi-Modal Inference (19 wrappers across 7 modalities):**
+- **Forecast** — `list_forecast_catalog`, `list_forecast_models`, `load_forecast_model`, `forecast` (Chronos-2, Chronos-Bolt, TimesFM 2.5, Granite-TTM-r2)
+- **Vision** — `list_vision_catalog`, `vision_embed`, `vision_similarity` (CLIP, SigLIP2, DINOv3)
+- **Text Embedding** — `list_text_embedding_catalog`, `text_embed` (Qwen3-Embedding, EmbeddingGemma, BGE-M3, Snowflake Arctic)
+- **Segmentation** — `list_segmentation_catalog`, `segment` (SAM 3 / 3.1, SAM 2, EdgeSAM, MobileSAM)
+- **Detection** — `list_detection_catalog`, `detect` (RF-DETR, D-FINE)
+- **Audio (ASR)** — `list_audio_catalog`, `transcribe` (Moonshine v2, Distil-Whisper, Whisper-v3-turbo, Parakeet-TDT, Canary)
+- **Video** — `list_video_catalog`, `video_embed` (encoder scaffolding — wave 1 catalog empty)
+
 **Token Registry:** `create_token`, `list_tokens`, `get_token_info`, `get_token_balance`, `wrap_tnzo`, `cross_vm_transfer`, `deploy_contract`
 
 **Task & Agent Marketplace:** `list_tasks`, `post_task`, `get_task`, `cancel_task`, `list_agent_templates`, `register_agent_template`, `spawn_agent_template`
