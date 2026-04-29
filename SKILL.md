@@ -72,14 +72,16 @@ All RPC calls use `POST` with `Content-Type: application/json`. The request body
 
 ### Create a Wallet
 
-Generate a new Ed25519 keypair and derive an address.
+Generate a new Tenzro 2-of-3 threshold MPC wallet. No seed phrase, no
+private key in user custody — the keystore holds shares, the node never
+sees a full key.
 
 ```bash
 curl -X POST https://rpc.tenzro.network \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
-    "method": "tenzro_createAccount",
+    "method": "tenzro_createWallet",
     "params": {"key_type": "ed25519"},
     "id": 1
   }'
@@ -90,39 +92,9 @@ curl -X POST https://rpc.tenzro.network \
 {
   "jsonrpc": "2.0",
   "result": {
-    "address": "0x<hex>",
-    "public_key": "<hex>",
-    "private_key": "<hex>",
-    "key_type": "ed25519"
-  },
-  "id": 1
-}
-```
-
-Store the `private_key` securely. You need it to sign transactions.
-
-### Create an MPC Wallet
-
-Generate a 2-of-3 threshold MPC wallet (no seed phrase needed).
-
-```bash
-curl -X POST https://rpc.tenzro.network \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_createWallet",
-    "params": {},
-    "id": 1
-  }'
-```
-
-**Response:**
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
     "wallet_id": "<uuid>",
-    "address": "0x<hex>",
+    "address": "0x<64 hex chars — 32-byte Tenzro address>",
+    "display_address": "<base58 display form>",
     "public_key": "<hex>",
     "key_type": "ed25519",
     "threshold": 2,
@@ -131,6 +103,10 @@ curl -X POST https://rpc.tenzro.network \
   "id": 1
 }
 ```
+
+The 32-byte hex `address` is the canonical form used by `eth_getBalance`,
+the faucet, and all transaction RPCs. The `display_address` is a
+human-friendly base58 alias (informational).
 
 ### Check Balance
 
@@ -1740,16 +1716,18 @@ Falls back to `tenzro_participate` on older nodes.
 
 ### 1. Create wallet and get testnet tokens
 
-1. Call `tenzro_createAccount` to get an address and keypair
-2. Call `POST /faucet` with the address to get 100 TNZO
-3. Call `tenzro_getBalance` to confirm the balance
+1. Call `tenzro_createWallet` to provision a 2-of-3 MPC wallet (returns
+   `wallet_id` + 32-byte hex `address` + base58 `display_address`)
+2. Call `POST /faucet` with the 32-byte hex `address` to get 100 TNZO
+3. Call `tenzro_getBalance` (or `eth_getBalance`) to confirm the balance
 
 ### 2. Register identity and send payment
 
 1. Call `tenzro_registerIdentity` with a display name
-2. Call `tenzro_createAccount` for a keypair
+2. Call `tenzro_createWallet` to provision the MPC wallet
 3. Call `POST /faucet` for testnet tokens
-4. Call `eth_sendRawTransaction` to send TNZO
+4. Call `tenzro_signAndSendTransaction` (or `eth_sendRawTransaction` for
+   pre-signed payloads) to send TNZO
 
 ### 3. Create agent with delegation scope
 
@@ -1850,7 +1828,7 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 
 **Wallet & Ledger:**
 - `get_balance` — Query TNZO balance by address
-- `create_wallet` — Generate new Ed25519 or Secp256k1 keypair
+- `create_wallet` — Provision a self-custody Tenzro 2-of-3 MPC wallet (32-byte address)
 - `send_transaction` — Send a TNZO transfer
 - `request_faucet` — Request testnet tokens (100 TNZO, 24h cooldown)
 - `get_block` — Get block by height from storage

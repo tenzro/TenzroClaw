@@ -329,13 +329,14 @@ def _mcp_tool_call(mcp_url: str, tool_name: str,
 
 
 def create_wallet(key_type: str = "ed25519") -> dict:
-    """Generate a new keypair and address."""
-    return _rpc("tenzro_createAccount", {"key_type": key_type})
+    """Generate a new self-custody Tenzro wallet (2-of-3 MPC, 32-byte address).
 
-
-def create_mpc_wallet() -> dict:
-    """Generate a new 2-of-3 MPC threshold wallet."""
-    return _rpc("tenzro_createWallet")
+    Returns the canonical Tenzro wallet shape: `wallet_id`, 32-byte hex
+    `address`, base58 `display_address`, `public_key`, `key_type`,
+    `threshold`, `total_shares`. The faucet, `eth_getBalance`, and all
+    transaction RPCs accept the 32-byte address directly.
+    """
+    return _rpc("tenzro_createWallet", {"key_type": key_type})
 
 
 def get_balance(address: str) -> dict:
@@ -4299,7 +4300,6 @@ COMMANDS = {
         args[1] if len(args) > 1 else "cli",
     ),
     "create_wallet": lambda args: create_wallet(args[0] if args else "ed25519"),
-    "create_mpc_wallet": lambda args: create_mpc_wallet(),
     "get_balance": lambda args: get_balance(args[0]),
     "balance": lambda args: get_balance(args[0]),
     "send": lambda args: send_transaction(

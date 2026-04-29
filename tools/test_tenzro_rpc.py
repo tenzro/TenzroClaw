@@ -52,11 +52,19 @@ class TestWallet(unittest.TestCase):
     @patch("tenzro_rpc.requests.post")
     def test_create_wallet(self, mock_post):
         mock_post.return_value = _mock_rpc_response({
-            "address": "0x1234abcd",
+            "wallet_id": "w-123",
+            "address": "0x" + "ab" * 32,
+            "display_address": "TenzroDisplayAddress",
+            "public_key": "0xpub",
             "key_type": "ed25519",
+            "threshold": 2,
+            "total_shares": 3,
         })
         result = tenzro_rpc.create_wallet("ed25519")
-        self.assertEqual(result["address"], "0x1234abcd")
+        self.assertEqual(result["wallet_id"], "w-123")
+        self.assertEqual(len(result["address"]), 66)  # 0x + 64 hex chars (32 bytes)
+        self.assertEqual(result["threshold"], 2)
+        self.assertEqual(result["total_shares"], 3)
 
     @patch("tenzro_rpc.requests.post")
     def test_get_balance(self, mock_post):
@@ -82,16 +90,6 @@ class TestWallet(unittest.TestCase):
         result = tenzro_rpc.send_transaction("0xfrom", "0xto", 10**18)
         # Server returns the bare 64-char hex tx hash.
         self.assertEqual(len(result), 64)
-
-    @patch("tenzro_rpc.requests.post")
-    def test_create_mpc_wallet(self, mock_post):
-        mock_post.return_value = _mock_rpc_response({
-            "wallet_id": "w-123",
-            "address": "0xabc",
-        })
-        result = tenzro_rpc.create_mpc_wallet()
-        self.assertEqual(result["wallet_id"], "w-123")
-
 
 class TestFaucet(unittest.TestCase):
     @patch("tenzro_rpc.requests.post")
@@ -976,7 +974,7 @@ class TestCLIDispatch(unittest.TestCase):
     def test_all_commands_are_registered(self):
         """Verify the COMMANDS dict covers all documented commands."""
         expected = [
-            "join_network", "create_wallet", "create_mpc_wallet",
+            "join_network", "create_wallet",
             "get_balance", "send", "faucet", "status", "health",
             "block_height", "get_block", "chain_id", "node_info",
             "register_identity", "resolve_did", "resolve_did_document",

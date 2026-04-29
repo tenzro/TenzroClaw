@@ -77,7 +77,7 @@ export CANTON_MCP_URL=https://canton-mcp.tenzro.network/mcp
 
 ### Tenzro Blockchain
 
-**Wallet & Transactions:** `create_wallet`, `get_balance`, `send_transaction`, `create_account`, `list_accounts`
+**Wallet & Transactions:** `create_wallet` (2-of-3 MPC, 32-byte address), `get_balance`, `send_transaction`, `list_accounts`
 
 **Identity (TDIP):** `register_identity`, `resolve_did`, `set_username`, `resolve_username`, `import_identity`, `list_identities`
 
