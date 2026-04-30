@@ -1853,6 +1853,7 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 - `send_transaction` — Send a TNZO transfer
 - `request_faucet` — Request testnet tokens (100 TNZO, 24h cooldown)
 - `get_block` — Get block by height from storage
+- `get_block_range` — Batch-fetch a contiguous range of blocks for catch-up sync (max 256/call; returns `nextHeight` + `moreAvailable` for pagination across pruning gaps)
 - `get_transaction` — Look up transaction by hash
 - `get_node_status` — Node health, block height, peer count, uptime
 

@@ -476,6 +476,22 @@ def get_block(height: int) -> dict:
     return _rpc("tenzro_getBlock", {"height": height})
 
 
+def get_block_range(start_height: int, end_height: int,
+                    max_results: int = 64) -> dict:
+    """Fetch a contiguous range of blocks for catch-up sync.
+
+    Returns a dict with `blocks`, `nextHeight`, `moreAvailable`, and `localTip`.
+    `moreAvailable` reflects whether the chain has more data past `nextHeight`,
+    so a sync loop can step over pruning gaps by repeatedly calling with
+    `start_height = response["nextHeight"]` while `moreAvailable` is true.
+    """
+    return _rpc("tenzro_getBlockRange", {
+        "startHeight": start_height,
+        "endHeight": end_height,
+        "maxResults": max_results,
+    })
+
+
 def chain_id() -> dict:
     """Get the chain ID."""
     result = _rpc("eth_chainId")
