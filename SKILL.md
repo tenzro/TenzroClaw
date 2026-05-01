@@ -72,6 +72,12 @@ Each call returns `{ identity, wallet, access_token, refresh_token, expires_in, 
 - `tenzro_linkWalletForAuth` — mint a fresh access + refresh token pair against an existing MPC wallet (e.g. one created via `tenzro_createWallet` or `tenzro_importIdentity`).
 - `tenzro_revokeJwt` / `tenzro_revokeDid` — revoke a single JWT by `jti` or cascade-invalidate every JWT minted under a DID.
 
+### Delegation and AS metadata RPCs
+
+- `tenzro_exchangeToken` — RFC 8693 OAuth 2.0 Token Exchange. Mint a narrower child JWT bound to a different DPoP key with a strict subset of the parent's RAR grants and AAP capabilities, extending the act-chain by one hop.
+- `tenzro_introspectToken` — RFC 7662 OAuth 2.0 Token Introspection. Returns `{active: true, ...claims}` on success or the minimal `{"active": false}` per RFC 7662 §2.2 when the token is unknown, expired, or revoked.
+- `tenzro_oauthDiscovery` — RFC 8414 / RFC 9728 metadata document. Mirrors `GET /.well-known/openid-configuration`, augmented with AAP extensions (`authorization_details_types_supported`, `aap_claims_supported`, `dpop_signing_alg_values_supported`).
+
 The `dpop_jkt` parameter on every onboarding/refresh/link call is the RFC 7638 SHA-256 thumbprint of the holder's Ed25519 public key. Pass it to bind the issued token to that key — every subsequent privileged call must then carry a DPoP proof signed by the same key. **Strongly recommended.**
 
 When operating from MCP/SDK/CLI clients, call `tenzro auth refresh` (or `tenzro auth link-wallet`) to keep the locally cached token current; the CLI persists the latest tokens to `~/.tenzro/config.json`.

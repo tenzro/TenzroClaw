@@ -267,7 +267,7 @@ def _mcp_tool_call(mcp_url: str, tool_name: str,
         "id": 1,
         "method": "initialize",
         "params": {
-            "protocolVersion": "2024-11-05",
+            "protocolVersion": "2025-11-25",
             "capabilities": {},
             "clientInfo": {"name": "tenzroclaw", "version": "0.1.0"},
         },
@@ -893,12 +893,18 @@ def get_agent_template(template_id: str) -> dict:
 
 
 def spawn_agent_from_template(template_id: str, name: str,
-                              capabilities: list = None) -> dict:
+                              capabilities: list = None,
+                              parent_machine_did: str = None) -> dict:
     """Spawn a new agent from a marketplace template.
 
     template_id: the template to instantiate
     name: display name for the spawned agent
     capabilities: optional additional capabilities beyond the template defaults
+    parent_machine_did: optional parent machine DID. When set, the spawned
+        agent's effective delegation scope is the strict intersection of the
+        parent's scope and the template's spec — the child can never be
+        broader than its parent on any axis (numeric ceilings, allow-lists,
+        time bound).
     """
     params = {
         "template_id": template_id,
@@ -906,6 +912,8 @@ def spawn_agent_from_template(template_id: str, name: str,
     }
     if capabilities:
         params["capabilities"] = capabilities
+    if parent_machine_did:
+        params["parent_machine_did"] = parent_machine_did
     return _rpc("tenzro_spawnAgentFromTemplate", params)
 
 
@@ -1913,16 +1921,25 @@ def download_agent_template(template_id: str) -> dict:
     return _rpc("tenzro_downloadAgentTemplate", {"template_id": template_id})
 
 
-def spawn_agent_template(template_id: str, display_name: str) -> dict:
+def spawn_agent_template(template_id: str, display_name: str,
+                         parent_machine_did: str = None) -> dict:
     """Spawn a new agent from a template with identity and wallet provisioning.
 
     template_id: the template to instantiate
     display_name: display name for the spawned agent
+    parent_machine_did: optional parent machine DID. When set, the spawned
+        agent's effective delegation scope is the strict intersection of the
+        parent's scope and the template's spec — the child can never be
+        broader than its parent on any axis (numeric ceilings, allow-lists,
+        time bound).
     """
-    return _rpc("tenzro_spawnAgentTemplate", {
+    params = {
         "template_id": template_id,
         "display_name": display_name,
-    })
+    }
+    if parent_machine_did:
+        params["parent_machine_did"] = parent_machine_did
+    return _rpc("tenzro_spawnAgentTemplate", params)
 
 
 # ── Agent Management (Extended) ────────────────────────────────
@@ -2126,6 +2143,23 @@ def pay_x402(url: str, payer_did: str = None, wallet: str = None,
 def payment_gateway_info() -> dict:
     """Get payment gateway info (supported protocols, networks, assets)."""
     return _rpc("tenzro_paymentGatewayInfo")
+
+
+def list_x402_schemes() -> dict:
+    """List the x402 scheme backends registered on the connected node.
+
+    Each scheme corresponds to a different verification path under the x402
+    protocol: 'tenzro-hybrid' (Ed25519 hybrid signature over canonical
+    preimage), 'exact-eip3009' (USDC EIP-3009 meta-transaction via the CDP
+    facilitator), 'permit2' (Uniswap Permit2 via the CDP facilitator), and
+    'erc7710' (delegation redemption). Use the returned ids in the
+    'extra.scheme' field of an x402 PaymentRequirement.
+
+    Returns:
+        dict with keys 'default' (str), 'schemes' (list of {id, description}),
+        and 'count' (int).
+    """
+    return _rpc("tenzro_listX402Schemes")
 
 
 def list_payment_sessions(include_closed: bool = False) -> dict:
@@ -4003,6 +4037,69 @@ def decide_approval(approval_id, decision, approver_did):
     })
 
 
+def exchange_token(
+    subject_token,
+    child_bearer_did,
+    child_dpop_jkt,
+    requested_rar=None,
+    requested_aap_capabilities=None,
+    requested_ttl_secs=None,
+):
+    """RFC 8693 OAuth 2.0 Token Exchange — mint a narrower child JWT.
+
+    Exchanges ``subject_token`` (a parent JWT) for a child JWT bound to
+    ``child_dpop_jkt`` (RFC 7638 thumbprint), with a strict subset of
+    the parent's RAR grants and AAP capabilities. The child token's
+    ``controller_did`` is set to the parent's ``sub``, extending the
+    act-chain by one hop.
+
+    Subset enforcement is performed by the AS — over-scoped requests
+    are rejected with JSON-RPC error ``-32002``. Pass
+    ``requested_ttl_secs=None`` to use the engine default (clamped to
+    parent's remaining lifetime).
+    """
+    if isinstance(requested_rar, str):
+        requested_rar = json.loads(requested_rar)
+    if isinstance(requested_aap_capabilities, str):
+        requested_aap_capabilities = json.loads(requested_aap_capabilities)
+    params = {
+        "subject_token": subject_token,
+        "child_bearer_did": child_bearer_did,
+        "child_dpop_jkt": child_dpop_jkt,
+        "requested_rar": requested_rar or {},
+        "requested_aap_capabilities": requested_aap_capabilities or [],
+    }
+    if requested_ttl_secs is not None:
+        params["requested_ttl_secs"] = requested_ttl_secs
+    return _rpc("tenzro_exchangeToken", params)
+
+
+def introspect_token(token):
+    """RFC 7662 OAuth 2.0 Token Introspection.
+
+    Ask the AS whether ``token`` is currently active and, if so,
+    return its full claim set (RAR ``authorization_details``, AAP
+    ``aap_*`` claims, ``cnf``, ``controller_did``, etc.). Per
+    RFC 7662 §2.2 a failed validation returns ``{"active": false}``
+    with no other fields — the AS does not leak why the token is
+    inactive.
+    """
+    return _rpc("tenzro_introspectToken", {"token": token})
+
+
+def oauth_discovery():
+    """RFC 8414 / RFC 9728 OAuth Authorization Server / Protected
+    Resource Metadata.
+
+    Returns the same metadata document published at
+    ``GET /.well-known/openid-configuration``, augmented with AAP
+    extensions: ``authorization_details_types_supported`` (8 RAR
+    types), ``aap_claims_supported`` (7 AAP claims), and
+    ``dpop_signing_alg_values_supported`` (``["EdDSA"]``).
+    """
+    return _rpc("tenzro_oauthDiscovery", None)
+
+
 # ── AP2 (Agent Payments Protocol) ────────────────────────────────
 
 
@@ -4016,11 +4113,23 @@ def ap2_verify_mandate(vdc: dict) -> dict:
     return _rpc("tenzro_ap2VerifyMandate", {"vdc": vdc})
 
 
-def ap2_validate_mandate_pair(intent_vdc: dict, cart_vdc: dict) -> dict:
-    """Validate that an Intent and Cart VDC pair are consistent."""
+def ap2_validate_mandate_pair(
+    intent_vdc: dict,
+    cart_vdc: dict,
+    enforce_delegation: bool = False,
+) -> dict:
+    """Validate that an Intent and Cart VDC pair are consistent.
+
+    When ``enforce_delegation`` is True, the node additionally cross-checks
+    the agent's TDIP ``DelegationScope`` against the cart total via
+    ``IdentityRegistry.enforce_operation(agent_did, "payment", total)``.
+    Both layers must admit the cart for ``valid: true``. The response
+    includes ``delegation_enforced`` so callers can confirm which path ran.
+    """
     return _rpc("tenzro_ap2ValidateMandatePair", {
         "intent_vdc": intent_vdc,
         "cart_vdc": cart_vdc,
+        "enforce_delegation": enforce_delegation,
     })
 
 
@@ -4449,6 +4558,7 @@ COMMANDS = {
     "spawn_agent_from_template": lambda args: spawn_agent_from_template(
         args[0], args[1],
         args[2].split(",") if len(args) > 2 else None,
+        args[3] if len(args) > 3 else None,
     ),
     "rate_agent_template": lambda args: rate_agent_template(
         args[0], int(args[1]),
@@ -4531,7 +4641,10 @@ COMMANDS = {
         args[0], int(args[1]) if len(args) > 1 else 10,
     ),
     "download_agent_template": lambda args: download_agent_template(args[0]),
-    "spawn_agent_template": lambda args: spawn_agent_template(args[0], args[1]),
+    "spawn_agent_template": lambda args: spawn_agent_template(
+        args[0], args[1],
+        args[2] if len(args) > 2 else None,
+    ),
     # Bridge
     "bridge_tokens": lambda args: bridge_tokens(
         args[0], args[1], args[2], int(args[3]), args[4], args[5],
@@ -4625,6 +4738,7 @@ COMMANDS = {
     "pay_mpp": lambda args: pay_mpp(args[0]),
     "pay_x402": lambda args: pay_x402(args[0]),
     "payment_gateway_info": lambda args: payment_gateway_info(),
+    "list_x402_schemes": lambda args: list_x402_schemes(),
     "list_payment_sessions": lambda args: list_payment_sessions(
         "--all" in args,
     ),
@@ -4995,7 +5109,9 @@ COMMANDS = {
     "ap2_protocol_info": lambda args: ap2_protocol_info(),
     "ap2_verify_mandate": lambda args: ap2_verify_mandate(json.loads(args[0])),
     "ap2_validate_mandate_pair": lambda args: ap2_validate_mandate_pair(
-        json.loads(args[0]), json.loads(args[1]),
+        json.loads(args[0]),
+        json.loads(args[1]),
+        bool(json.loads(args[2])) if len(args) > 2 else False,
     ),
     "ap2_create_session": lambda args: ap2_create_session(
         args[0], args[1], args[2], int(args[3]),

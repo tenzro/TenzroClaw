@@ -1072,6 +1072,7 @@ class TestAp2(unittest.TestCase):
     def test_ap2_validate_mandate_pair(self, mock_post):
         mock_post.return_value = _mock_rpc_response({
             "valid": True, "matched_subject": True,
+            "delegation_enforced": False,
         })
         intent = {"type": "intent"}
         cart = {"type": "cart"}
@@ -1080,6 +1081,31 @@ class TestAp2(unittest.TestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(
             kwargs["json"]["method"], "tenzro_ap2ValidateMandatePair"
+        )
+        # Default: enforce_delegation flag is forwarded as False.
+        self.assertEqual(
+            kwargs["json"]["params"]["enforce_delegation"], False
+        )
+
+    @patch("tenzro_rpc.requests.post")
+    def test_ap2_validate_mandate_pair_with_delegation(self, mock_post):
+        mock_post.return_value = _mock_rpc_response({
+            "valid": True, "matched_subject": True,
+            "delegation_enforced": True,
+        })
+        intent = {"type": "intent"}
+        cart = {"type": "cart"}
+        result = tenzro_rpc.ap2_validate_mandate_pair(
+            intent, cart, enforce_delegation=True,
+        )
+        self.assertTrue(result["valid"])
+        self.assertTrue(result["delegation_enforced"])
+        args, kwargs = mock_post.call_args
+        self.assertEqual(
+            kwargs["json"]["method"], "tenzro_ap2ValidateMandatePair"
+        )
+        self.assertEqual(
+            kwargs["json"]["params"]["enforce_delegation"], True
         )
 
     @patch("tenzro_rpc.requests.post")
