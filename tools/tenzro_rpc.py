@@ -132,6 +132,8 @@ Usage:
     python tenzro_rpc.py get_provider_pricing
     python tenzro_rpc.py eth_block_number
     python tenzro_rpc.py eth_gas_price
+    python tenzro_rpc.py eth_max_priority_fee_per_gas
+    python tenzro_rpc.py eth_fee_history 10 latest "[25,50,75]"
     python tenzro_rpc.py eth_get_balance 0x<address>
     python tenzro_rpc.py eth_get_transaction_receipt 0x<hash>
     python tenzro_rpc.py eth_get_code 0x<address>
@@ -2759,8 +2761,40 @@ def eth_get_transaction_count(address: str,
 
 
 def eth_gas_price() -> dict:
-    """Get the current gas price."""
+    """Get the current effective gas price (base fee + suggested priority tip).
+
+    Tracks the EIP-1559 fee market — value adjusts ±12.5% per block based on
+    parent gas usage vs. the 15M target.
+    """
     return _rpc("eth_gasPrice")
+
+
+def eth_max_priority_fee_per_gas() -> dict:
+    """Get the suggested EIP-1559 priority fee (tip) in wei.
+
+    Use this to fill `maxPriorityFeePerGas` on a Type-2 transaction. Derive the
+    base-fee portion from `eth_fee_history()` or the parent block's
+    `baseFeePerGas` field.
+    """
+    return _rpc("eth_maxPriorityFeePerGas")
+
+
+def eth_fee_history(block_count: int = 10,
+                    newest_block: str = "latest",
+                    reward_percentiles: list = None) -> dict:
+    """Get base-fee history and gas-usage ratios over the last N blocks.
+
+    block_count: how many recent blocks to include (1..=1024).
+    newest_block: hex height or "latest".
+    reward_percentiles: optional list of tip percentiles (e.g. [25, 50, 75]).
+
+    Returns `baseFeePerGas` of length `block_count + 1` (the trailing entry is
+    the predicted base fee for the next block, suitable as the floor of a
+    Type-2 transaction's `maxFeePerGas`), `gasUsedRatio`, and per-block tip
+    percentiles when requested.
+    """
+    percentiles = reward_percentiles if reward_percentiles is not None else []
+    return _rpc("eth_feeHistory", [hex(block_count), newest_block, percentiles])
 
 
 def eth_estimate_gas(tx: dict) -> dict:
@@ -4828,6 +4862,12 @@ COMMANDS = {
     "eth_get_balance": lambda args: eth_get_balance(args[0]),
     "eth_get_transaction_count": lambda args: eth_get_transaction_count(args[0]),
     "eth_gas_price": lambda args: eth_gas_price(),
+    "eth_max_priority_fee_per_gas": lambda args: eth_max_priority_fee_per_gas(),
+    "eth_fee_history": lambda args: eth_fee_history(
+        int(args[0]) if args else 10,
+        args[1] if len(args) > 1 else "latest",
+        json.loads(args[2]) if len(args) > 2 else None,
+    ),
     "eth_estimate_gas": lambda args: eth_estimate_gas(json.loads(args[0])),
     "eth_call": lambda args: eth_call(json.loads(args[0])),
     "eth_get_code": lambda args: eth_get_code(args[0]),
