@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue)](https://python.org)
-[![Tests](https://img.shields.io/badge/tests-47%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-123%20passed-brightgreen)]()
 
 The official [OpenClaw](https://github.com/anthropics/openclaw) skill for interacting with [Tenzro Network](https://tenzro.com) — a full blockchain and multi-chain toolkit for AI agents.
 
@@ -87,7 +87,7 @@ export LIFI_MCP_URL=https://lifi-mcp.tenzro.network/mcp
 **AI Models & Inference:** `list_models`, `chat`, `inference_request`, `serve_model`, `stop_model`, `download_model`, `list_model_endpoints`
 
 **Multi-Modal Inference (19 wrappers across 7 modalities):**
-- **Forecast** — `list_forecast_catalog`, `list_forecast_models`, `load_forecast_model`, `forecast` (Chronos-2, Chronos-Bolt, TimesFM 2.5, Granite-TTM-r2)
+- **Forecast** — `list_forecast_catalog`, `list_forecast_models`, `load_forecast_model`, `forecast` (TimesFM 2.5)
 - **Vision** — `list_vision_catalog`, `vision_embed`, `vision_similarity` (CLIP, SigLIP2, DINOv3)
 - **Text Embedding** — `list_text_embedding_catalog`, `text_embed` (Qwen3-Embedding, EmbeddingGemma, BGE-M3, Snowflake Arctic)
 - **Segmentation** — `list_segmentation_catalog`, `segment` (SAM 3 / 3.1, SAM 2, EdgeSAM, MobileSAM)
@@ -147,7 +147,24 @@ skills:
 python3 -m unittest tools/test_tenzro_rpc.py -v
 ```
 
-47 tests covering wallet, identity, verification, tokens, marketplace, staking, and more.
+123 tests covering wallet, identity, verification, tokens, marketplace, staking, and more.
+
+## Worked Examples
+
+End-to-end runnable scripts against the live testnet:
+
+```bash
+# Task marketplace settlement cycle: post → quote → assign → complete,
+# with on-chain TNZO transfer at completion and balance reconciliation.
+python3 examples/agentic_workflow.py
+
+# Multi-VM settlement: drives a native→evm transfer and asserts the
+# pointer-model invariants across all four VM views (native, EVM
+# wTNZO, SPL wTNZO, DAML holding).
+python3 examples/multivm_settlement.py
+```
+
+Both scripts spawn fresh identities via `tenzro_joinAsMicroNode`, request faucet TNZO, then exercise real handlers — no fixtures.
 
 ## Architecture
 
