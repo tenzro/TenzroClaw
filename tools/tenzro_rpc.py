@@ -124,8 +124,9 @@ Usage:
     python tenzro_rpc.py get_voting_power 0x<address>
     python tenzro_rpc.py delegate_voting_power 0xfrom 0xto
     python tenzro_rpc.py list_canton_domains
-    python tenzro_rpc.py list_daml_contracts
-    python tenzro_rpc.py submit_daml_command create MyTemplate party1
+    python tenzro_rpc.py list_daml_contracts '["Tenzro.Workflow:WorkflowAnchor"]'
+    python tenzro_rpc.py submit_daml_create Tenzro.Workflow:WorkflowAnchor '{"owner":"alice"}'
+    python tenzro_rpc.py submit_daml_exercise Tenzro.Workflow:WorkflowAnchor <cid> Approve '{}'
     python tenzro_rpc.py set_role Validator
     python tenzro_rpc.py list_providers llm
     python tenzro_rpc.py get_provider_schedule
@@ -240,6 +241,21 @@ def _rpc(method: str, params: Any = None) -> dict:
     issued JWT and TENZRO_DPOP_PROOF to a fresh DPoP proof header value.
     The server validates both before invoking the auth-mediated signing
     path. Public RPCs (balance, status, block reads) work without auth.
+
+    Scope-gated RPCs (currently `tenzro_*Canton*`) require an operator-
+    issued API key. Set TENZRO_API_KEY to the `tnz_<base64url>` key
+    issued by the RPC operator; it is forwarded as the `X-Tenzro-Api-Key`
+    header. The node holds the upstream Auth0 credentials and proxies
+    on the caller's behalf — callers do not manage Auth0 directly.
+
+    Operator-only RPCs (API-key minting/revocation/listing) require the
+    operator's admin token. Set TENZRO_ADMIN_TOKEN; it is forwarded as
+    `X-Tenzro-Admin-Token`. Every Tenzro node operator holds their own
+    admin token for *their own* node — there is no global "Tenzro Labs
+    token," and admin capabilities do not extend to network-wide state
+    (validator set, treasury, fee schedule, system contracts — those
+    flow through on-chain governance via `tenzro-token`). See
+    `docs/api-keys.md` for the full sovereignty model.
     """
     global _request_id
     _request_id += 1
@@ -256,6 +272,16 @@ def _rpc(method: str, params: Any = None) -> dict:
     dpop = os.environ.get("TENZRO_DPOP_PROOF")
     if dpop:
         headers["DPoP"] = dpop
+    api_key = os.environ.get("TENZRO_API_KEY")
+    if api_key:
+        headers["X-Tenzro-Api-Key"] = api_key
+    # Operator admin token for node-scoped mutation RPCs (API-key
+    # issuance / revocation / listing, staking, provider registration).
+    # Each node operator holds their own token on their own node — see
+    # docs/api-keys.md for the per-operator sovereignty model.
+    admin_token = os.environ.get("TENZRO_ADMIN_TOKEN")
+    if admin_token:
+        headers["X-Tenzro-Admin-Token"] = admin_token
     resp = requests.post(RPC_URL, json=payload, headers=headers,
                          timeout=RPC_TIMEOUT)
     resp.raise_for_status()
@@ -681,6 +707,101 @@ def verify_tee_attestation(vendor: str, report_data: str,
     if measurement:
         body["measurement"] = measurement
     return _api_post("/verify/tee-attestation", body)
+
+
+# ── API Keys ──────────────────────────────────────────────────────
+#
+# Two control planes:
+#
+# 1. Operator (X-Tenzro-Admin-Token): mint / list / revoke any key on
+#    the operator's own node. Sourced from the TENZRO_ADMIN_TOKEN env
+#    var by _rpc().
+# 2. Subject (X-Tenzro-Api-Key): list / revoke keys belonging to the
+#    caller's own subject. Sourced from TENZRO_API_KEY.
+#
+# Every Tenzro node operator holds their own admin token for *their
+# own* node. Admin capabilities do not extend to network-wide state
+# (validator set, treasury, fee schedule, system contracts — those
+# flow through on-chain governance via tenzro-token). See
+# docs/api-keys.md.
+
+
+def create_api_key(label: str, scopes: list = None,
+                   subject: str = None,
+                   key_class: str = "subject") -> dict:
+    """Mint a new API key on this node. Operator-only (admin-token gated).
+
+    Args:
+        label: free-form label shown in `list_api_keys`.
+        scopes: scopes to grant; defaults to `["canton"]` server-side
+            when empty.
+        subject: optional subject identifier (typically a Tenzro DID).
+            Required if the operator wants the holder to self-revoke
+            later via `revoke_my_api_key`.
+        key_class: revocability class. One of:
+            - "subject" (default): subject can self-revoke; admin can
+              revoke.
+            - "operator_internal": admin-only revoke.
+            - "operator_protected": NOT revokable via RPC by anyone
+              (including admin). Rotate by updating the operator
+              secret and restarting the node. The wrapper injects the
+              `confirm_operator_protected` interlock automatically.
+
+    Requires TENZRO_ADMIN_TOKEN in the environment.
+
+    The returned `key` is the plaintext `tnz_...` token shown exactly
+    once — persist it immediately.
+    """
+    params: dict = {
+        "label": label,
+        "scopes": scopes if scopes is not None else [],
+        "class": key_class,
+    }
+    if subject is not None:
+        params["subject"] = subject
+    if key_class == "operator_protected":
+        params["confirm_operator_protected"] = True
+    return _rpc("tenzro_createApiKey", params)
+
+
+def list_api_keys() -> dict:
+    """List every API key the node has issued — active and revoked.
+
+    Operator-only (admin-token-gated). Requires TENZRO_ADMIN_TOKEN.
+    """
+    return _rpc("tenzro_listApiKeys")
+
+
+def revoke_api_key(key_id: str) -> dict:
+    """Revoke an API key by its non-secret `key_id`. Operator-only.
+
+    Fails with `-32004` if the target is an `operator_protected` key
+    (those cannot be revoked via RPC, by anyone, including an admin).
+    Rotate that class by updating the operator secret + restart.
+
+    Requires TENZRO_ADMIN_TOKEN in the environment.
+    """
+    return _rpc("tenzro_revokeApiKey", {"key_id": key_id})
+
+
+def list_my_api_keys() -> dict:
+    """List every API key belonging to the caller's own subject.
+
+    Subject-gated. Requires TENZRO_API_KEY in the environment.
+    """
+    return _rpc("tenzro_listMyApiKeys")
+
+
+def revoke_my_api_key(key_id: str) -> dict:
+    """Revoke an API key belonging to the caller's own subject.
+
+    Only `subject`-class keys are eligible. The error for "no such
+    key" and "not your key" is intentionally the same so ownership
+    cannot be probed.
+
+    Requires TENZRO_API_KEY in the environment.
+    """
+    return _rpc("tenzro_revokeMyApiKey", {"key_id": key_id})
 
 
 # ── Token ─────────────────────────────────────────────────────────
@@ -3069,42 +3190,61 @@ def delegate_voting_power(from_addr: str, to_addr: str) -> dict:
 
 
 def list_canton_domains() -> dict:
-    """List Canton synchronizer domains."""
+    """List Canton synchronizer domains configured on this node.
+
+    Returns the `{enabled, domains, message?}` envelope. Check `enabled`
+    before treating `domains` as live.
+    """
     return _rpc("tenzro_listCantonDomains")
 
 
-def list_daml_contracts(domain: str = None,
-                        template_id: str = None) -> dict:
-    """List DAML contracts, optionally filtered.
+def list_daml_contracts(template_ids: list,
+                        query: dict = None) -> dict:
+    """Query active DAML contracts on the shared Canton domain.
 
-    domain: optional domain filter
-    template_id: optional template ID filter
+    The Canton v2 active-contracts endpoint requires at least one template
+    id — pass them as a list.
+
+    template_ids: list of DAML template ids (required, non-empty)
+    query: optional structural filter applied against `createArguments`
     """
-    params = {}
-    if domain:
-        params["domain"] = domain
-    if template_id:
-        params["template_id"] = template_id
+    if not template_ids:
+        raise ValueError("template_ids must contain at least one DAML template id")
+    params = {"template_ids": list(template_ids)}
+    if query is not None:
+        params["query"] = query
     return _rpc("tenzro_listDamlContracts", params)
 
 
-def submit_daml_command(command_type: str, template_id: str,
-                        party: str, payload: dict = None) -> dict:
-    """Submit a DAML command to Canton.
+def submit_daml_create(template_id: str, create_arguments: dict) -> dict:
+    """Submit a DAML `create` command on the shared Canton domain.
 
-    command_type: create | exercise
-    template_id: DAML template ID
-    party: acting party
-    payload: command payload
+    template_id: DAML template id (e.g. "Tenzro.Workflow:WorkflowAnchor")
+    create_arguments: contract payload
     """
-    params = {
-        "command_type": command_type,
+    return _rpc("tenzro_submitDamlCommand", {
+        "command_type": "create",
         "template_id": template_id,
-        "party": party,
-    }
-    if payload:
-        params["payload"] = payload
-    return _rpc("tenzro_submitDamlCommand", params)
+        "create_arguments": create_arguments,
+    })
+
+
+def submit_daml_exercise(template_id: str, contract_id: str,
+                         choice: str, choice_argument: dict) -> dict:
+    """Submit a DAML `exercise` command on an existing contract.
+
+    template_id: DAML template id
+    contract_id: existing contract id
+    choice: choice name to exercise
+    choice_argument: argument payload for the choice
+    """
+    return _rpc("tenzro_submitDamlCommand", {
+        "command_type": "exercise",
+        "template_id": template_id,
+        "contract_id": contract_id,
+        "choice": choice,
+        "choice_argument": choice_argument,
+    })
 
 
 # ── Provider Management (Extended) ─────────────────────────────
@@ -5992,6 +6132,18 @@ COMMANDS = {
     "verify_transaction": lambda args: verify_transaction(args[0], args[1], args[2]),
     "verify_settlement": lambda args: verify_settlement(args[0], args[1], args[2]),
     "verify_inference": lambda args: verify_inference(args[0], args[1], args[2]),
+    # API Keys (operator: admin-token-gated)
+    "create_api_key": lambda args: create_api_key(
+        args[0],
+        args[1].split(",") if len(args) > 1 and args[1] else None,
+        args[2] if len(args) > 2 else None,
+        args[3] if len(args) > 3 else "subject",
+    ),
+    "list_api_keys": lambda args: list_api_keys(),
+    "revoke_api_key": lambda args: revoke_api_key(args[0]),
+    # API Keys (subject: X-Tenzro-Api-Key-gated)
+    "list_my_api_keys": lambda args: list_my_api_keys(),
+    "revoke_my_api_key": lambda args: revoke_my_api_key(args[0]),
     # Token
     "total_supply": lambda args: total_supply(),
     "token_balance": lambda args: token_balance(args[0]),
@@ -6311,11 +6463,16 @@ COMMANDS = {
     # Canton / DAML
     "list_canton_domains": lambda args: list_canton_domains(),
     "list_daml_contracts": lambda args: list_daml_contracts(
-        args[0] if args else None,
+        json.loads(args[0]) if args else [],
+        json.loads(args[1]) if len(args) > 1 else None,
     ),
-    "submit_daml_command": lambda args: submit_daml_command(
+    "submit_daml_create": lambda args: submit_daml_create(
+        args[0],
+        json.loads(args[1]) if len(args) > 1 else {},
+    ),
+    "submit_daml_exercise": lambda args: submit_daml_exercise(
         args[0], args[1], args[2],
-        json.loads(args[3]) if len(args) > 3 else None,
+        json.loads(args[3]) if len(args) > 3 else {},
     ),
     # Provider Management (Extended)
     "set_role": lambda args: set_role(args[0]),
