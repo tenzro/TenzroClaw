@@ -3363,12 +3363,26 @@ def get_download_progress(model_id: str) -> dict:
     return _rpc("tenzro_getDownloadProgress", {"model_id": model_id})
 
 
-def serve_model(model_id: str) -> dict:
+def serve_model(model_id: str, force_cluster: bool = False,
+                force_single: bool = False, visibility: str = "network") -> dict:
     """Start serving a model for inference.
 
     model_id: model to serve
+    force_cluster: split across the LAN cluster even when the model fits one host
+    force_single: never form a cluster; serve single-host
+    visibility: "network" (default) gossips the model; "private" keeps it
+        local/LAN-only
+
+    When the model is too large for one host the node auto-clusters: it reads
+    the GGUF header for shape, discovers LAN members from gossip, and runs a
+    layer-wise pipeline across them. No options are required for that path.
     """
-    return _rpc("tenzro_serveModel", {"model_id": model_id})
+    params = {"model_id": model_id, "visibility": visibility}
+    if force_cluster:
+        params["user_forced"] = True
+    if force_single:
+        params["force_single"] = True
+    return _rpc("tenzro_serveModel", params)
 
 
 def stop_model(model_id: str) -> dict:
@@ -7059,6 +7073,23 @@ def cluster_plan(model: dict, members: list,
     })
 
 
+def cluster_preview(model_id: str, force_cluster: bool = False,
+                    force_single: bool = False) -> dict:
+    """Preview placement for a downloaded model from the node's live view.
+
+    Unlike cluster_plan, needs no manual dimensions or member list: the node
+    derives the model shape from the GGUF header and discovers LAN members from
+    gossip. Returns the fit decision, discovered members, any rejected members
+    (with reasons), and the proposed per-member layer stages. Call before
+    serve_model.
+    """
+    return _rpc("tenzro_clusterPreview", {
+        "model_id": model_id,
+        "user_forced": force_cluster,
+        "force_single": force_single,
+    })
+
+
 COMMANDS = {
     # Wallet & Balance
     "join_network": lambda args: join_as_micro_node(
@@ -7450,7 +7481,12 @@ COMMANDS = {
     "unregister_model_endpoint": lambda args: unregister_model_endpoint(args[0]),
     "download_model": lambda args: download_model(args[0]),
     "get_download_progress": lambda args: get_download_progress(args[0]),
-    "serve_model": lambda args: serve_model(args[0]),
+    "serve_model": lambda args: serve_model(
+        args[0],
+        args[1].lower() in ("1", "true", "yes") if len(args) > 1 else False,
+        args[2].lower() in ("1", "true", "yes") if len(args) > 2 else False,
+        args[3] if len(args) > 3 else "network",
+    ),
     "stop_model": lambda args: stop_model(args[0]),
     "delete_model": lambda args: delete_model(args[0]),
     # Token (Extended)
@@ -8286,6 +8322,11 @@ COMMANDS = {
     "cluster_plan": lambda args: cluster_plan(
         json.loads(args[0]),
         json.loads(args[1]),
+        args[2].lower() in ("1", "true", "yes") if len(args) > 2 else False,
+    ),
+    "cluster_preview": lambda args: cluster_preview(
+        args[0],
+        args[1].lower() in ("1", "true", "yes") if len(args) > 1 else False,
         args[2].lower() in ("1", "true", "yes") if len(args) > 2 else False,
     ),
 }
