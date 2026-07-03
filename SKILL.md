@@ -1965,6 +1965,7 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 - `stop_model` — Stop serving a model
 - `delete_model` — Delete a downloaded model
 - `discover_models` — Discover AI models available on the network
+- `get_router_metrics` — Read the inference router's live metrics: requests routed, hedges dispatched, hedges won, deadline-exceeded requests
 
 **Cross-Chain Bridge:**
 - `bridge_tokens` — Bridge tokens between Tenzro, Ethereum, Solana, Base
@@ -2056,6 +2057,9 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 - `get_settlement` — Get settlement details by ID
 - `create_escrow` — Create an escrow for a payment
 - `release_escrow` — Release an escrow
+- `prepaid_deposit` — Fund the streaming balance storage deals and compute rentals draw down per epoch
+- `prepaid_withdraw` — Withdraw unspent prepaid streaming balance
+- `prepaid_balance` — Read the prepaid streaming balance
 - `open_payment_channel` — Open a micropayment channel
 - `close_payment_channel` — Close a micropayment channel
 
