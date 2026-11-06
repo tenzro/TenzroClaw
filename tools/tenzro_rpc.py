@@ -7,16 +7,13 @@ functions.
 
 Requires: pip install requests
 
-Ecosystem MCP servers (Solana, Ethereum, LayerZero, Chainlink, Canton) are
+Ecosystem MCP servers (Solana, Ethereum, Chainlink) are
 called via the MCP Streamable HTTP protocol. Each ecosystem function uses
 mcp_tool_call() to initialize a session and invoke a tool.
 
 Usage:
     python tenzro_rpc.py join_network "Alice"
     python tenzro_rpc.py get_balance 0x1234...
-    python tenzro_rpc.py create_wallet
-    python tenzro_rpc.py faucet 0x1234...
-    python tenzro_rpc.py send 0xfrom 0xto 1000000000000000000
     python tenzro_rpc.py status
     python tenzro_rpc.py register_identity "Alice"
     python tenzro_rpc.py resolve_did "did:tenzro:human:..."
@@ -31,113 +28,40 @@ Usage:
     python tenzro_rpc.py list_model_endpoints
     python tenzro_rpc.py create_payment x402 /inference 100 USDC 0xrecipient
     python tenzro_rpc.py verify_payment <challenge_id> x402 <payer_did> 0xpayer 100 USDC 0xsig
-    python tenzro_rpc.py set_delegation did:tenzro:machine:... 10000000 100000000
-    python tenzro_rpc.py post_task "Review code" "Review this Rust code" code_review 50000000000000000000
-    python tenzro_rpc.py list_tasks
-    python tenzro_rpc.py get_task <task_id>
-    python tenzro_rpc.py cancel_task <task_id>
-    python tenzro_rpc.py quote_task <task_id> 0xprovider 40000000000000000000 qwen3-0.6b 90 30
-    python tenzro_rpc.py list_agent_templates
-    python tenzro_rpc.py register_agent_template "Code Reviewer" "Reviews code" specialist "You are..."
-    python tenzro_rpc.py get_agent_template <template_id>
-    python tenzro_rpc.py register_agent "my-agent" 0xaddress nlp,code
-    python tenzro_rpc.py spawn_agent <parent_id> "sub-agent" data,nlp
-    python tenzro_rpc.py run_agent_task <agent_id> "Summarize network stats"
-    python tenzro_rpc.py create_swarm <orchestrator_id> researcher:nlp,data coder:code
-    python tenzro_rpc.py get_swarm_status <swarm_id>
-    python tenzro_rpc.py terminate_swarm <swarm_id>
-    python tenzro_rpc.py create_token "My Token" MYT 0xcreator 1000000000000000000000
+    python tenzro_rpc.py list_duties
+    python tenzro_rpc.py get_duty <duty_id>
     python tenzro_rpc.py get_token_info MYT
     python tenzro_rpc.py list_tokens
     python tenzro_rpc.py get_token_balance 0x1234...
-    python tenzro_rpc.py cross_vm_transfer TNZO 1000000000000000000 evm svm 0xfrom 0xto
-    python tenzro_rpc.py deploy_contract evm 0xbytecode 0xdeployer
-    python tenzro_rpc.py bridge_tokens tenzro ethereum TNZO 1000000000000000000 0xsender 0xrecipient
-    python tenzro_rpc.py stake 1000000000000000000 validator
-    python tenzro_rpc.py stake 1000000000000000000 compute consumer,datacentre
-    python tenzro_rpc.py unstake 1000000000000000000
-    python tenzro_rpc.py register_provider model
-    python tenzro_rpc.py register_provider storage "" 40
-    python tenzro_rpc.py register_provider cloud "" "" machines
+    python tenzro_rpc.py deploy_contract '<signed ContractDeploy transaction JSON>'
+    python tenzro_rpc.py list_bridge_routes
+    python tenzro_rpc.py role_stakes 0xwallet
     python tenzro_rpc.py provider_stats
-    python tenzro_rpc.py list_skills
-    python tenzro_rpc.py list_skills web search
-    python tenzro_rpc.py register_skill "web-search" "1.0.0" did:tenzro:machine:agent-abc "Searches the web" 1000000000000000000
-    python tenzro_rpc.py search_skills "web search"
-    python tenzro_rpc.py use_skill <skill_id> '{"query":"hello"}'
-    python tenzro_rpc.py use_skill <skill_id> '{"query":"hello"}' 1.0.0 <sha256_hex>
-    python tenzro_rpc.py spawn_agent_with_skill <parent_id> "sub-agent" <skill_id> nlp,search
-    python tenzro_rpc.py get_skill <skill_id>
-    python tenzro_rpc.py update_skill <skill_id>
-    python tenzro_rpc.py register_tool "web-search" "Searches the web" "https://example.com/mcp"
-    python tenzro_rpc.py list_tools
-    python tenzro_rpc.py get_tool <tool_id>
-    python tenzro_rpc.py search_tools "web search"
-    python tenzro_rpc.py use_tool <tool_id> '{"query":"hello"}'
-    python tenzro_rpc.py update_tool <tool_id>
-    python tenzro_rpc.py list_agents
-    python tenzro_rpc.py send_agent_message <from_id> <to_id> "Hello agent"
-    python tenzro_rpc.py delegate_task <agent_id> "Summarize data"
     python tenzro_rpc.py discover_models text
-    python tenzro_rpc.py discover_agents nlp
-    python tenzro_rpc.py fund_agent <agent_id> 1000000000000000000
-    python tenzro_rpc.py assign_task <task_id> <provider>
-    python tenzro_rpc.py complete_task <task_id> "Task result here"
-    python tenzro_rpc.py update_task <task_id>
-    python tenzro_rpc.py update_agent_template <template_id>
-    python tenzro_rpc.py run_agent_template <agent_id>
-    python tenzro_rpc.py download_agent_template <template_id>
-    python tenzro_rpc.py spawn_agent_template <template_id> "My Agent"
-    python tenzro_rpc.py import_identity did:tenzro:human:... <private_key>
-    python tenzro_rpc.py register_machine_identity <controller_did> nlp,code
-    python tenzro_rpc.py add_service <did> LinkedDomains https://example.com <envelope_hex>
-    python tenzro_rpc.py add_credential <did> KycAttestation <issuer_did> <envelope_hex>
+    python tenzro_rpc.py register_machine_identity <controller_did> <public_key_hex> nlp,code <did_envelope_hex>
     python tenzro_rpc.py list_identities
-    python tenzro_rpc.py pay_mpp https://api.example.com/resource
-    python tenzro_rpc.py pay_x402 https://api.example.com/resource
-    python tenzro_rpc.py payment_gateway_info
-    python tenzro_rpc.py list_payment_sessions
-    python tenzro_rpc.py get_payment_receipt <receipt_id>
     python tenzro_rpc.py peer_count
     python tenzro_rpc.py syncing
     python tenzro_rpc.py hardware_profile
-    python tenzro_rpc.py list_accounts
     python tenzro_rpc.py get_finalized_block
     python tenzro_rpc.py export_config
     python tenzro_rpc.py get_transaction 0x<hash>
     python tenzro_rpc.py get_nonce 0x<address>
     python tenzro_rpc.py get_transaction_history 0x<address>
     python tenzro_rpc.py settle '{"service_type":"inference",...}'
-    python tenzro_rpc.py get_settlement <settlement_id>
-    python tenzro_rpc.py create_escrow 0xpayer 0xpayee 1000000000000000000
-    python tenzro_rpc.py release_escrow 0xpayer <escrow_id_hex>
-    python tenzro_rpc.py refund_escrow 0xpayer <escrow_id_hex>
     python tenzro_rpc.py open_payment_channel 0xpartyA 0xpartyB 1000000000000000000
     python tenzro_rpc.py close_payment_channel <channel_id>
     python tenzro_rpc.py inference_request gemma4-9b "What is Tenzro?"
     python tenzro_rpc.py register_model_endpoint gemma4-9b http://localhost:8000/v1
     python tenzro_rpc.py get_model_endpoint <instance_id>
     python tenzro_rpc.py unregister_model_endpoint <instance_id>
-    python tenzro_rpc.py download_model gemma4-9b
-    python tenzro_rpc.py get_download_progress gemma4-9b
     python tenzro_rpc.py serve_model gemma4-9b
     python tenzro_rpc.py stop_model gemma4-9b
     python tenzro_rpc.py delete_model gemma4-9b
-    python tenzro_rpc.py swap_token TNZO USDC 1000000000000000000 0xsender
-    python tenzro_rpc.py agent_pay_for_inference <agent_id> gemma4-9b 1000000000000000000
-    python tenzro_rpc.py wrap_tnzo 0xaddress 1000000000000000000
-    python tenzro_rpc.py list_proposals
-    python tenzro_rpc.py create_proposal "Change fee" "Lower network fee to 0.3%"
-    python tenzro_rpc.py vote <proposal_id> for
+    python tenzro_rpc.py list_proposals policy_update
     python tenzro_rpc.py get_voting_power 0x<address>
-    python tenzro_rpc.py delegate_voting_power 0xfrom 0xto
-    python tenzro_rpc.py list_canton_domains
-    python tenzro_rpc.py list_daml_contracts '["Tenzro.Workflow:WorkflowAnchor"]'
-    python tenzro_rpc.py submit_daml_create Tenzro.Workflow:WorkflowAnchor '{"owner":"alice"}'
-    python tenzro_rpc.py submit_daml_exercise Tenzro.Workflow:WorkflowAnchor <cid> Approve '{}'
     python tenzro_rpc.py set_role Validator
     python tenzro_rpc.py list_providers ai
-    python tenzro_rpc.py get_provider_schedule
     python tenzro_rpc.py get_provider_pricing
     python tenzro_rpc.py eth_block_number
     python tenzro_rpc.py eth_gas_price
@@ -150,44 +74,22 @@ Usage:
     python tenzro_rpc.py net_peer_count
     python tenzro_rpc.py net_version
 
-    # Ecosystem MCP tools — Solana
-    python tenzro_rpc.py solana_get_balance <address>
-    python tenzro_rpc.py solana_get_price <token_id>
-    python tenzro_rpc.py solana_swap <input_mint> <output_mint> <amount>
-    python tenzro_rpc.py solana_get_slot
-    python tenzro_rpc.py solana_get_tps
-
-    # Ecosystem MCP tools — Ethereum
+    # Chainlink MCP tools
     python tenzro_rpc.py chainlink_get_price ETH/USD
-    python tenzro_rpc.py eth_get_gas_price_ext
-    python tenzro_rpc.py eth_resolve_ens vitalik.eth
-
-    # Ecosystem MCP tools — LayerZero
-    python tenzro_rpc.py lz_list_chains
-    python tenzro_rpc.py lz_quote_fee 30101 30184 0x
-
-    # Ecosystem MCP tools — Chainlink
-    python tenzro_rpc.py ccip_get_supported_chains
     python tenzro_rpc.py ds_list_feeds
 
-    # Ecosystem MCP tools — Canton
-    python tenzro_rpc.py canton_get_health
-    python tenzro_rpc.py canton_list_parties
-
     # OAuth 2.1 + DPoP onboarding
-    python tenzro_rpc.py onboard_human "Alice"
+    python tenzro_rpc.py onboard_human "Alice" <credential_id> <p256_pubkey> <ml_dsa_pubkey> '<authorization json>'
     python tenzro_rpc.py onboard_delegated_agent did:tenzro:human:... '["inference"]' '{}'
-    python tenzro_rpc.py onboard_autonomous_agent 0xbond_funding_address
+    python tenzro_rpc.py onboard_autonomous_agent <device_public_key_hex> <machine_id>
     python tenzro_rpc.py revoke_jwt <jti> "lost device"
     python tenzro_rpc.py revoke_did did:tenzro:human:... "lost device"
 
-    # AgentBond + Insurance (Spec 9)
+    # AgentBond + Insurance
     python tenzro_rpc.py get_agent_bond did:tenzro:machine:...
-    python tenzro_rpc.py post_agent_bond 0xcontroller did:tenzro:machine:agent did:tenzro:human:owner 1000000000000000000000
-    python tenzro_rpc.py file_insurance_claim did:tenzro:human:claimant 0xclaimant did:tenzro:machine:bad_agent 5000000000000000000 1
     python tenzro_rpc.py get_insurance_pool_balance
 
-    # Adaptive Burn governance dial (Spec 8)
+    # Adaptive Burn governance dial
     python tenzro_rpc.py list_bound_devices
     python tenzro_rpc.py wallet_readiness
     python tenzro_rpc.py get_economic_policy
@@ -195,48 +97,11 @@ Usage:
     python tenzro_rpc.py get_supply_metrics
     python tenzro_rpc.py get_burn_rate_recommendation
 
-    # SeedAgent treasury (Spec 10)
-    python tenzro_rpc.py get_treasury_earmark
-    python tenzro_rpc.py list_seed_agents
-    python tenzro_rpc.py get_network_activity 24h true
-
-    # Mempool / dual-rail / hot-state (Specs 2, 3, 6)
-    python tenzro_rpc.py get_burn_quota
+    # Mempool / hot-state
     python tenzro_rpc.py get_mempool_stats
     python tenzro_rpc.py get_account_contention 0x<address>
 
-    # Receipts & disputes
-    python tenzro_rpc.py list_receipts_by_controller did:tenzro:human:...
-    python tenzro_rpc.py summarize_controller did:tenzro:human:...
-    python tenzro_rpc.py get_provider_reputation 0x<provider>
-    python tenzro_rpc.py list_disputes_by_channel <channel_id>
-    python tenzro_rpc.py treasury_add_withdrawer 0x<address>
-    python tenzro_rpc.py treasury_remove_withdrawer 0x<address>
-    python tenzro_rpc.py treasury_set_withdrawal_threshold 2
-    python tenzro_rpc.py treasury_approve_withdrawal <withdrawal_id> TNZO 1000000000000000000 0x<approver> <pubkey_hex> <sig_hex> [ed25519|secp256k1]
-    python tenzro_rpc.py treasury_execute_withdrawal <withdrawal_id> TNZO 1000000000000000000
-    python tenzro_rpc.py treasury_get_pending_withdrawal <withdrawal_id>
-
-    # x402 Bazaar — monetized-resource discovery
-    python tenzro_rpc.py x402_protocol_info
-    python tenzro_rpc.py x402_register_resource did:tenzro:machine:seller https://api.example.com/forecast 0xpayto 1000000000000000000 tenzro-hybrid tenzro TNZO
-    python tenzro_rpc.py x402_discover_resources tenzro-hybrid tenzro TNZO
-    python tenzro_rpc.py x402_deregister_resource <listing_id> did:tenzro:machine:seller
-    python tenzro_rpc.py x402_verify_offer '{"scheme":"tenzro-hybrid",...}'
-    python tenzro_rpc.py x402_payment_id did:tenzro:machine:payer '{"scheme":"tenzro-hybrid",...}'
-
     # Managed Databases — local → LAN → network
-    python tenzro_rpc.py list_database_engines
-    python tenzro_rpc.py create_database vecmem qdrant did:tenzro:human:owner local 1 1
-    python tenzro_rpc.py list_databases
-    python tenzro_rpc.py get_database vecmem
-    python tenzro_rpc.py list_database_partitions vecmem
-    python tenzro_rpc.py get_database_partition vecmem 0
-    python tenzro_rpc.py issue_database_connection vecmem did:tenzro:human:owner
-    python tenzro_rpc.py database_query vecmem did:tenzro:human:owner '{"op":"search",...}'
-    python tenzro_rpc.py authorize_database_read vecmem did:tenzro:human:owner
-    python tenzro_rpc.py rescale_database vecmem did:tenzro:human:owner lan_cluster 3 2
-    python tenzro_rpc.py drop_database vecmem
 """
 
 import json
@@ -252,39 +117,15 @@ except ImportError:
 # Default endpoints — override with environment variables
 import os
 
-RPC_URL = os.environ.get("TENZRO_RPC_URL", "https://rpc.tenzro.xyz")
-API_URL = os.environ.get("TENZRO_API_URL", "https://api.tenzro.xyz")
+RPC_URL = os.environ.get("TENZRO_RPC_URL", "https://rpc.tenzro.com")
+API_URL = os.environ.get("TENZRO_API_URL", "https://api.tenzro.com")
 RPC_TIMEOUT = int(os.environ.get("TENZRO_RPC_TIMEOUT", "120"))
 
 # Ecosystem MCP server endpoints
-SOLANA_MCP_URL = os.environ.get(
-    "SOLANA_MCP_URL", "https://solana-mcp.tenzro.xyz/mcp")
-ETHEREUM_MCP_URL = os.environ.get(
-    "ETHEREUM_MCP_URL", "https://ethereum-mcp.tenzro.xyz/mcp")
-LAYERZERO_MCP_URL = os.environ.get(
-    "LAYERZERO_MCP_URL", "https://layerzero-mcp.tenzro.xyz/mcp")
 CHAINLINK_MCP_URL = os.environ.get(
-    "CHAINLINK_MCP_URL", "https://chainlink-mcp.tenzro.xyz/mcp")
-CANTON_MCP_URL = os.environ.get(
-    "CANTON_MCP_URL", "https://canton-mcp.tenzro.xyz/mcp")
+    "CHAINLINK_MCP_URL", "https://chainlink-mcp.tenzro.com/mcp")
 
 _request_id = 0
-
-
-def _is_canton_method(method: str) -> bool:
-    """Whether a JSON-RPC method carries a Canton scope.
-
-    Matches how the node decides: any `tenzro_` method naming Canton or
-    DAML, in either the CamelCase (`tenzro_listCantonDomains`) or
-    snake-case (`tenzro_canton_health`) form.
-    """
-    return method.startswith("tenzro_") and (
-        "Canton" in method
-        or "canton" in method
-        or "Daml" in method
-        or "daml" in method
-    )
-
 
 def _rpc(method: str, params: Any = None) -> dict:
     """Send a JSON-RPC 2.0 request to Tenzro.
@@ -295,39 +136,15 @@ def _rpc(method: str, params: Any = None) -> dict:
     The server validates both before invoking the auth-mediated signing
     path. Public RPCs (balance, status, block reads) work without auth.
 
-    Scope-gated RPCs (currently `tenzro_*Canton*`) require an operator-
-    issued API key. Set TENZRO_API_KEY to the `tnz_<base64url>` key
-    issued by the RPC operator; it is forwarded as the `X-Tenzro-Api-Key`
-    header. The node mediates upstream credentials on the caller's
-    behalf — callers do not manage them directly.
+    Which methods need a token is the node's access policy. Node
+    administration (the operator and the administrators the policy
+    names) never extends to network-wide state, which flows through
+    on-chain governance.
 
-    Operator-only RPCs (API-key minting/revocation/listing) require the
-    operator's admin token. Set TENZRO_ADMIN_TOKEN; it is forwarded as
-    `X-Tenzro-Admin-Token`. Every Tenzro node operator holds their own
-    admin token for *their own* node — there is no global "Tenzro Labs
-    token," and admin capabilities do not extend to network-wide state
-    (validator set, treasury, fee schedule, system contracts — those
-    flow through on-chain governance via `tenzro-token`). See
-    `docs/api-keys.md` for the full sovereignty model.
-
-    Canton-scoped RPCs additionally take a network. Set
-    TENZRO_CANTON_NETWORK to `devnet` or `mainnet` and it is merged into
-    the params as `canton_network` — the node reads the choice from the
-    params rather than a header. A key authorizing exactly one network
-    needs no setting; a key authorizing several does, and the node names
-    the authorized set when the choice is missing.
     """
     global _request_id
     _request_id += 1
     call_params = params if params is not None else {}
-    canton_network = os.environ.get("TENZRO_CANTON_NETWORK")
-    if (
-        canton_network
-        and _is_canton_method(method)
-        and isinstance(call_params, dict)
-        and "canton_network" not in call_params
-    ):
-        call_params = {**call_params, "canton_network": canton_network}
     payload = {
         "jsonrpc": "2.0",
         "method": method,
@@ -341,16 +158,6 @@ def _rpc(method: str, params: Any = None) -> dict:
     dpop = os.environ.get("TENZRO_DPOP_PROOF")
     if dpop:
         headers["DPoP"] = dpop
-    api_key = os.environ.get("TENZRO_API_KEY")
-    if api_key:
-        headers["X-Tenzro-Api-Key"] = api_key
-    # Operator admin token for node-scoped mutation RPCs (API-key
-    # issuance / revocation / listing, staking, provider registration).
-    # Each node operator holds their own token on their own node — see
-    # docs/api-keys.md for the per-operator sovereignty model.
-    admin_token = os.environ.get("TENZRO_ADMIN_TOKEN")
-    if admin_token:
-        headers["X-Tenzro-Admin-Token"] = admin_token
     resp = requests.post(RPC_URL, json=payload, headers=headers,
                          timeout=RPC_TIMEOUT)
     resp.raise_for_status()
@@ -359,13 +166,11 @@ def _rpc(method: str, params: Any = None) -> dict:
         return {"error": data["error"]}
     return data.get("result", {})
 
-
 def _api_get(path: str) -> dict:
     """GET request to Web API."""
     resp = requests.get(f"{API_URL}{path}", timeout=30)
     resp.raise_for_status()
     return resp.json()
-
 
 def _api_post(path: str, body: dict) -> dict:
     """POST request to Web API."""
@@ -373,34 +178,17 @@ def _api_post(path: str, body: dict) -> dict:
     resp.raise_for_status()
     return resp.json()
 
-
 def _mcp_tool_call(mcp_url: str, tool_name: str,
                    arguments: dict) -> dict:
     """Call a tool on an ecosystem MCP server via Streamable HTTP.
 
     Handles the MCP initialize handshake, session tracking, and
     SSE response parsing automatically.
-
-    The Canton MCP server is scope-gated: it requires an operator-issued
-    API key with scope `canton` (TENZRO_API_KEY, sent as
-    `X-Tenzro-Api-Key`), and a key authorizing more than one Canton
-    network must name the target (TENZRO_CANTON_NETWORK, sent as
-    `X-Canton-Network`). The gate sits above the MCP envelope and does
-    not read tool arguments, so the network travels as a header here
-    while the JSON-RPC surface carries it as a param. The other
-    ecosystem MCP servers are open.
     """
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }
-    if mcp_url == CANTON_MCP_URL:
-        api_key = os.environ.get("TENZRO_API_KEY")
-        if api_key:
-            headers["X-Tenzro-Api-Key"] = api_key
-        canton_network = os.environ.get("TENZRO_CANTON_NETWORK")
-        if canton_network:
-            headers["X-Canton-Network"] = canton_network
     # Step 1: Initialize session
     init_payload = {
         "jsonrpc": "2.0",
@@ -464,36 +252,7 @@ def _mcp_tool_call(mcp_url: str, tool_name: str,
     except (json.JSONDecodeError, ValueError):
         return {"text": resp.text}
 
-
 # ── Wallet & Balance ──────────────────────────────────────────────
-
-
-def create_account(key_type: str = "ed25519") -> dict:
-    """Generate a plain keypair and derive its 20-byte address.
-
-    The private key is returned once, in the response, and the node keeps no
-    copy — store it yourself. `key_type` is `ed25519` (default) or
-    `secp256k1`; anything else falls back to Ed25519. Returns `address`,
-    `public_key`, `private_key`, and `key_type` (capitalized, e.g. `Ed25519`).
-
-    Use this when you want to hold the key. For custody split across shares,
-    use :func:`create_wallet`.
-    """
-    return _rpc("tenzro_createAccount", {"key_type": key_type})
-
-
-def create_wallet() -> dict:
-    """Generate a new self-custody Tenzro wallet (2-of-3 FROST-Ed25519 (RFC 9591), 32-byte address).
-
-    Returns the canonical Tenzro wallet shape: `wallet_id`, 32-byte hex
-    `address`, base58 `display_address`, `public_key`, `key_type` (always
-    `Ed25519` — FROST-Ed25519 is the only scheme), `threshold`, `total_shares`.
-    The wallet additionally carries a mandatory ML-DSA-65 post-quantum signing
-    key for hybrid signatures. The faucet, `eth_getBalance`, and all
-    transaction RPCs accept the 32-byte address directly.
-    """
-    return _rpc("tenzro_createWallet", {})
-
 
 def get_balance(address: str) -> dict:
     """Get TNZO balance for an address. Returns balance in wei (1 TNZO = 10^18 wei) as a decimal string."""
@@ -504,102 +263,6 @@ def get_balance(address: str) -> dict:
     return result
 
 
-def send_transaction(from_addr: str, to_addr: str, value: int,
-                     gas_limit: int = 21000,
-                     gas_price: int = 1_000_000_000,
-                     approval_id: str | None = None) -> dict:
-    """Send a TNZO transfer transaction via ambient OAuth/DPoP auth.
-
-    The server looks up the wallet bound to the bearer DID (set
-    TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF environment variables) and
-    signs the transaction on its behalf via tenzro_signAndSendTransaction
-    — the node constructs the canonical Transaction::hash() preimage
-    including the PQ public key, signs both Ed25519 and ML-DSA-65 legs,
-    verifies them, and submits atomically. Private keys never travel
-    over the wire.
-
-    When the controller has put transfers on the AAP always-ask list the
-    first call returns JSON-RPC -32002 with data.approval_id. Pass that id
-    back as approval_id once the controller has approved it and the
-    transfer executes; a denial returns the approver's reason.
-    """
-    nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
-    nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
-
-    chain_id_result = _rpc("eth_chainId", [])
-    chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
-
-    params = {
-        "from": from_addr,
-        "to": to_addr,
-        # Decimal string carries the full u128 range — JSON numbers
-        # clamp to u64 in the handler's numeric path.
-        "value": str(value),
-        "gas_limit": gas_limit,
-        "gas_price": gas_price,
-        "nonce": nonce,
-        "chain_id": chain_id,
-    }
-    if approval_id is not None:
-        params["approval_id"] = approval_id
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-def sign_transaction(from_addr: str, to_addr: str, value: int,
-                     gas_limit: int = 21000,
-                     gas_price: int = 1_000_000_000,
-                     nonce: int | None = None,
-                     chain_id: int | None = None) -> dict:
-    """Sign a transaction server-side without submitting it.
-
-    Uses ambient OAuth/DPoP auth — the bearer JWT identifies which wallet
-    the server should use to sign. Returns a dict with the classical
-    Ed25519 signature + public_key, the ML-DSA-65 pq_signature +
-    pq_public_key, the server-canonical timestamp, and the resulting
-    tx_hash. The caller can later submit by passing those fields to
-    eth_sendRawTransaction unchanged.
-    """
-    if nonce is None:
-        nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
-        nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
-
-    if chain_id is None:
-        chain_id_result = _rpc("eth_chainId", [])
-        chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
-
-    return _rpc("tenzro_signTransaction", {
-        "from": from_addr,
-        "to": to_addr,
-        "value": str(value),
-        "gas_limit": gas_limit,
-        "gas_price": gas_price,
-        "nonce": nonce,
-        "chain_id": chain_id,
-    })
-
-
-def sign_and_send(from_addr: str, to_addr: str,
-                  amount_wei: int) -> dict:
-    """Sign and send a TNZO transfer in one call.
-
-    Uses ambient OAuth/DPoP auth (TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF
-    env vars) — no private key required.
-
-    Args:
-        from_addr: Sender hex address (must match the bearer's wallet)
-        to_addr: Recipient hex address
-        amount_wei: Amount in wei base units (1 TNZO = 10**18 wei)
-
-    Returns:
-        Transaction result with tx_hash
-    """
-    return send_transaction(
-        from_addr=from_addr,
-        to_addr=to_addr,
-        value=int(amount_wei),
-    )
-
-
 def send_self_custody_transaction(from_addr: str, to_addr: str, value: int,
                                   signature: str, public_key: str,
                                   pq_signature: str, pq_public_key: str,
@@ -608,7 +271,7 @@ def send_self_custody_transaction(from_addr: str, to_addr: str, value: int,
                                   gas_price: int = 1_000_000_000,
                                   nonce: int | None = None,
                                   chain_id: int | None = None) -> dict:
-    """Submit a pre-signed self-custody TNZO transfer via eth_sendRawTransaction.
+    """Submit a pre-signed self-custody TNZO transfer via tenzro_sendRawTransaction.
 
     A self-custody runner holds its Ed25519 + ML-DSA-65 keypair locally (in a
     TEE seal or an offline signer), builds the canonical Transaction::hash()
@@ -640,14 +303,12 @@ def send_self_custody_transaction(from_addr: str, to_addr: str, value: int,
         chain_id: Chain id used at signing time. Queried live if omitted.
     """
     if nonce is None:
-        nonce_result = _rpc("eth_getTransactionCount", [from_addr, "latest"])
-        nonce = int(nonce_result, 16) if isinstance(nonce_result, str) else 0
+        nonce = _read_quantity("nonce", "eth_getTransactionCount", [from_addr, "latest"])
 
     if chain_id is None:
-        chain_id_result = _rpc("eth_chainId", [])
-        chain_id = int(chain_id_result, 16) if isinstance(chain_id_result, str) else 1337
+        chain_id = _read_quantity("chain id", "eth_chainId", [])
 
-    return _rpc("eth_sendRawTransaction", {
+    return _rpc("tenzro_sendRawTransaction", {
         "from": from_addr,
         "to": to_addr,
         "value": str(value),
@@ -662,37 +323,15 @@ def send_self_custody_transaction(from_addr: str, to_addr: str, value: int,
         "pq_signature": pq_signature,
     })
 
-
-# ── Faucet ────────────────────────────────────────────────────────
-
-
-def request_faucet(address: str) -> dict:
-    """Request testnet TNZO from the faucet (24h cooldown per address).
-
-    The per-request amount is set by the node's genesis faucet config and comes
-    back as ``amount_wei``.
-
-    Use the hex public key (from create_wallet 'address' field) as the address.
-    """
-    # Try RPC first (more reliable), fall back to Web API
-    result = _rpc("tenzro_faucet", {"address": address})
-    if result and "error" not in result:
-        return result
-    return _api_post("/faucet", {"address": address})
-
-
 # ── Node Status ───────────────────────────────────────────────────
-
 
 def get_status() -> dict:
     """Get node status (health, block height, peers, uptime)."""
     return _api_get("/status")
 
-
 def get_health() -> dict:
     """Health check."""
     return _api_get("/health")
-
 
 def block_height() -> dict:
     """Get the current block height."""
@@ -701,11 +340,9 @@ def block_height() -> dict:
         return {"block_height": int(result, 16), "hex": result}
     return result
 
-
 def get_block(height: int) -> dict:
     """Get a block by height."""
     return _rpc("tenzro_getBlock", {"height": height})
-
 
 def get_block_range(start_height: int, end_height: int,
                     max_results: int = 64) -> dict:
@@ -722,7 +359,6 @@ def get_block_range(start_height: int, end_height: int,
         "maxResults": max_results,
     })
 
-
 def chain_id() -> dict:
     """Get the chain ID."""
     result = _rpc("eth_chainId")
@@ -730,24 +366,21 @@ def chain_id() -> dict:
         return {"chain_id": int(result, 16), "hex": result}
     return result
 
-
 def node_info() -> dict:
     """Get full node info via RPC."""
-    return _rpc("tenzro_nodeInfo")
-
+    return _rpc("tenzro_getNodeStatus")
 
 def node_did_document() -> dict:
     """Resolve this node's DID Document — every way of reaching it.
 
-    A node is addressed five ways (TDIP DID, Ed25519 public key, iroh
-    EndpointId, libp2p PeerId, Pkarr record) plus its JSON-RPC / MCP / A2A /
+    A node is addressed by its TDIP DID, Ed25519 public key, iroh
+    EndpointId and relays, plus its JSON-RPC / MCP / A2A /
     web service URLs. Resolving the DID yields all of them, so a caller
     holding any one identifier can get the rest.
 
     Also served at ``/.well-known/did.json`` for generic DID resolvers.
     """
     return _rpc("tenzro_nodeDidDocument")
-
 
 def get_settlement_preference(payee_did: str) -> dict:
     """What asset this payee is paid in.
@@ -758,18 +391,7 @@ def get_settlement_preference(payee_did: str) -> dict:
     """
     return _rpc("tenzro_getSettlementPreference", {"payee_did": payee_did})
 
-
-def service_key_status() -> dict:
-    """Whether this node's operator requires a service key to reach it.
-
-    The gate covers JSON-RPC, MCP, A2A and the web API at once. It never
-    covers consensus or P2P, and never gates /health or /ready.
-    """
-    return _rpc("tenzro_serviceKeyStatus")
-
-
 # ── Identity ──────────────────────────────────────────────────────
-
 
 def register_identity(display_name: str | None = None,
                       identity_type: str = "human",
@@ -787,7 +409,7 @@ def register_identity(display_name: str | None = None,
         `delegation_scope` constrains spending and operations the machine
         may perform on behalf of the controller.
       - 'autonomous': requires `capabilities`. No human controller; the
-        machine acts purely on its own FROST-Ed25519 threshold-bound key.
+        machine acts purely on its own hardware-held key (TPM / Secure Enclave).
 
     delegation_scope shape (all keys optional):
       {
@@ -812,7 +434,6 @@ def register_identity(display_name: str | None = None,
         params["key_type"] = key_type
     return _rpc("tenzro_registerIdentity", params)
 
-
 def register_autonomous_identity(capabilities: list,
                                  public_key: str | None = None,
                                  key_type: str = "ed25519") -> dict:
@@ -825,57 +446,30 @@ def register_autonomous_identity(capabilities: list,
         key_type=key_type,
     )
 
-
 def resolve_did(did: str) -> dict:
     """Resolve a DID to identity information."""
     return _rpc("tenzro_resolveIdentity", {"did": did})
 
-
 def resolve_did_document(did: str) -> dict:
     """Resolve a DID to a W3C DID Document."""
     return _rpc("tenzro_resolveDidDocument", {"did": did})
-
 
 def join_as_micro_node(display_name: str = "Tenzro User",
                        origin: str = "cli",
                        participant_type: str = "human") -> dict:
     """Join the Tenzro Network as a MicroNode participant.
 
-    Zero-install — auto-provisions a TDIP DID and MPC wallet.
-    Returns full identity, wallet, capabilities, network endpoints, and chain ID.
-    Falls back to tenzro_participate for older nodes.
+    Zero-install: provisions a TDIP DID and wallet, and returns the identity,
+    wallet, capabilities, network endpoints and chain ID.
     """
     params = {
         "display_name": display_name.lstrip("@"),
         "origin": origin,
         "participant_type": participant_type,
     }
-    result = _rpc("tenzro_joinAsMicroNode", params)
-    if "error" in result:
-        # Fall back to legacy tenzro_participate
-        result = _rpc("tenzro_participate", {"display_name": display_name.lstrip("@")})
-    return result
-
-
-def set_username(did: str, username: str) -> dict:
-    """Set a human-readable username for a DID.
-
-    did: the DID to attach the username to (e.g. did:tenzro:human:<uuid>)
-    username: the desired username (unique across the network)
-    """
-    return _rpc("tenzro_setUsername", [{"did": did, "username": username}])
-
-
-def resolve_username(username: str) -> dict:
-    """Resolve a username to its associated DID and identity info.
-
-    username: the username to look up
-    """
-    return _rpc("tenzro_resolveUsername", [{"username": username}])
-
+    return _rpc("tenzro_joinAsMicroNode", params)
 
 # ── Verification ──────────────────────────────────────────────────
-
 
 def verify_zk_proof(proof_bytes: str, public_inputs: list,
                     circuit_id: str) -> dict:
@@ -890,7 +484,6 @@ def verify_zk_proof(proof_bytes: str, public_inputs: list,
         "circuit_id": circuit_id,
     })
 
-
 def verify_tee_attestation(vendor: str, report_data: str,
                            measurement: str | None = None) -> dict:
     """Verify a TEE attestation via Web API."""
@@ -899,167 +492,53 @@ def verify_tee_attestation(vendor: str, report_data: str,
         body["measurement"] = measurement
     return _api_post("/verify/tee-attestation", body)
 
-
-# ── API Keys ──────────────────────────────────────────────────────
+# ── Node access ───────────────────────────────────────────────────
 #
-# Two control planes:
-#
-# 1. Operator (X-Tenzro-Admin-Token): mint / list / revoke any key on
-#    the operator's own node. Sourced from the TENZRO_ADMIN_TOKEN env
-#    var by _rpc().
-# 2. Subject (X-Tenzro-Api-Key): list / revoke keys belonging to the
-#    caller's own subject. Sourced from TENZRO_API_KEY.
-#
-# Every Tenzro node operator holds their own admin token for *their
-# own* node. Admin capabilities do not extend to network-wide state
-# (validator set, treasury, fee schedule, system contracts — those
-# flow through on-chain governance via tenzro-token). See
-# docs/api-keys.md.
+# Sign in once with a passkey or hardware key for a DPoP-bound access
+# token (tenzro_accessChallenge, then tenzro_issueAccessToken with the
+# signed answer), and export it as TENZRO_BEARER_JWT with a per-call
+# TENZRO_DPOP_PROOF. The policy and token calls are for the node's
+# operator and the administrators its access policy names.
 
+def access_challenge(did: str, dpop_jkt: str) -> dict:
+    """Ask for a single-use sign-in challenge for `did`, bound to a DPoP key."""
+    return _rpc("tenzro_accessChallenge", {"did": did, "dpop_jkt": dpop_jkt})
 
-def create_api_key(label: str, scopes: list | None = None,
-                   subject: str | None = None,
-                   key_class: str = "subject") -> dict:
-    """Mint a new API key on this node. Operator-only (admin-token gated).
+def get_access_policy() -> dict:
+    """The node's access policy, as data and as access.toml text."""
+    return _rpc("tenzro_getAccessPolicy")
 
-    Args:
-        label: free-form label shown in `list_api_keys`.
-        scopes: scopes to grant; defaults to `["canton"]` server-side
-            when empty.
-        subject: optional subject identifier (typically a Tenzro DID).
-            Required if the operator wants the holder to self-revoke
-            later via `revoke_my_api_key`.
-        key_class: revocability class. One of:
-            - "subject" (default): subject can self-revoke; admin can
-              revoke.
-            - "operator_internal": admin-only revoke.
-            - "operator_protected": NOT revokable via RPC by anyone
-              (including admin). Rotate by updating the operator
-              secret and restarting the node. The wrapper injects the
-              `confirm_operator_protected` interlock automatically.
+def set_access_policy(toml_text: str) -> dict:
+    """Replace the node's access policy with `toml_text`. Returns the new version."""
+    return _rpc("tenzro_setAccessPolicy", {"toml": toml_text})
 
-    Requires TENZRO_ADMIN_TOKEN in the environment.
+def preview_access(surface: str, method: str, did: str | None = None) -> dict:
+    """What the access policy decides for `did` (anonymous when None) calling `method` on `surface`."""
+    params = {"surface": surface, "method": method}
+    if did:
+        params["did"] = did
+    return _rpc("tenzro_previewAccess", params)
 
-    The returned `key` is the plaintext `tnz_...` token shown exactly
-    once — persist it immediately.
-    """
-    params: dict = {
-        "label": label,
-        "scopes": scopes if scopes is not None else [],
-        "class": key_class,
-    }
-    if subject is not None:
-        params["subject"] = subject
-    if key_class == "operator_protected":
-        params["confirm_operator_protected"] = True
-    return _rpc("tenzro_createApiKey", params)
+def list_access_tokens() -> dict:
+    """The live access tokens the node issued."""
+    return _rpc("tenzro_listAccessTokens")
 
-
-def list_api_keys() -> dict:
-    """List every API key the node has issued — active and revoked.
-
-    Operator-only (admin-token-gated). Requires TENZRO_ADMIN_TOKEN.
-    """
-    return _rpc("tenzro_listApiKeys")
-
-
-def revoke_api_key(key_id: str) -> dict:
-    """Revoke an API key by its non-secret `key_id`. Operator-only.
-
-    Fails with `-32004` if the target is an `operator_protected` key
-    (those cannot be revoked via RPC, by anyone, including an admin).
-    Rotate that class by updating the operator secret + restart.
-
-    Requires TENZRO_ADMIN_TOKEN in the environment.
-    """
-    return _rpc("tenzro_revokeApiKey", {"key_id": key_id})
-
-
-def list_my_api_keys() -> dict:
-    """List every API key belonging to the caller's own subject.
-
-    Subject-gated. Requires TENZRO_API_KEY in the environment.
-
-    This is the entitlement self-read: each row carries the scopes, tier
-    ceiling, canton_networks, canton_user_id, and party-delegation arrays
-    the node enforces. A row with a non-empty canton_networks but a null
-    canton_user_id has node access without ledger access — it
-    authenticates but is bound to no Canton party, so command submission
-    is refused.
-    """
-    return _rpc("tenzro_listMyApiKeys")
-
-
-def revoke_my_api_key(key_id: str) -> dict:
-    """Revoke an API key belonging to the caller's own subject.
-
-    Only `subject`-class keys are eligible. The error for "no such
-    key" and "not your key" is intentionally the same so ownership
-    cannot be probed.
-
-    Requires TENZRO_API_KEY in the environment.
-    """
-    return _rpc("tenzro_revokeMyApiKey", {"key_id": key_id})
-
+def revoke_access_token(target: str) -> dict:
+    """Withdraw one access token by jti, or every live token of a DID."""
+    key = "did" if target.startswith("did:") else "jti"
+    return _rpc("tenzro_revokeAccessToken", {key: target})
 
 # ── Token ─────────────────────────────────────────────────────────
-
 
 def total_supply() -> dict:
     """Get total TNZO token supply."""
     return _rpc("tenzro_totalSupply")
 
-
 def token_balance(address: str) -> dict:
     """Get TNZO token balance for an address."""
     return _rpc("tenzro_tokenBalance", {"address": address})
 
-
-def get_price(symbol: str = "", symbols: list | None = None) -> dict:
-    """Read one or more asset prices from the node's price oracle.
-
-    Pass a single ``symbol`` (e.g. "ETH") or a ``symbols`` list.
-    ``price_usd_8dp`` is the USD price as an integer scaled by 1e8, encoded
-    as a decimal string. Symbols with no live feed are returned under
-    ``unavailable`` rather than failing the whole call. Requires
-    ``bridge.prices.enabled`` on the node.
-    """
-    params = {}
-    if symbol:
-        params["symbol"] = symbol
-    if symbols:
-        params["symbols"] = symbols
-    return _rpc("tenzro_getPrice", params)
-
-
 # ── Token Registry & Contracts ───────────────────────────────────
-
-
-def create_token(name: str, symbol: str, creator: str,
-                 initial_supply: str, decimals: int = 18,
-                 mintable: bool = False, burnable: bool = False) -> dict:
-    """Create an ERC-20 token via the factory and register in the unified registry.
-
-    name: human-readable token name (e.g. "My Token")
-    symbol: ticker symbol (e.g. "MYT")
-    creator: creator address (0x-prefixed hex, 20 or 32 bytes)
-    initial_supply: total initial supply as a decimal string (in smallest unit)
-    decimals: token decimal places (default 18)
-    mintable: allow minting beyond initial supply (default False)
-    burnable: allow burning tokens (default False)
-    """
-    params = {
-        "name": name,
-        "symbol": symbol,
-        "creator": creator,
-        "initial_supply": initial_supply,
-        "decimals": decimals,
-    }
-    if mintable:
-        params["mintable"] = True
-    if burnable:
-        params["burnable"] = True
-    return _rpc("tenzro_createToken", params)
 
 
 def get_token_info(symbol: str | None = None, evm_address: str | None = None,
@@ -1079,11 +558,10 @@ def get_token_info(symbol: str | None = None, evm_address: str | None = None,
         return {"error": "Provide symbol, evm_address, or token_id"}
     return _rpc("tenzro_getToken", params)
 
-
 def list_tokens(vm_type: str | None = None, limit: int = 50) -> dict:
     """List registered tokens in the unified token registry.
 
-    vm_type: optional filter — evm | svm | daml | native
+    vm_type: optional filter — evm | svm | native
     limit: max tokens to return (default 50, max 100)
     """
     params = {}
@@ -1093,63 +571,35 @@ def list_tokens(vm_type: str | None = None, limit: int = 50) -> dict:
         params["limit"] = limit
     return _rpc("tenzro_listTokens", params)
 
-
 def get_token_balance_all_vms(address: str) -> dict:
-    """Get TNZO balance across all VMs (native, EVM wTNZO, SVM wTNZO, DAML holding).
+    """Get TNZO balance across all VMs (native, EVM wTNZO, SVM wTNZO).
 
     Returns balances with decimal conversion for each VM representation.
     """
     return _rpc("tenzro_getTokenBalance", {"address": address})
 
+def deploy_contract(signed_tx: dict) -> dict:
+    """Submit a contract deployment the deployer signed on its own hardware.
 
-def cross_vm_transfer(token: str, amount: str, from_vm: str, to_vm: str,
-                      from_address: str, to_address: str) -> dict:
-    """Transfer tokens atomically between VMs using the pointer model.
-
-    token: token symbol (e.g. "TNZO") or token ID
-    amount: transfer amount as a decimal string (in smallest unit)
-    from_vm/to_vm: evm | svm | daml | native
-    from_address/to_address: 0x-prefixed hex addresses
+    signed_tx: the fields ``tenzro_sendRawTransaction`` takes, with
+    ``tx_type`` a ``ContractDeploy`` carrying the EVM creation code and
+    constructor arguments, ``public_key`` and the composite ``signature``.
+    The contract is created when a block executes the transaction; the
+    answer is its ``tx_hash``.
     """
-    return _rpc("tenzro_crossVmTransfer", {
-        "token": token,
-        "amount": amount,
-        "from_vm": from_vm,
-        "to_vm": to_vm,
-        "from_address": from_address,
-        "to_address": to_address,
-    })
-
-
-def deploy_contract(vm_type: str, bytecode: str, deployer: str,
-                    constructor_args: str | None = None,
-                    gas_limit: int = 3_000_000) -> dict:
-    """Deploy smart contract bytecode to EVM, SVM, or DAML.
-
-    vm_type: evm | svm | daml
-    bytecode: 0x-prefixed hex contract bytecode
-    deployer: 0x-prefixed hex deployer address
-    constructor_args: optional 0x-prefixed hex ABI-encoded constructor arguments
-    gas_limit: gas limit for deployment (default 3,000,000)
-    """
-    params = {
-        "vm_type": vm_type,
-        "bytecode": bytecode,
-        "deployer": deployer,
-        "gas_limit": gas_limit,
-    }
-    if constructor_args:
-        params["constructor_args"] = constructor_args
-    return _rpc("tenzro_deployContract", params)
-
+    return _rpc("tenzro_deployContract", signed_tx)
 
 # ── Models ────────────────────────────────────────────────────────
 
+def list_models(loaded: bool = False) -> dict:
+    """List registered AI models.
 
-def list_models() -> dict:
-    """List registered AI models."""
+    With `loaded=True`, list every model this node holds, of every type,
+    with its engine, visibility, access and loaded/serving state.
+    """
+    if loaded:
+        return _rpc("tenzro_listModels", {"loaded": True})
     return _rpc("tenzro_listModels")
-
 
 def chat(model: str, message: str, temperature: float = 0.7,
          max_tokens: int = 512) -> dict:
@@ -1161,11 +611,9 @@ def chat(model: str, message: str, temperature: float = 0.7,
         "max_tokens": max_tokens,
     })
 
-
 def list_model_endpoints() -> dict:
     """List running model service endpoints."""
     return _rpc("tenzro_listModelEndpoints")
-
 
 def _intent_params(use_case: str, budget: int | None = None, optimize: float | None = None,
                    quality_floor: str | None = None, est_input_tokens: int | None = None,
@@ -1185,7 +633,6 @@ def _intent_params(use_case: str, budget: int | None = None, optimize: float | N
         if value is not None:
             params[key] = value
     return params
-
 
 def route_intent(use_case: str, budget: int | None = None, optimize: float | None = None,
                  quality_floor: str | None = None, est_input_tokens: int | None = None,
@@ -1216,7 +663,6 @@ def route_intent(use_case: str, budget: int | None = None, optimize: float | Non
         params["prompt"] = prompt
     return _rpc("tenzro_routeIntent", params)
 
-
 def chat_by_intent(use_case: str, message: str, budget: int | None = None,
                    optimize: float | None = None, quality_floor: str | None = None,
                    est_input_tokens: int | None = None, est_output_tokens: int | None = None,
@@ -1242,7 +688,6 @@ def chat_by_intent(use_case: str, message: str, budget: int | None = None,
         params["max_tokens"] = max_tokens
     return _rpc("tenzro_chatByIntent", params)
 
-
 def record_route_outcome(model_id: str, cluster: int, outcome: str) -> dict:
     """Report how a routed call turned out.
 
@@ -1259,7 +704,6 @@ def record_route_outcome(model_id: str, cluster: int, outcome: str) -> dict:
         "outcome": outcome,
     })
 
-
 def route_difficulty_stats(model_id: str | None = None) -> dict:
     """Read the node's difficulty index: cluster count and prompts per cluster.
 
@@ -1273,9 +717,7 @@ def route_difficulty_stats(model_id: str | None = None) -> dict:
         params["model_id"] = model_id
     return _rpc("tenzro_routeDifficultyStats", params)
 
-
 # ── Payments ──────────────────────────────────────────────────────
-
 
 def create_payment_challenge(protocol: str, resource: str, amount: int,
                              asset: str = "TNZO",
@@ -1298,7 +740,6 @@ def create_payment_challenge(protocol: str, resource: str, amount: int,
         params["recipient"] = recipient
     return _rpc("tenzro_createPaymentChallenge", params)
 
-
 def verify_payment(challenge_id: str, protocol: str, payer_did: str,
                    payer_address: str, amount: int, asset: str,
                    signature: str) -> dict:
@@ -1313,246 +754,21 @@ def verify_payment(challenge_id: str, protocol: str, payer_did: str,
         "signature": signature,
     })
 
-
 # ── Delegation ───────────────────────────────────────────────────
 
+# ── Network Duties ──────────────────────────────────────────────
 
-def set_delegation_scope(machine_did: str, max_transaction_value: int,
-                         max_daily_spend: int,
-                         allowed_operations: list | None = None,
-                         allowed_chains: list | None = None) -> dict:
-    """Set delegation scope for a machine DID.
+def list_duties() -> dict:
+    """List open network duties: work the chain pays the first prover for."""
+    return _rpc("tenzro_listDuties", {})
 
-    max_transaction_value, max_daily_spend: amounts in wei (10^-18 TNZO),
-    sent as decimal strings to preserve full u128 precision over JSON.
-    """
-    params = {
-        "machine_did": machine_did,
-        "max_transaction_value": str(max_transaction_value),
-        "max_daily_spend": str(max_daily_spend),
-    }
-    if allowed_operations:
-        params["allowed_operations"] = allowed_operations
-    if allowed_chains:
-        params["allowed_chains"] = allowed_chains
-    return _rpc("tenzro_setDelegationScope", params)
-
-
-# ── Task Marketplace ─────────────────────────────────────────────
-
-
-def post_task(title: str, description: str, task_type: str,
-              budget_wei: int, poster: str,
-              required_capabilities: list | None = None,
-              required_model: str | None = None,
-              preferred_model_id: str | None = None,
-              deadline: int | None = None,
-              input_text: str = "") -> dict:
-    """Post a task to the decentralized AI task marketplace.
-
-    task_type: inference | code_review | data_analysis | content_generation |
-               agent_execution | translation | research | custom:<name>
-    budget_wei: maximum budget in wei (10^-18 TNZO), sent as decimal string
-                to preserve full u128 precision over JSON.
-    poster: hex address of the account posting the task (required by server).
-    """
-    params = {
-        "title": title,
-        "description": description,
-        "task_type": task_type,
-        "max_price": str(budget_wei),
-        "poster": poster,
-        "input": input_text,
-    }
-    if required_capabilities:
-        params["required_capabilities"] = required_capabilities
-    if required_model:
-        params["required_model"] = required_model
-    if preferred_model_id:
-        params["preferred_model_id"] = preferred_model_id
-    if deadline is not None:
-        params["deadline"] = deadline
-    return _rpc("tenzro_postTask", params)
-
-
-def list_tasks(status: str | None = None, task_type: str | None = None) -> dict:
-    """List tasks on the marketplace, optionally filtered."""
-    params = {}
-    if status:
-        params["status"] = status
-    if task_type:
-        params["task_type"] = task_type
-    return _rpc("tenzro_listTasks", params)
-
-
-def get_task(task_id: str) -> dict:
-    """Get details of a specific task."""
-    return _rpc("tenzro_getTask", {"task_id": task_id})
-
-
-def cancel_task(task_id: str) -> dict:
-    """Cancel a task (poster only)."""
-    return _rpc("tenzro_cancelTask", {"task_id": task_id})
-
-
-def quote_task(task_id: str, provider: str, price_wei: int,
-               model_id: str | None = None, confidence: int | None = None,
-               estimated_duration_secs: int | None = None) -> dict:
-    """Submit a quote for an open task as a provider/agent.
-
-    price_wei: amount in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON.
-
-    provider: the address that will execute the task. Required.
-
-    confidence: 0-100, the provider's self-assessed confidence in
-    delivering at the quoted price (default 80 server-side).
-    """
-    params = {
-        "task_id": task_id,
-        "provider": provider,
-        "price": str(price_wei),
-    }
-    if model_id:
-        params["model_id"] = model_id
-    if confidence is not None:
-        params["confidence"] = confidence
-    if estimated_duration_secs is not None:
-        params["estimated_duration_secs"] = estimated_duration_secs
-    return _rpc("tenzro_quoteTask", params)
-
+def get_duty(duty_id: str) -> dict:
+    """Get one network duty by id."""
+    return _rpc("tenzro_getDuty", {"duty_id": duty_id})
 
 # ── Agent Template Marketplace ───────────────────────────────────
 
-
-def list_agent_templates(tag: str | None = None, creator: str | None = None,
-                         free_only: bool = False, limit: int = 50) -> dict:
-    """List available agent templates.
-
-    tag: filter by tag
-    creator: filter by hex creator address
-    free_only: only return free-pricing templates
-    """
-    params = {"limit": limit}
-    if tag:
-        params["tag"] = tag
-    if creator:
-        params["creator"] = creator
-    if free_only:
-        params["free_only"] = True
-    return _rpc("tenzro_listAgentTemplates", params)
-
-
-def register_agent_template(name: str, description: str,
-                            template_type: str,
-                            creator: str,
-                            system_prompt: str = "",
-                            tags: list | None = None,
-                            template_id: str | None = None,
-                            pricing: str = "free",
-                            creator_did: str | None = None,
-                            creator_wallet: str | None = None) -> dict:
-    """Register a new agent template on the marketplace.
-
-    template_type: autonomous | tool_agent | orchestrator | specialist | multi_modal
-    creator: hex-encoded (0x-prefixed) creator address — required by the node
-    template_id: optional stable id (e.g. "ref-..."); registration fails if it
-        already exists. When omitted the node mints a UUID.
-    pricing: "free", "per_execution:<wei>", "per_token:<wei>",
-        "subscription:<wei>", or "revenue_share:<bps>". Non-free pricing
-        requires creator_wallet.
-    """
-    params = {
-        "name": name,
-        "description": description,
-        "template_type": template_type,
-        "creator": creator,
-        "system_prompt": system_prompt,
-        "tags": tags or [],
-        "pricing": pricing,
-    }
-    if template_id:
-        params["template_id"] = template_id
-    if creator_did:
-        params["creator_did"] = creator_did
-    if creator_wallet:
-        params["creator_wallet"] = creator_wallet
-    return _rpc("tenzro_registerAgentTemplate", params)
-
-
-def get_agent_template(template_id: str) -> dict:
-    """Get details of a specific agent template."""
-    return _rpc("tenzro_getAgentTemplate", {"template_id": template_id})
-
-
-def spawn_agent_from_template(template_id: str, name: str,
-                              capabilities: list | None = None,
-                              parent_machine_did: str | None = None) -> dict:
-    """Spawn a new agent from a marketplace template.
-
-    template_id: the template to instantiate
-    name: display name for the spawned agent
-    capabilities: optional additional capabilities beyond the template defaults
-    parent_machine_did: optional parent machine DID. When set, the spawned
-        agent's effective delegation scope is the strict intersection of the
-        parent's scope and the template's spec — the child can never be
-        broader than its parent on any axis (numeric ceilings, allow-lists,
-        time bound).
-    """
-    params = {
-        "template_id": template_id,
-        "name": name,
-    }
-    if capabilities:
-        params["capabilities"] = capabilities
-    if parent_machine_did:
-        params["parent_machine_did"] = parent_machine_did
-    return _rpc("tenzro_spawnAgentFromTemplate", params)
-
-
-def rate_agent_template(template_id: str, rating: int,
-                        review: str | None = None) -> dict:
-    """Rate an agent template (1-5 stars) with an optional text review.
-
-    template_id: the template to rate
-    rating: integer 1-5
-    review: optional review text
-    """
-    params = {
-        "template_id": template_id,
-        "rating": rating,
-    }
-    if review:
-        params["review"] = review
-    return _rpc("tenzro_rateAgentTemplate", params)
-
-
-def search_agent_templates(query: str, agent_type: str | None = None,
-                           limit: int = 20) -> dict:
-    """Search agent templates by free-text query.
-
-    query: search query string
-    agent_type: optional filter — autonomous | tool_agent | orchestrator | specialist | multi_modal
-    limit: max results to return (default 20)
-    """
-    params = {"query": query}
-    if agent_type:
-        params["agent_type"] = agent_type
-    if limit != 20:
-        params["limit"] = limit
-    return _rpc("tenzro_searchAgentTemplates", params)
-
-
-def get_agent_template_stats(template_id: str) -> dict:
-    """Get usage statistics for an agent template.
-
-    Returns spawn count, average rating, total reviews, and revenue.
-    """
-    return _rpc("tenzro_getAgentTemplateStats", {"template_id": template_id})
-
-
 # ── Skills Registry ──────────────────────────────────────────────
-
 
 def _skill_bundle(uri: str, sha256: str, size_bytes: int) -> dict:
     """Build a content-addressed artifact descriptor for a skill.
@@ -1568,333 +784,22 @@ def _skill_bundle(uri: str, sha256: str, size_bytes: int) -> dict:
         "size_bytes": size_bytes,
     }
 
-
-def list_skills(tag: str | None = None, creator_did: str | None = None,
-                max_price: int | None = None, active_only: bool = True,
-                category: str | None = None, capability: str | None = None,
-                bundled_only: bool = False,
-                limit: int = 50, offset: int = 0) -> dict:
-    """List skills in the decentralized Skills Registry.
-
-    The registry is permissionless: anyone may publish, and a skill is either
-    free or priced in TNZO paid to its creator.
-
-    max_price: optional filter in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON.
-    bundled_only: keep only skills publishing a pinnable artifact.
-    """
-    params = {"active_only": active_only}
-    if tag:
-        params["tag"] = tag
-    if creator_did:
-        params["creator_did"] = creator_did
-    if category:
-        params["category"] = category
-    if capability:
-        params["capability"] = capability
-    if bundled_only:
-        params["bundled_only"] = True
-    if max_price is not None:
-        params["max_price"] = str(max_price)
-    if limit != 50:
-        params["limit"] = limit
-    if offset > 0:
-        params["offset"] = offset
-    return _rpc("tenzro_listSkills", params)
-
-
-def register_skill(name: str, version: str, creator_did: str,
-                   description: str, price_per_call: int,
-                   tags: list | None = None, required_capabilities: list | None = None,
-                   endpoint: str | None = None, input_schema: dict | None = None,
-                   output_schema: dict | None = None, category: str | None = None,
-                   creator_wallet: str | None = None,
-                   bundle_uri: str | None = None, bundle_sha256: str | None = None,
-                   bundle_size: int | None = None) -> dict:
-    """Register a new skill in the permissionless Skills Registry.
-
-    price_per_call: amount in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON. Any non-zero price requires
-    creator_wallet as the payout address.
-
-    Supplying the bundle triple (locator, hex SHA-256 of the bytes, size) lets
-    callers pin exactly which artifact they are paying to run.
-    """
-    params = {
-        "name": name,
-        "version": version,
-        "creator_did": creator_did,
-        "description": description,
-        "price_per_call": str(price_per_call),
-    }
-    if tags:
-        params["tags"] = tags
-    if required_capabilities:
-        params["required_capabilities"] = required_capabilities
-    if endpoint:
-        params["endpoint"] = endpoint
-    if input_schema:
-        params["input_schema"] = input_schema
-    if output_schema:
-        params["output_schema"] = output_schema
-    if category:
-        params["category"] = category
-    if creator_wallet:
-        params["creator_wallet"] = creator_wallet
-    if bundle_uri and bundle_sha256 and bundle_size:
-        params["bundle"] = _skill_bundle(bundle_uri, bundle_sha256, bundle_size)
-    return _rpc("tenzro_registerSkill", params)
-
-
-def search_skills(query: str, tag: str | None = None, max_price: int | None = None,
-                  category: str | None = None, capability: str | None = None,
-                  bundled_only: bool = False, limit: int = 20) -> dict:
-    """Search skills by free-text query over name, description and tags.
-
-    max_price: optional filter in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON.
-    """
-    params = {"query": query, "active_only": True}
-    if tag:
-        params["tag"] = tag
-    if category:
-        params["category"] = category
-    if capability:
-        params["capability"] = capability
-    if bundled_only:
-        params["bundled_only"] = True
-    if max_price is not None:
-        params["max_price"] = str(max_price)
-    if limit != 20:
-        params["limit"] = limit
-    return _rpc("tenzro_searchSkills", params)
-
-
-def use_skill(skill_id: str, input_data: dict | None = None,
-              expected_version: str | None = None,
-              expected_sha256: str | None = None) -> dict:
-    """Invoke a skill by ID with given input payload.
-
-    Because the registry is permissionless, pinning is how a caller fixes which
-    bytes it pays to run: pass expected_version and/or expected_sha256 and a
-    mismatch is refused (-32006) before any settlement, so a refused call is
-    free. Pinning nothing accepts whatever the publisher currently serves.
-    """
-    params = {
-        "skill_id": skill_id,
-        "input": input_data or {},
-    }
-    if expected_version:
-        params["expected_version"] = expected_version
-    if expected_sha256:
-        params["expected_sha256"] = expected_sha256
-    return _rpc("tenzro_useSkill", params)
-
-
-def get_skill_usage(skill_id: str) -> dict:
-    """Get usage statistics for a skill.
-
-    Returns total invocations, unique callers, revenue, and average latency.
-    """
-    return _rpc("tenzro_getSkillUsage", [{"skill_id": skill_id}])
-
-
-def get_tool_usage(tool_id: str) -> dict:
-    """Get usage statistics for a tool.
-
-    Returns total invocations, unique callers, error rate, and average latency.
-    """
-    return _rpc("tenzro_getToolUsage", [{"tool_id": tool_id}])
-
-
-def spawn_agent_with_skill(parent_id: str, name: str, skill_id: str,
-                           capabilities: list | None = None) -> dict:
-    """Spawn a new agent pre-configured with a specific skill."""
-    params = {
-        "parent_id": parent_id,
-        "name": name,
-        "skill_id": skill_id,
-    }
-    if capabilities:
-        params["capabilities"] = capabilities
-    return _rpc("tenzro_spawnAgentWithSkill", params)
-
-
 # ── Agent Spawning & Swarm ───────────────────────────────────────
 
-
-def register_agent(name: str, creator: str,
-                   capabilities: list | None = None,
-                   tenzro_did: str | None = None,
-                   kind: str | None = None) -> dict:
-    """Register a new AI agent with identity and wallet.
-
-    Parameters:
-        name: human-readable agent name
-        creator: creator address (Solana-base58 or 0x-hex EVM); the runtime
-                 binds an MPC wallet under this owner
-        capabilities: optional list of capability strings
-        tenzro_did: optional TDIP machine DID to bind this agent to (must have
-                    been registered via `register_identity(identity_type='machine')`)
-        kind: optional agent kind, e.g. 'autonomous'
-    """
-    params = {
-        "name": name,
-        "creator": creator,
-    }
-    if capabilities:
-        params["capabilities"] = capabilities
-    if tenzro_did:
-        params["tenzro_did"] = tenzro_did
-    if kind:
-        params["kind"] = kind
-    return _rpc("tenzro_registerAgent", params)
-
-
-def spawn_agent(parent_id: str, name: str,
-                capabilities: list | None = None) -> dict:
-    """Spawn a sub-agent from a parent agent."""
-    params = {
-        "parent_id": parent_id,
-        "name": name,
-    }
-    if capabilities:
-        params["capabilities"] = capabilities
-    return _rpc("tenzro_spawnAgent", params)
-
-
-def run_agent_task(agent_id: str, task: str,
-                   max_steps: int = 10) -> dict:
-    """Run an autonomous task via the agentic execution loop."""
-    return _rpc("tenzro_runAgentTask", {
-        "agent_id": agent_id,
-        "task": task,
-        "max_steps": max_steps,
-    })
-
-
-def create_swarm(orchestrator_id: str,
-                 members: list) -> dict:
-    """Create a swarm of agents coordinated by an orchestrator.
-
-    members: list of dicts with 'name' and 'capabilities' keys,
-             or strings like 'researcher:nlp,data'
-    """
-    parsed = []
-    for m in members:
-        if isinstance(m, dict):
-            parsed.append(m)
-        elif isinstance(m, str) and ":" in m:
-            name, caps = m.split(":", 1)
-            parsed.append({
-                "name": name,
-                "capabilities": caps.split(","),
-            })
-        else:
-            parsed.append({"name": str(m), "capabilities": []})
-    return _rpc("tenzro_createSwarm", {
-        "orchestrator_id": orchestrator_id,
-        "members": parsed,
-    })
-
-
-def get_swarm_status(swarm_id: str) -> dict:
-    """Get the status of a swarm and its members."""
-    return _rpc("tenzro_getSwarmStatus", {"swarm_id": swarm_id})
-
-
-def terminate_swarm(swarm_id: str) -> dict:
-    """Terminate a swarm and all its member agents."""
-    return _rpc("tenzro_terminateSwarm", {"swarm_id": swarm_id})
-
-
 # ── Cross-Chain Bridge ───────────────────────────────────────────
-
-
-def bridge_tokens(source_chain: str, dest_chain: str, asset: str,
-                  amount_wei: int, sender: str,
-                  recipient: str) -> dict:
-    """Bridge tokens between chains.
-
-    source_chain/dest_chain: tenzro | ethereum | solana | base
-    asset: TNZO, USDC, etc.
-    amount_wei: amount in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON.
-    """
-    return _rpc("tenzro_bridgeTokens", {
-        "source_chain": source_chain,
-        "dest_chain": dest_chain,
-        "asset": asset,
-        "amount": str(amount_wei),
-        "sender": sender,
-        "recipient": recipient,
-    })
-
 
 # ── Staking & Providers ─────────────────────────────────────────
 
 
-def stake_tokens(amount_wei: int,
-                 provider_type: str = "validator",
-                 accelerators: list[str] | None = None,
-                 terabytes: int | None = None,
-                 cloud_tier: str | None = None) -> dict:
-    """Stake TNZO tokens.
-
-    amount_wei: amount in wei (10^-18 TNZO). Sent as decimal string
-    to preserve full u128 precision over JSON.
-    provider_type: validator | rpc | tee | model | compute | storage |
-                   cloud | trainer | syncer
-    accelerators: classes pledged by a compute provider —
-                  integrated | consumer | workstation | datacentre
-    terabytes: whole terabytes pledged by a storage provider
-    cloud_tier: highest class offered by a cloud operator —
-                functions | databases | machines
-    """
-    return _rpc("tenzro_stake", {
-        "amount": str(amount_wei),
-        "provider_type": provider_type,
-        "accelerators": accelerators or [],
-        "terabytes": terabytes,
-        "cloud_tier": cloud_tier,
-    })
-
-
-def unstake_tokens(amount_wei: int) -> dict:
-    """Unstake TNZO tokens (initiates unbonding period).
-
-    amount_wei is sent as a decimal string to preserve full u128 precision.
-    """
-    return _rpc("tenzro_unstake", {"amount": str(amount_wei)})
-
-
-def register_provider(provider_type: str,
-                      accelerators: list[str] | None = None,
-                      terabytes: int | None = None,
-                      cloud_tier: str | None = None) -> dict:
-    """Register for a role on the network.
-
-    provider_type: validator | rpc | tee | model | compute | storage |
-                   cloud | trainer | syncer
-
-    Compute, storage and cloud bonds scale with the capacity pledged;
-    every other role takes the flat bond for its rung.
-    """
-    return _rpc("tenzro_registerProvider", {
-        "provider_type": provider_type,
-        "accelerators": accelerators or [],
-        "terabytes": terabytes,
-        "cloud_tier": cloud_tier,
-    })
-
+def role_stakes(address: str | None = None) -> dict:
+    """An account's stake per role and every role's network total."""
+    return _rpc("tenzro_getRoleStakes", {"address": address} if address else {})
 
 def provider_stats() -> dict:
     """Get provider statistics (served models, inferences, staking)."""
-    return _rpc("tenzro_providerStats")
-
+    return _rpc("tenzro_getProviderStats")
 
 # ── Additional Verification ──────────────────────────────────────
-
 
 def verify_transaction(tx_hash: str, sender_public_key: str,
                        signature: str) -> dict:
@@ -1905,7 +810,6 @@ def verify_transaction(tx_hash: str, sender_public_key: str,
         "signature": signature,
     })
 
-
 def verify_settlement(settlement_id: str, proof_type: str,
                       proof_data: str) -> dict:
     """Verify a settlement receipt via Web API."""
@@ -1914,7 +818,6 @@ def verify_settlement(settlement_id: str, proof_type: str,
         "proof_type": proof_type,
         "proof_data": proof_data,
     })
-
 
 def verify_inference(request_id: str, model_id: str,
                      result_hash: str) -> dict:
@@ -1925,631 +828,82 @@ def verify_inference(request_id: str, model_id: str,
         "result_hash": result_hash,
     })
 
-
 # ── NFT Collections ──────────────────────────────────────────────
 
-
-def create_nft_collection(name: str, symbol: str, creator: str,
-                          standard: str = "erc721") -> dict:
-    """Create a new NFT collection.
-
-    name: collection display name
-    symbol: short symbol (e.g. TNFT)
-    creator: address of the collection creator
-    standard: token standard — erc721 or erc1155
-    """
-    return _rpc("tenzro_createNftCollection", {
-        "name": name,
-        "symbol": symbol,
-        "creator": creator,
-        "standard": standard,
-    })
-
-
-def mint_nft(collection_id: str, to: str, token_id: str,
-             uri: str) -> dict:
-    """Mint a single NFT in a collection.
-
-    collection_id: the collection to mint into
-    to: recipient address
-    token_id: unique token ID within the collection
-    uri: metadata URI for the token
-    """
-    return _rpc("tenzro_mintNft", {
-        "collection_id": collection_id,
-        "to": to,
-        "token_id": token_id,
-        "uri": uri,
-    })
-
-
-def mint_nft_batch(collection_id: str, to: str, token_ids: list,
-                   uris: list) -> dict:
-    """Mint multiple NFTs in a single transaction.
-
-    collection_id: the collection to mint into
-    to: recipient address
-    token_ids: list of unique token IDs
-    uris: list of metadata URIs (must match token_ids length)
-    """
-    return _rpc("tenzro_mintNftBatch", {
-        "collection_id": collection_id,
-        "to": to,
-        "token_ids": token_ids,
-        "uris": uris,
-    })
-
-
-def transfer_nft(collection_id: str, from_addr: str, to: str,
-                 token_id: str) -> dict:
-    """Transfer an NFT to another address.
-
-    collection_id: the collection containing the token
-    from_addr: current owner address
-    to: recipient address
-    token_id: token ID to transfer
-    """
-    return _rpc("tenzro_transferNft", {
-        "collection_id": collection_id,
-        "from": from_addr,
-        "to": to,
-        "token_id": token_id,
-    })
-
-
-def get_nft_owner(collection_id: str, token_id: str) -> dict:
-    """Get the owner of a specific NFT."""
-    return _rpc("tenzro_nftOwnerOf", {
-        "collection_id": collection_id,
-        "token_id": token_id,
-    })
-
-
-def get_nft_balance(collection_id: str, address: str) -> dict:
-    """Get the number of NFTs an address owns in a collection."""
-    return _rpc("tenzro_nftBalanceOf", {
-        "collection_id": collection_id,
-        "address": address,
-    })
-
-
-def get_nft_collection(collection_id: str) -> dict:
-    """Get details of an NFT collection (name, symbol, total supply, standard)."""
-    return _rpc("tenzro_getNftCollection", {"collection_id": collection_id})
-
-
-def list_nft_collections(limit: int = 50) -> dict:
-    """List all NFT collections on the network."""
-    params = {}
-    if limit != 50:
-        params["limit"] = limit
-    return _rpc("tenzro_listNftCollections", params)
-
-
-# ── Bridge (Extended) ────────────────────────────────────────────
-
-
-def bridge_quote(from_chain: str, to_chain: str, token: str,
-                 amount: int, protocol: str | None = None) -> dict:
-    """Get a fee quote for bridging tokens between chains.
-
-    from_chain: source chain (tenzro, ethereum, solana, base, etc.)
-    to_chain: destination chain
-    token: token symbol (TNZO, USDC, etc.)
-    amount: amount in wei
-    protocol: optional bridge protocol (layerzero, ccip, debridge)
-    """
-    params = {
-        "from_chain": from_chain,
-        "to_chain": to_chain,
-        "token": token,
-        "amount": amount,
-    }
-    if protocol:
-        params["protocol"] = protocol
-    return _rpc("tenzro_bridgeQuote", params)
-
-
-def bridge_execute(from_chain: str, to_chain: str, token: str,
-                   amount: int, sender: str, recipient: str,
-                   protocol: str | None = None) -> dict:
-    """Execute a cross-chain token bridge transfer.
-
-    from_chain: source chain
-    to_chain: destination chain
-    token: token symbol
-    amount: amount in wei, sent as a decimal string to preserve u128 precision
-    sender: sender address on source chain
-    recipient: recipient address on destination chain
-    protocol: pin a specific bridge adapter; omit to let the router choose
-    """
-    params = {
-        "source_chain": from_chain,
-        "dest_chain": to_chain,
-        "asset": token,
-        "amount": str(amount),
-        "sender": sender,
-        "recipient": recipient,
-    }
-    if protocol:
-        params["protocol"] = protocol
-    return _rpc("tenzro_bridgeTokens", params)
-
-
-def bridge_status(transfer_id: str, protocol: str | None = None) -> dict:
-    """Check the status of a cross-chain bridge transfer.
-
-    transfer_id: the bridge transfer ID or tx hash
-    protocol: optional bridge protocol to query
-    """
-    params = {"transfer_id": transfer_id}
-    if protocol:
-        params["protocol"] = protocol
-    return _rpc("tenzro_bridgeStatus", params)
-
-
-def bridge_with_hook(from_chain: str, to_chain: str, token: str,
-                     amount: int, sender: str, hook_target: str,
-                     hook_calldata: str,
-                     revert_on_fail: bool = True) -> dict:
-    """Bridge tokens with a post-delivery hook (compose call on destination).
-
-    from_chain: source chain
-    to_chain: destination chain
-    token: token symbol
-    amount: amount in wei
-    sender: sender address
-    hook_target: contract address to call on destination after delivery
-    hook_calldata: hex-encoded calldata for the hook
-    revert_on_fail: if True, revert the bridge if the hook fails
-    """
-    return _rpc("tenzro_bridgeWithHook", {
-        "from_chain": from_chain,
-        "to_chain": to_chain,
-        "token": token,
-        "amount": amount,
-        "sender": sender,
-        "hook_target": hook_target,
-        "hook_calldata": hook_calldata,
-        "revert_on_fail": revert_on_fail,
-    })
-
-
-# ── deBridge Cross-Chain ────────────────────────────────────────
-
-
-def debridge_search_tokens(query, chain_id=None):
-    """Search for tokens on deBridge DLN."""
-    params = {"query": query}
-    if chain_id:
-        params["chain_id"] = int(chain_id)
-    return _rpc("tenzro_debridgeSearchTokens", params)
-
-
-def debridge_get_chains():
-    """List all chains supported by deBridge DLN."""
-    return _rpc("tenzro_debridgeGetChains", {})
-
-
-def debridge_get_instructions():
-    """Get deBridge operational instructions."""
-    return _rpc("tenzro_debridgeGetInstructions", {})
-
-
-def debridge_create_tx(src_chain, dst_chain, src_token, dst_token,
-                       amount, recipient):
-    """Create a cross-chain transaction via deBridge DLN."""
-    return _rpc("tenzro_debridgeCreateTx", {
-        "src_chain_id": int(src_chain),
-        "dst_chain_id": int(dst_chain),
-        "src_token": src_token,
-        "dst_token": dst_token,
-        "amount": amount,
-        "recipient": recipient,
-    })
-
-
-def debridge_same_chain_swap(chain_id, token_in, token_out, amount):
-    """Same-chain token swap via deBridge."""
-    return _rpc("tenzro_debridgeSameChainSwap", {
-        "chain_id": int(chain_id),
-        "token_in": token_in,
-        "token_out": token_out,
-        "amount": amount,
-    })
-
-
-# ── ERC-7802 Crosschain Token ───────────────────────────────────
-
-
-def crosschain_mint(bridge: str, adapter: str, source_chain: str,
-                    payload: str, to: str | None = None, amount: int | None = None) -> dict:
-    """Mint tokens via an authorized crosschain bridge (ERC-7802).
-
-    The node dispatches the payload through its bridge router for quorum
-    verification; the verified message inside is the sole authority for
-    recipient and amount.
-
-    bridge: authorized bridge address
-    adapter: bridge router adapter name (e.g. wormhole, hyperlane, axelar)
-    source_chain: chain the payload arrived from
-    payload: hex-encoded inbound bridge payload
-    to: expected recipient address (cross-check, optional)
-    amount: expected amount in wei (cross-check, optional)
-    """
-    params = {
-        "bridge": bridge,
-        "adapter": adapter,
-        "source_chain": source_chain,
-        "payload": payload,
-    }
-    if to is not None:
-        params["to"] = to
-    if amount is not None:
-        params["amount"] = amount
-    return _rpc("tenzro_crosschainMint", params)
-
-
-def crosschain_burn(bridge: str, from_addr: str, amount: int,
-                    destination: str) -> dict:
-    """Burn tokens for crosschain transfer (ERC-7802).
-
-    bridge: authorized bridge address
-    from_addr: address whose tokens are burned
-    amount: amount in wei to burn
-    destination: destination chain identifier or address
-    """
-    return _rpc("tenzro_crosschainBurn", {
-        "bridge": bridge,
-        "from": from_addr,
-        "amount": amount,
-        "destination": destination,
-    })
-
-
-def authorize_bridge(bridge: str, name: str,
-                     daily_mint_limit: int | None = None,
-                     daily_burn_limit: int | None = None) -> dict:
-    """Authorize a bridge for crosschain mint/burn operations (ERC-7802).
-
-    bridge: bridge contract address to authorize
-    name: human-readable bridge name
-    daily_mint_limit: optional daily mint cap in wei
-    daily_burn_limit: optional daily burn cap in wei
-    """
-    params = {
-        "bridge": bridge,
-        "name": name,
-    }
-    if daily_mint_limit is not None:
-        params["daily_mint_limit"] = daily_mint_limit
-    if daily_burn_limit is not None:
-        params["daily_burn_limit"] = daily_burn_limit
-    return _rpc("tenzro_authorizeBridge", params)
-
-
-def list_authorized_bridges() -> dict:
-    """List all authorized crosschain bridges (ERC-7802)."""
-    return _rpc("tenzro_listAuthorizedBridges")
-
-
-# ── Treasury Multisig Withdrawals ───────────────────────────────
-#
-# Withdrawer/threshold configuration requires the operator admin
-# token (TENZRO_ADMIN_TOKEN). Approval and execution are authorized
-# by the approver's signature over the domain-separated preimage
-# "tenzro/treasury/withdrawal-approval" || withdrawal_id || asset_id
-# || amount_le and the configured threshold.
-
-
-def treasury_add_withdrawer(address: str) -> dict:
-    """Authorize a treasury withdrawer address (admin token required).
-
-    address: withdrawer address (0x-prefixed hex)
-    """
-    return _rpc("tenzro_treasuryAddWithdrawer", {"address": address})
-
-
-def treasury_remove_withdrawer(address: str) -> dict:
-    """Remove an authorized treasury withdrawer (admin token required).
-
-    address: withdrawer address (0x-prefixed hex)
-    """
-    return _rpc("tenzro_treasuryRemoveWithdrawer", {"address": address})
-
-
-def treasury_set_withdrawal_threshold(threshold: int) -> dict:
-    """Set the treasury withdrawal approval threshold (admin token required).
-
-    threshold: distinct approvals required per withdrawal
-    """
-    return _rpc("tenzro_treasurySetWithdrawalThreshold",
-                {"threshold": threshold})
-
-
-def treasury_approve_withdrawal(withdrawal_id: str, asset_id: str,
-                                amount: str, approver: str,
-                                public_key: str, signature: str,
-                                key_type: str = "ed25519") -> dict:
-    """Approve a treasury withdrawal with a signed approval.
-
-    withdrawal_id: identifier shared by all approvers
-    asset_id: asset identifier (e.g. TNZO)
-    amount: amount in base units (decimal string)
-    approver: approver address (0x-prefixed hex, authorized withdrawer)
-    public_key: approver public key (hex)
-    signature: hex signature over the withdrawal-approval preimage
-    key_type: ed25519 (default) or secp256k1
-    """
-    return _rpc("tenzro_treasuryApproveWithdrawal", {
-        "withdrawal_id": withdrawal_id,
-        "asset_id": asset_id,
-        "amount": amount,
-        "approver": approver,
-        "key_type": key_type,
-        "public_key": public_key,
-        "signature": signature,
-    })
-
-
-def treasury_execute_withdrawal(withdrawal_id: str, asset_id: str,
-                                amount: str) -> dict:
-    """Execute a treasury withdrawal once the threshold is reached.
-
-    The (withdrawal_id, asset_id, amount) triple must match the
-    approved withdrawal exactly.
-    """
-    return _rpc("tenzro_treasuryExecuteWithdrawal", {
-        "withdrawal_id": withdrawal_id,
-        "asset_id": asset_id,
-        "amount": amount,
-    })
-
-
-def treasury_get_pending_withdrawal(withdrawal_id: str) -> dict:
-    """Get a pending treasury withdrawal's approval state.
-
-    Returns null when no pending withdrawal matches.
-    """
-    return _rpc("tenzro_treasuryGetPendingWithdrawal",
-                {"withdrawal_id": withdrawal_id})
+# ── Bridge (governed routes) ─────────────────────────────────────
+
+def list_bridge_routes() -> dict:
+    """List every governed bridge route with caps, epoch usage, supply and breaker state."""
+    return _rpc("tenzro_listBridgeRoutes", {})
+
+def get_bridge_route(adapter: str, source_chain: str) -> dict:
+    """Get one governed bridge route by transport (ccip, ibc, deposit or contract) and external chain."""
+    return _rpc("tenzro_getBridgeRoute", {"adapter": adapter, "source_chain": source_chain})
 
 
 # ── ERC-3643 Compliance ─────────────────────────────────────────
 
-
-def check_compliance(token_id: str, from_addr: str, to: str,
-                     amount: int) -> dict:
-    """Check if a transfer is compliant under ERC-3643 rules.
-
-    token_id: the regulated token ID or symbol
-    from_addr: sender address
-    to: recipient address
-    amount: transfer amount in wei
-    """
-    return _rpc("tenzro_checkCompliance", {
-        "token_id": token_id,
-        "from": from_addr,
-        "to": to,
-        "amount": amount,
-    })
-
-
-def register_compliance(token_id: str, require_kyc: bool = False,
-                        min_kyc_tier: int = 1,
-                        require_accreditation: bool = False,
-                        max_holders: int | None = None,
-                        max_transfer_amount: int | None = None) -> dict:
-    """Register compliance rules for a token (ERC-3643).
-
-    token_id: token to attach rules to
-    require_kyc: require KYC verification for holders
-    min_kyc_tier: minimum KYC tier (1-3) if require_kyc is True
-    require_accreditation: require accredited investor status
-    max_holders: optional cap on total token holders
-    max_transfer_amount: optional max single transfer amount in wei
-    """
-    params = {
-        "token_id": token_id,
-        "require_kyc": require_kyc,
-        "min_kyc_tier": min_kyc_tier,
-        "require_accreditation": require_accreditation,
-    }
-    if max_holders is not None:
-        params["max_holders"] = max_holders
-    if max_transfer_amount is not None:
-        params["max_transfer_amount"] = max_transfer_amount
-    return _rpc("tenzro_registerCompliance", params)
-
-
-def freeze_address(token_id: str, address: str,
-                   reason: str) -> dict:
-    """Freeze an address from transferring a regulated token (ERC-3643).
-
-    token_id: the regulated token ID
-    address: address to freeze
-    reason: reason for freezing (e.g. "sanctions", "investigation")
-    """
-    return _rpc("tenzro_freezeAddress", {
-        "token_id": token_id,
-        "address": address,
-        "reason": reason,
-    })
-
-
-def unfreeze_address(token_id: str, address: str) -> dict:
-    """Unfreeze a previously frozen address (ERC-3643).
-
-    token_id: the regulated token ID
-    address: address to unfreeze
-    """
-    return _rpc("tenzro_unfreezeAddress", {
-        "token_id": token_id,
-        "address": address,
-    })
-
-
-def recover_tokens(token_id: str, from_addr: str, to: str,
-                   amount: int, reason: str) -> dict:
-    """Recover tokens from an address (ERC-3643 forced transfer).
-
-    token_id: the regulated token ID
-    from_addr: address to recover from
-    to: address to send recovered tokens to
-    amount: amount in wei to recover
-    reason: regulatory reason for recovery
-    """
-    return _rpc("tenzro_recoverTokens", {
-        "token_id": token_id,
-        "from": from_addr,
-        "to": to,
-        "amount": amount,
-        "reason": reason,
-    })
-
-
-def add_identity_claim(address: str, topic: int, issuer: str,
-                       envelope: str, data: str = "",
-                       valid_from: str = "",
-                       valid_to: str = "") -> dict:
-    """Add an identity claim to an address for compliance verification.
-
-    address: the address to add the claim for
-    topic: numeric ERC-3643 claim topic
-    issuer: DID of the claim issuer (must be an active trusted issuer
-        registered for this topic; the envelope must be signed by this DID)
-    envelope: hex DID-envelope header signed by the issuer over the
-        canonical claim params, with method "tenzro_addIdentityClaim"
-    data: optional claim data payload
-    valid_from: optional ISO-8601 start time
-    valid_to: optional ISO-8601 expiry time
-
-    Every field is sent unconditionally because the envelope signature covers
-    the canonical params: omitting one here would sign a different preimage
-    than the node reconstructs.
-    """
-    return _rpc("tenzro_addIdentityClaim", {
-        "address": address,
-        "topic": topic,
-        "issuer": issuer,
-        "data": data,
-        "valid_from": valid_from,
-        "valid_to": valid_to,
-        "envelope": envelope,
-    })
-
-
-def add_trusted_issuer(issuer_did: str, name: str,
-                       topics: list) -> dict:
-    """Register a trusted claim issuer for compliance verification.
-
-    Operator-only: the node requires the admin token for this method.
-
-    issuer_did: DID of the trusted issuer
-    name: human-readable name of the issuer
-    topics: list of claim topics this issuer is trusted for
-        (empty list = unrestricted)
-    """
-    return _rpc("tenzro_addTrustedIssuer", {
-        "issuer_did": issuer_did,
-        "name": name,
-        "topics": topics,
-    })
-
-
-def list_trusted_issuers() -> dict:
-    """List registered trusted claim issuers."""
-    return _rpc("tenzro_listTrustedIssuers", {})
-
-
 # ── Events & Webhooks ────────────────────────────────────────────
 
+def get_events(filter: dict | None = None, from_cursor: str | None = None,
+               limit: int = 100, completeness: bool = False,
+               anchor_index: int | None = None) -> dict:
+    """Get the chain's events after a cursor, each with its proof.
 
-def get_events(filter: dict | None = None, from_sequence: int | None = None,
-               limit: int = 100) -> dict:
-    """Get events from the network event stream.
-
-    filter: optional filter dict (e.g. {"type": "transfer", "token": "TNZO"})
-    from_sequence: optional sequence number to resume from
+    filter: optional event filter (e.g. {"event_types": ["log"], "addresses": ["0x.."]})
+    from_cursor: optional cursor (height:tx_index:event_index) to resume after
     limit: max events to return (default 100)
+    completeness: also return the proof that the page left out nothing the
+        filter selects (block-index entries of every block it covered)
+    anchor_index: checkpoint every proof ends at (default: latest certified)
     """
-    params = {}
+    params: dict = {"limit": limit}
     if filter:
         params["filter"] = filter
-    if from_sequence is not None:
-        params["from_sequence"] = from_sequence
-    if limit != 100:
-        params["limit"] = limit
-    return _rpc("tenzro_getEvents", params)
+    if from_cursor:
+        params["from_cursor"] = from_cursor
+    if completeness:
+        params["completeness"] = True
+    if anchor_index is not None:
+        params["anchor_index"] = anchor_index
+    return _rpc("tenzro_queryEvents", params)
+
+
+# ── Beacon, DA retention, fee markets ─────────
+
+
+def get_beacon(round_: int | None = None, at_ms: int | None = None) -> dict:
+    """The randomness beacon's head, the value at `round_`, or the first
+    value at or after `at_ms`."""
+    params: dict = {}
+    if round_ is not None:
+        params["round"] = round_
+    if at_ms is not None:
+        params["at_ms"] = at_ms
+    return _rpc("tenzro_getBeacon", params)
+
+
+def get_da_object(commitment: str) -> dict:
+    """A data-availability object as chain state records it, with its expiry."""
+    return _rpc("tenzro_getDaObject", {"commitment": commitment})
+
+
+def get_da_retention() -> dict:
+    """Retention per class (audit never under 183 days), live and expired totals."""
+    return _rpc("tenzro_getDaRetention", {})
+
+
+def get_fee_market() -> dict:
+    """The base fee of every resource market: compute, state growth,
+    bandwidth, proof, each with its per-block target."""
+    return _rpc("tenzro_getFeeMarket", {})
 
 
 def get_event_status() -> dict:
     """Get the current event stream status (latest sequence, lag, etc.)."""
     return _rpc("tenzro_eventStatus")
 
-
-def register_webhook(url: str, owner_did: str, did_envelope: str,
-                     event_types: list | None = None,
-                     addresses: list | None = None,
-                     secret: str = "") -> dict:
-    """Register a webhook for real-time event delivery.
-
-    The node enforces: url must be `https://`; if `secret` is provided it
-    must be at least 16 characters. When `addresses` is non-empty, the
-    node only delivers events whose `addresses` array intersects this
-    list — use this for per-tenant / per-user webhook subscriptions.
-
-    url: HTTPS endpoint to receive POST callbacks
-    event_types: optional list of event type names to subscribe to
-        (e.g. ["transfer", "settlement"]); omit for all event types
-    addresses: optional list of addresses to filter by; omit for no
-        restriction
-    secret: optional HMAC-SHA256 secret (≥16 characters when provided)
-        for verifying webhook payload signatures
-    """
-    params = {"url": url, "owner_did": owner_did, "did_envelope": did_envelope}
-    if event_types:
-        params["event_types"] = event_types
-    if addresses:
-        params["addresses"] = addresses
-    if secret:
-        params["secret"] = secret
-    return _rpc("tenzro_registerWebhook", params)
-
-
-def list_webhooks(owner_did: str, did_envelope: str) -> dict:
-    """List the webhooks registered under one owner DID.
-
-    Scoped to one owner rather than the whole node: a webhook row carries
-    its delivery URL and the addresses its owner watches.
-
-    owner_did: the DID whose webhooks to list
-    did_envelope: hex envelope proving control of owner_did, bound to
-        method `tenzro_listWebhooks` with the DID string as the params hash
-    """
-    return _rpc("tenzro_listWebhooks", {
-        "owner_did": owner_did,
-        "did_envelope": did_envelope,
-    })
-
-
-def delete_webhook(webhook_id: str, did_envelope: str) -> dict:
-    """Delete a registered webhook.
-
-    webhook_id: the webhook ID to remove
-    did_envelope: hex envelope proving control of the owner_did recorded at
-        registration, bound to method `tenzro_deleteWebhook` with the webhook
-        id as the params hash. A webhook id comes back from every list call,
-        so it identifies the row and authorizes nothing.
-    """
-    return _rpc("tenzro_deleteWebhook", {
-        "webhook_id": webhook_id,
-        "did_envelope": did_envelope,
-    })
-
-
 # ── SLA Fault Detector ──────────────────────────────────────────
-
 
 def sla_issue_probe(provider_did: str, epoch: int, round_: int,
                     deadline_ms: int) -> dict:
@@ -2557,7 +911,7 @@ def sla_issue_probe(provider_did: str, epoch: int, round_: int,
 
     Validator-only. Computes a VRF output over (provider_did, epoch,
     round), registers the probe in the validator's outstanding-probe
-    map, and broadcasts it on the `tenzro/sla` gossipsub topic.
+    map, and broadcasts it on the `tenzro/sla` gossip topic.
 
     On a non-validator node this returns JSON-RPC error
     `-32000 SlaManager not initialized`.
@@ -2575,7 +929,6 @@ def sla_issue_probe(provider_did: str, epoch: int, round_: int,
         "deadline_ms": deadline_ms,
     })
 
-
 def sla_list_outstanding_probes() -> dict:
     """List every in-flight probe awaiting a response from any
     provider, regardless of issuer. Used by operators to spot probes
@@ -2584,149 +937,43 @@ def sla_list_outstanding_probes() -> dict:
     """
     return _rpc("tenzro_slaListOutstandingProbes")
 
-
 def sla_get_params() -> dict:
-    """Read the fault-detector parameters this validator is using.
+    """Read the SLA parameters.
 
     Returns:
-        - slash_threshold: number of missed probes before slashing
-          fires for a provider
-        - slash_amount_wei: per-crossing slash amount in wei (decimal
+        - unavailable_penalty_wei: what a frozen unavailable verdict takes
+          from the provider's compute bond into the insurance pool (decimal
           string)
         - vrf_pubkey: 0x-prefixed hex of this validator's VRF public
           key
     """
     return _rpc("tenzro_slaGetParams")
 
-
 # ── Snapshot (State Sync) ───────────────────────────────────────
 
-
 def list_snapshots() -> dict:
-    """List local snapshots (summary only, per-chunk hashes elided).
+    """List the snapshots this node holds and the iroh endpoint it serves
+    their data from. The data itself (anchor chain and state buckets) is
+    fetched over the node's iroh state-sync protocol, not over JSON-RPC.
 
-    Use `get_snapshot_manifest(height)` to fetch the full manifest
-    including per-chunk SHA-256 hashes needed for verification.
-
-    Returns: { "snapshots": [ {height, state_root_hex, num_chunks, ...} ] }
+    Returns: { "snapshots": [ {height, state_root, manifest_blob, buckets} ],
+    "endpoint_id" }
     """
     return _rpc("tenzro_listSnapshots")
 
-
 def get_snapshot_manifest(height: int) -> dict:
-    """Fetch the full manifest for the snapshot at `height`, including
-    per-chunk SHA-256 hashes.
+    """Fetch the manifest for the snapshot at `height`.
 
     Returns the node's JSON-RPC error `-32004 no snapshot at height` if
     no snapshot exists at that height.
 
-    Returns: SnapshotManifest with `height`, `state_root_hex`,
-    `num_chunks`, `chunk_hashes_hex[]`, `created_at`, `format`.
+    Returns: { "height", "state_root", "anchor_chain", "buckets": [...] }
     """
     return _rpc("tenzro_getSnapshotManifest", {"height": int(height)})
 
-
-def get_snapshot_chunk(height: int, chunk_index: int) -> dict:
-    """Fetch one chunk by (height, chunk_index). The returned `data_b64`
-    is the base64-encoded chunk bytes; verify against
-    `manifest.chunk_hashes_hex[chunk_index]` before applying.
-
-    Returns: { "height", "chunk_index", "data_b64" }
-    """
-    return _rpc("tenzro_getSnapshotChunk", {
-        "height": int(height),
-        "chunk_index": int(chunk_index),
-    })
-
-
-# `tenzro_offerSnapshot` and `tenzro_applySnapshotChunk` are gone from the
-# node's JSON-RPC surface. The manifest attested only to its own chunks and
-# nothing bound it to the chain, so reachable over RPC they were arbitrary
-# state replacement by an unauthenticated caller. The inbound half of
-# state-sync is driven in-process by the node's bootstrap path; the read half
-# above is what a syncing node calls on a serving one.
-
-
 # ── EIP-7702 (Set EOA Account Code) ─────────────────────────────
 
-
-def eip7702_signing_hash(chain_id: int, delegate_address: str,
-                         nonce: int) -> dict:
-    """Compute the secp256k1 signing hash for an EIP-7702 authorization
-    tuple (chain_id, delegate_address, nonce).
-
-    The returned `signing_hash` is what the EOA's secp256k1 private key
-    signs client-side. The full preimage is
-    `MAGIC(0x05) || rlp([chain_id, delegate_address, nonce])`.
-
-    Returns: { "signing_hash", "signing_data", "magic_byte": "0x05" }
-    """
-    return _rpc("tenzro_eip7702SigningHash", {
-        "chain_id": int(chain_id),
-        "delegate_address": delegate_address,
-        "nonce": int(nonce),
-    })
-
-
-def eip7702_build_designator(delegate_address: str) -> dict:
-    """Build the 23-byte EIP-7702 delegation designator
-    (`0xef0100 || delegate_address`) that gets written into the EOA's
-    code slot once an authorization is accepted.
-
-    Returns: { "designator", "length": 23, "prefix": "0xef0100",
-               "delegate_address" }
-    """
-    return _rpc("tenzro_eip7702BuildDesignator", {
-        "delegate_address": delegate_address,
-    })
-
-
-def eip7702_parse_designator(code: str) -> dict:
-    """Decode an account's `code` (hex with or without 0x prefix) and
-    extract the delegate address if it's a valid EIP-7702 designator.
-
-    Returns: { "is_designator": bool, "delegate_address": str | None }
-    """
-    return _rpc("tenzro_eip7702ParseDesignator", {"code": code})
-
-
-def eip7702_protocol_info() -> dict:
-    """Read static metadata about the EIP-7702 support surface (tx type,
-    magic byte, designator layout, signing scheme)."""
-    return _rpc("tenzro_eip7702ProtocolInfo")
-
-
 # ── Permit2 (SignatureTransfer) ─────────────────────────────────
-
-
-def permit2_domain_separator(chain_id: int) -> dict:
-    """Read the EIP-712 domain separator for the canonical Tenzro
-    Permit2 contract on `chain_id`."""
-    return _rpc("tenzro_permit2DomainSeparator", {"chain_id": int(chain_id)})
-
-
-def permit2_digest(chain_id: int, owner: str, token: str, amount: str,
-                   spender: str, nonce: str, deadline: int,
-                   witness: str | None = None,
-                   witness_type_string: str | None = None) -> dict:
-    """Compute the EIP-712 digest a user signs for a Permit2
-    SignatureTransfer. Optional witness binds the permit to a 32-byte
-    witness (used by ERC-7683 origin opens)."""
-    params = {
-        "chain_id": int(chain_id),
-        "owner": owner,
-        "token": token,
-        "amount": str(amount),
-        "spender": spender,
-        "nonce": str(nonce),
-        "deadline": int(deadline),
-    }
-    if witness:
-        params["witness"] = witness
-    if witness_type_string:
-        params["witness_type_string"] = witness_type_string
-    return _rpc("tenzro_permit2Digest", params)
-
 
 def permit2_verify_and_consume(chain_id: int, owner: str, token: str,
                                amount: str, spender: str, nonce: str,
@@ -2751,601 +998,26 @@ def permit2_verify_and_consume(chain_id: int, owner: str, token: str,
         params["witness_type_string"] = witness_type_string
     return _rpc("tenzro_permit2VerifyAndConsume", params)
 
-
 def permit2_nonce_used(owner: str, nonce: str) -> dict:
     """Check whether a (owner, nonce) slot has been consumed."""
     return _rpc("tenzro_permit2NonceUsed", {"owner": owner, "nonce": str(nonce)})
 
 
-# ── Secure-Mint Registry ────────────────────────────────────────
 
 
-def set_secure_mint_policy(token: str, asset_id: str, reserve: str,
-                           por_feed_id: str, attester_did: str,
-                           attestation_hash: str, attested_at: int,
-                           ttl_secs: int, circulating: str | None = None,
-                           heartbeat_secs: int | None = None,
-                           mint_window_cap: str | None = None,
-                           mint_window_secs: int | None = None,
-                           paused: bool = False) -> dict:
-    """Set or update a Secure-Mint policy for a tokenized RWA. Enforces
-    per-token 1:1 reserve attestation `circulating + amount ≤ reserve`.
-    `token` is the 20-byte token address (0x-hex, the policy key); `asset_id`
-    is the CAIP-19 reserve asset. Optional guards: `heartbeat_secs` (live-feed
-    gate), `mint_window_cap`/`mint_window_secs` (rolling velocity ceiling),
-    `paused` (install already tripped)."""
-    params = {
-        "token": token,
-        "asset_id": asset_id,
-        "reserve": str(reserve),
-        "por_feed_id": por_feed_id,
-        "attester_did": attester_did,
-        "attestation_hash": attestation_hash,
-        "attested_at": int(attested_at),
-        "ttl_secs": int(ttl_secs),
-        "paused": bool(paused),
-    }
-    if circulating is not None:
-        params["circulating"] = str(circulating)
-    if heartbeat_secs is not None:
-        params["heartbeat_secs"] = int(heartbeat_secs)
-    if mint_window_cap is not None:
-        params["mint_window_cap"] = str(mint_window_cap)
-    if mint_window_secs is not None:
-        params["mint_window_secs"] = int(mint_window_secs)
-    return _rpc("tenzro_setSecureMintPolicy", params)
 
 
-def get_secure_mint_policy(token: str) -> dict:
-    """Read the Secure-Mint policy for a token (20-byte 0x-hex address)."""
-    return _rpc("tenzro_getSecureMintPolicy", {"token": token})
-
-
-def clear_secure_mint_policy(token: str) -> dict:
-    """Clear the Secure-Mint policy for a token."""
-    return _rpc("tenzro_clearSecureMintPolicy", {"token": token})
-
-
-def secure_mint_check(token: str, amount: str) -> dict:
-    """Read-only invariant check for a proposed mint."""
-    return _rpc("tenzro_secureMintCheck",
-                {"token": token, "amount": str(amount)})
-
-
-def secure_mint_apply(token: str, amount: str) -> dict:
-    """Atomic check + circulating increment."""
-    return _rpc("tenzro_secureMintApply",
-                {"token": token, "amount": str(amount)})
-
-
-def secure_mint_record_burn(token: str, amount: str) -> dict:
-    """Record a redemption (decrement circulating)."""
-    return _rpc("tenzro_secureMintRecordBurn",
-                {"token": token, "amount": str(amount)})
-
-
-def set_secure_mint_paused(token: str, paused: bool) -> dict:
-    """Trip or clear the per-token issuance circuit breaker. Admin-gated."""
-    return _rpc("tenzro_setSecureMintPaused",
-                {"token": token, "paused": bool(paused)})
-
-
-def set_global_issuance_pause(paused: bool) -> dict:
-    """Trip or clear the global issuance circuit breaker, halting mint across
-    every token at once. Admin-gated."""
-    return _rpc("tenzro_setGlobalIssuancePause", {"paused": bool(paused)})
-
-
-def register_stable_asset(issuer: str, unit_token: str, symbol: str,
-                          reserve_source: dict, por_feed_id: str,
-                          allowed_rails: list, settlement_dst: str) -> dict:
-    """Register or replace an issuer's stable-asset policy (issuer-agnostic
-    stable-unit issuance on the Secure-Mint reserve floor). Needs the `issuer`
-    API-key scope. `reserve_source` is
-    {"kind": "custodial", "attester_did": ..., "asset_caip19": ...} or
-    {"kind": "on_chain_vault", "vault": ..., "asset_caip19": ...}."""
-    return _rpc("tenzro_registerStableAsset", {
-        "issuer": issuer,
-        "unit_token": unit_token,
-        "symbol": symbol,
-        "reserve_source": reserve_source,
-        "por_feed_id": por_feed_id,
-        "allowed_rails": list(allowed_rails),
-        "settlement_dst": settlement_dst,
-    })
-
-
-def get_stable_asset(issuer: str, unit_token: str) -> dict:
-    """Read an issuer's stable-asset policy."""
-    return _rpc("tenzro_getStableAsset",
-                {"issuer": issuer, "unit_token": unit_token})
-
-
-def mint_stable_asset(issuer: str, unit_token: str, amount: str) -> dict:
-    """Mint stable units, hard-gated by the Secure-Mint reserve floor."""
-    return _rpc("tenzro_mintStableAsset",
-                {"issuer": issuer, "unit_token": unit_token, "amount": str(amount)})
-
-
-def redeem_stable_asset(issuer: str, unit_token: str, amount: str) -> dict:
-    """Redeem (burn) stable units, decrementing circulating supply."""
-    return _rpc("tenzro_redeemStableAsset",
-                {"issuer": issuer, "unit_token": unit_token, "amount": str(amount)})
-
-
-# ── Hyperlane V3 (sovereign Tenzro-ISM) ─────────────────────────
-
-
-def hyperlane_list_chains() -> dict:
-    """List supported Hyperlane chains and their canonical domain ids."""
-    return _rpc("tenzro_hyperlaneListChains")
-
-
-def hyperlane_quote_dispatch(origin_domain: int, destination_domain: int,
-                             recipient: str, body_hex: str,
-                             sender: str | None = None,
-                             interchain_gas_payment: str | None = None) -> dict:
-    """Quote the interchain gas payment for a dispatch."""
-    params = {
-        "origin_domain": int(origin_domain),
-        "destination_domain": int(destination_domain),
-        "recipient": recipient,
-        "body_hex": body_hex,
-    }
-    if sender:
-        params["sender"] = sender
-    if interchain_gas_payment:
-        params["interchain_gas_payment"] = str(interchain_gas_payment)
-    return _rpc("tenzro_hyperlaneQuoteDispatch", params)
-
-
-def hyperlane_dispatch(origin_domain: int, destination_domain: int,
-                       recipient: str, body_hex: str,
-                       sender: str | None = None,
-                       interchain_gas_payment: str | None = None) -> dict:
-    """Dispatch a Hyperlane V3 message through the canonical Mailbox."""
-    params = {
-        "origin_domain": int(origin_domain),
-        "destination_domain": int(destination_domain),
-        "recipient": recipient,
-        "body_hex": body_hex,
-    }
-    if sender:
-        params["sender"] = sender
-    if interchain_gas_payment:
-        params["interchain_gas_payment"] = str(interchain_gas_payment)
-    return _rpc("tenzro_hyperlaneDispatch", params)
-
-
-def hyperlane_get_message(message_id: str) -> dict:
-    """Look up a Hyperlane message by id."""
-    return _rpc("tenzro_hyperlaneGetMessage", {"message_id": message_id})
-
-
-# ── Axelar GMP ──────────────────────────────────────────────────
-
-
-def axelar_list_chains() -> dict:
-    """List supported Axelar chains (EVM / Cosmos / Move / Stellar / XRPL)."""
-    return _rpc("tenzro_axelarListChains")
-
-
-def axelar_call_contract(source_chain: str, destination_chain: str,
-                         destination_address: str, payload_hex: str,
-                         gas_token: str | None = None,
-                         gas_amount: str | None = None) -> dict:
-    """Dispatch an Axelar `call_contract` GMP message."""
-    params = {
-        "source_chain": source_chain,
-        "destination_chain": destination_chain,
-        "destination_address": destination_address,
-        "payload_hex": payload_hex,
-    }
-    if gas_token:
-        params["gas_token"] = gas_token
-    if gas_amount:
-        params["gas_amount"] = str(gas_amount)
-    return _rpc("tenzro_axelarCallContract", params)
-
-
-def axelar_pay_gas(payload_hash: str, source_chain: str,
-                   destination_chain: str, destination_address: str,
-                   gas_token: str, gas_amount: str) -> dict:
-    """Pre-pay the Axelar Gas Service for an already-dispatched message."""
-    return _rpc("tenzro_axelarPayGas", {
-        "payload_hash": payload_hash,
-        "source_chain": source_chain,
-        "destination_chain": destination_chain,
-        "destination_address": destination_address,
-        "gas_token": gas_token,
-        "gas_amount": str(gas_amount),
-    })
-
-
-def axelar_get_message(payload_hash: str) -> dict:
-    """Look up an Axelar GMP message by payload hash."""
-    return _rpc("tenzro_axelarGetMessage", {"payload_hash": payload_hash})
-
-
-# ── Babylon Bitcoin Staking ─────────────────────────────────────
-
-
-def babylon_register_finality_provider(validator: str, btc_pk: str,
-                                       commission_bps: int) -> dict:
-    """Register a Tenzro validator as a Babylon finality provider."""
-    return _rpc("tenzro_babylonRegisterFinalityProvider", {
-        "validator": validator,
-        "btc_pk": btc_pk,
-        "commission_bps": int(commission_bps),
-    })
-
-
-def babylon_get_finality_provider(validator: str) -> dict:
-    """Read the Babylon finality-provider record for a Tenzro validator."""
-    return _rpc("tenzro_babylonGetFinalityProvider", {"validator": validator})
-
-
-def babylon_list_finality_providers() -> dict:
-    """List every registered Babylon finality provider."""
-    return _rpc("tenzro_babylonListFinalityProviders")
-
-
-def babylon_total_stake_for_provider(validator: str) -> dict:
-    """Sum BTC delegations for a finality provider."""
-    return _rpc("tenzro_babylonTotalStakeForProvider", {"validator": validator})
-
-
-def babylon_submit_finality_signature(validator: str, block_hash: str,
-                                      eots_signature: str) -> dict:
-    """Submit an EOTS over a Tenzro block hash."""
-    return _rpc("tenzro_babylonSubmitFinalitySignature", {
-        "validator": validator,
-        "block_hash": block_hash,
-        "eots_signature": eots_signature,
-    })
-
-
-def babylon_list_delegations(validator: str) -> dict:
-    """List BTC delegations for a finality provider."""
-    return _rpc("tenzro_babylonListDelegations", {"validator": validator})
 
 
 # ── CAIP discovery (ChainAgnostic/namespaces#184) ───────────────
 
-
-def caip2() -> dict:
-    """Get the CAIP-2 chain id for this node:
-    `tenzro:<lowercase hex of first 16 bytes of genesis block hash>`.
-    Returns includes EVM-compatible `evm_chain_id` sidecar."""
-    return _rpc("tenzro_caip2")
-
-
-def caip10(address: str) -> dict:
-    """Get the CAIP-10 account id for a Tenzro address.
-    Accepts hex or base58btc on input; normalises to canonical 64-hex."""
-    return _rpc("tenzro_caip10", {"address": address})
-
-
-def caip19(kind: str, token_id: str | None = None, collection_id: str | None = None,
-           nft_token_id: str | None = None) -> dict:
-    """Get the CAIP-19 asset id.
-    kind: 'slip44' (native TNZO, SLIP-44 coin index 1414421071),
-          'token' (Tenzro token registry id),
-          'nft' (collection id + nft_token_id).
-    """
-    params = {"kind": kind}
-    if token_id:
-        params["token_id"] = token_id
-    if collection_id:
-        params["collection_id"] = collection_id
-    if nft_token_id:
-        params["nft_token_id"] = nft_token_id
-    return _rpc("tenzro_caip19", params)
-
-
 # ── Tools Registry ──────────────────────────────────────────────
-
-
-def register_tool(name: str, description: str, endpoint: str,
-                  transport: str = "mcp", capabilities: list | None = None,
-                  category: str = "general", version: str = "1.0.0",
-                  creator_did: str | None = None) -> dict:
-    """Register a new tool (MCP server endpoint) in the Tools Registry.
-
-    name: tool name
-    description: tool description
-    endpoint: MCP server endpoint URL
-    transport: mcp | mcp-stdio | api | native (default mcp)
-    capabilities: list of capabilities (e.g. ["web-search", "code-execution"])
-    category: tool category (e.g. "search", "code", "data")
-    version: version string
-    creator_did: optional creator DID
-    """
-    params = {
-        "name": name,
-        "description": description,
-        "endpoint": endpoint,
-        "transport": transport,
-        "category": category,
-        "version": version,
-    }
-    if capabilities:
-        params["capabilities"] = capabilities
-    if creator_did:
-        params["creator_did"] = creator_did
-    return _rpc("tenzro_registerTool", [params])
-
-
-def list_tools(transport: str | None = None, category: str | None = None,
-               status: str | None = None, limit: int = 20) -> dict:
-    """List registered tools (MCP servers) on the network.
-
-    transport: optional filter — mcp | mcp-stdio | api | native
-    category: optional category filter
-    status: optional — active | inactive | available
-    limit: max tools to return (default 20)
-    """
-    params = {"limit": limit}
-    if transport:
-        params["transport"] = transport
-    if category:
-        params["category"] = category
-    if status:
-        params["status"] = status
-    return _rpc("tenzro_listTools", [params])
-
-
-def get_tool(tool_id: str) -> dict:
-    """Get details of a specific tool by ID."""
-    return _rpc("tenzro_getTool", [{"tool_id": tool_id}])
-
-
-def search_tools(query: str, limit: int = 10) -> dict:
-    """Search for tools by keyword."""
-    return _rpc("tenzro_searchTools", [{"query": query, "limit": limit}])
-
-
-def use_tool(tool_id: str, params: dict | None = None,
-             tool_name: str | None = None) -> dict:
-    """Invoke a tool via its MCP endpoint.
-
-    tool_id: tool ID to invoke
-    params: input parameters dict
-    tool_name: optional specific MCP tool name to call
-    """
-    call_params = {
-        "tool_id": tool_id,
-        "params": params or {},
-    }
-    if tool_name:
-        call_params["tool_name"] = tool_name
-    return _rpc("tenzro_useTool", [call_params])
-
-
-def update_tool(tool_id: str, description: str | None = None,
-                endpoint: str | None = None, version: str | None = None,
-                capabilities: list | None = None,
-                status: str | None = None) -> dict:
-    """Update an existing tool registration.
-
-    tool_id: tool to update
-    Only provided fields are updated.
-    """
-    params = {"tool_id": tool_id}
-    if description:
-        params["description"] = description
-    if endpoint:
-        params["endpoint"] = endpoint
-    if version:
-        params["version"] = version
-    if capabilities:
-        params["capabilities"] = capabilities
-    if status:
-        params["status"] = status
-    return _rpc("tenzro_updateTool", [params])
-
 
 # ── Skills Registry (Extended) ──────────────────────────────────
 
-
-def get_skill(skill_id: str) -> dict:
-    """Get details of a specific skill by ID."""
-    return _rpc("tenzro_getSkill", [{"skill_id": skill_id}])
-
-
-def update_skill(skill_id: str, description: str | None = None,
-                 version: str | None = None, price_per_call: int | None = None,
-                 tags: list | None = None, endpoint: str | None = None,
-                 status: str | None = None, category: str | None = None,
-                 creator_wallet: str | None = None,
-                 required_capabilities: list | None = None,
-                 bundle_uri: str | None = None, bundle_sha256: str | None = None,
-                 bundle_size: int | None = None,
-                 withdraw_bundle: bool = False) -> dict:
-    """Update an existing skill registration.
-
-    skill_id: skill to update
-    Only provided fields are updated.
-
-    Republishing an artifact (bundle triple) is a version bump, not a mutation
-    of the bytes a pinned caller already agreed to run: pins on the old digest
-    fail closed against the new row. Pass withdraw_bundle to drop the artifact.
-    """
-    params = {"skill_id": skill_id}
-    if description:
-        params["description"] = description
-    if version:
-        params["version"] = version
-    if price_per_call is not None:
-        params["price_per_call"] = str(price_per_call)
-    if tags:
-        params["tags"] = tags
-    if endpoint:
-        params["endpoint"] = endpoint
-    if status:
-        params["status"] = status
-    if category:
-        params["category"] = category
-    if creator_wallet:
-        params["creator_wallet"] = creator_wallet
-    if required_capabilities:
-        params["required_capabilities"] = required_capabilities
-    if withdraw_bundle:
-        params["bundle"] = None
-    elif bundle_uri and bundle_sha256 and bundle_size:
-        params["bundle"] = _skill_bundle(bundle_uri, bundle_sha256, bundle_size)
-    return _rpc("tenzro_updateSkill", [params])
-
-
-# ── Task Marketplace (Extended) ─────────────────────────────────
-
-
-def assign_task(task_id: str, provider: str, quoted_price_wei: int | None = None) -> dict:
-    """Assign a task to a specific provider/agent.
-
-    task_id: the task to assign
-    provider: provider address (hex) the task is assigned to
-    quoted_price_wei: optional — locks this price (as a decimal string)
-    on the task envelope; settled to the provider at `complete_task`.
-    Omit to settle at `max_price`.
-    """
-    params = {"task_id": task_id, "provider": provider}
-    if quoted_price_wei is not None:
-        params["quoted_price"] = str(quoted_price_wei)
-    return _rpc("tenzro_assignTask", [params])
-
-
-def complete_task(task_id: str, output: str) -> dict:
-    """Submit the output for a completed task.
-
-    task_id: the task being completed
-    output: result data or output text — the live RPC handler
-    reads `output` (not `result`); passing the wrong key silently
-    completes the task with an empty output and still settles funds.
-    """
-    return _rpc("tenzro_completeTask", [{"task_id": task_id, "output": output}])
-
-
-def update_task(task_id: str, status: str | None = None,
-                description: str | None = None, budget_wei: int | None = None) -> dict:
-    """Update an existing task.
-
-    task_id: task to update
-    Only provided fields are updated.
-    """
-    params = {"task_id": task_id}
-    if status:
-        params["status"] = status
-    if description:
-        params["description"] = description
-    if budget_wei is not None:
-        params["budget"] = budget_wei
-    return _rpc("tenzro_updateTask", [params])
-
-
 # ── Agent Template Marketplace (Extended) ───────────────────────
 
-
-def update_agent_template(template_id: str, description: str | None = None,
-                          system_prompt: str | None = None,
-                          capabilities: list | None = None,
-                          status: str | None = None) -> dict:
-    """Update an existing agent template.
-
-    template_id: template to update
-    Only provided fields are updated.
-    """
-    params = {"template_id": template_id}
-    if description:
-        params["description"] = description
-    if system_prompt:
-        params["system_prompt"] = system_prompt
-    if capabilities:
-        params["capabilities"] = capabilities
-    if status:
-        params["status"] = status
-    return _rpc("tenzro_updateAgentTemplate", [params])
-
-
-def run_agent_template(agent_id: str, max_iterations: int = 10,
-                       dry_run: bool = False) -> dict:
-    """Run an agent spawned from a template.
-
-    agent_id: the spawned agent ID to run
-    max_iterations: max execution iterations
-    dry_run: if True, simulate without side effects
-    """
-    return _rpc("tenzro_runAgentTemplate", {
-        "agent_id": agent_id,
-        "max_iterations": max_iterations,
-        "dry_run": dry_run,
-    })
-
-
-def download_agent_template(template_id: str) -> dict:
-    """Download an agent template's definition for local use.
-
-    template_id: the template to download
-    """
-    return _rpc("tenzro_downloadAgentTemplate", {"template_id": template_id})
-
-
-def spawn_agent_template(template_id: str, display_name: str,
-                         parent_machine_did: str | None = None) -> dict:
-    """Spawn a new agent from a template with identity and wallet provisioning.
-
-    template_id: the template to instantiate
-    display_name: display name for the spawned agent
-    parent_machine_did: optional parent machine DID. When set, the spawned
-        agent's effective delegation scope is the strict intersection of the
-        parent's scope and the template's spec — the child can never be
-        broader than its parent on any axis (numeric ceilings, allow-lists,
-        time bound).
-    """
-    params = {
-        "template_id": template_id,
-        "display_name": display_name,
-    }
-    if parent_machine_did:
-        params["parent_machine_did"] = parent_machine_did
-    return _rpc("tenzro_spawnAgentTemplate", params)
-
-
 # ── Agent Management (Extended) ────────────────────────────────
-
-
-def list_agents() -> dict:
-    """List all registered agents on the node."""
-    return _rpc("tenzro_listAgents")
-
-
-def send_agent_message(from_id: str, to_id: str, message: str) -> dict:
-    """Send a message between agents.
-
-    from_id: sender agent ID
-    to_id: recipient agent ID
-    message: message content
-    """
-    return _rpc("tenzro_sendAgentMessage", {
-        "from": from_id,
-        "to": to_id,
-        "message": message,
-    })
-
-
-def delegate_task(agent_id: str, task: str,
-                  target_agent: str | None = None) -> dict:
-    """Delegate a task to an agent or sub-agent.
-
-    agent_id: the agent doing the delegation
-    task: task description
-    target_agent: optional specific agent to delegate to
-    """
-    params = {"agent_id": agent_id, "task": task}
-    if target_agent:
-        params["target_agent"] = target_agent
-    return _rpc("tenzro_delegateTask", params)
-
 
 def discover_models(query: str | None = None, category: str | None = None) -> dict:
     """Discover AI models available on the network.
@@ -3360,215 +1032,41 @@ def discover_models(query: str | None = None, category: str | None = None) -> di
         params["category"] = category
     return _rpc("tenzro_discoverModels", params)
 
-
-def discover_agents(capability: str | None = None) -> dict:
-    """Discover agents available on the network.
-
-    capability: optional capability filter
-    """
-    params = {}
-    if capability:
-        params["capability"] = capability
-    return _rpc("tenzro_discoverAgents", params)
-
-
-def fund_agent(agent_id: str, amount_wei: int) -> dict:
-    """Fund an agent's wallet with TNZO.
-
-    agent_id: agent to fund
-    amount_wei: amount in wei (10^-18 TNZO), sent as decimal string
-    to preserve full u128 precision over JSON.
-    """
-    return _rpc("tenzro_fundAgent", {
-        "agent_id": agent_id,
-        "amount": str(amount_wei),
-    })
-
-
-def list_agent_jwks() -> dict:
-    """List the public JWK Set published by this node (RFC 7517 / RFC 9421
-    keyid resolution).
-
-    Each entry's `kid` is the canonical RFC 9421 keyid in the form
-    `<did>#<key_fragment>` and resolves directly via `get_agent_jwk`.
-    JSON-RPC mirror of `GET /.well-known/jwks.json`.
-    """
-    return _rpc("tenzro_listAgentJwks")
-
-
-def get_agent_jwk(keyid: str) -> dict:
-    """Look up a single JWK by `kid` (RFC 9421 keyid resolution).
-
-    keyid: typically `<did>#<key_fragment>`, or bare `did:tenzro:...`
-    to return the first compatible key.
-    """
-    return _rpc("tenzro_getAgentJwk", [keyid])
-
-
-def get_agent_daily_spend(agent_did: str) -> dict:
-    """Get the daily spend summary for a machine DID. Triggers a UTC-midnight
-    window reset if the wall-clock has rolled since the last recorded
-    transaction.
+def get_agent_terms(agent_did: str) -> dict:
+    """An agent's full consensus Terms, its root kind (passkey or machine),
+    status, and spend today and this hour against each limit.
 
     agent_did: the agent's DID
 
-    Returns `{agent_did, current_daily_spend, max_daily_spend, remaining,
-    last_reset}`.
+    Returns `{agent_did, root_kind, status, version, approval_digest,
+    updated_at_ms, terms, spent}`, or None when it has no Terms on chain.
     """
-    return _rpc("tenzro_getAgentDailySpend", {"agent_did": agent_did})
-
-
-def list_capabilities() -> dict:
-    """List every capability registered on this node, with how many
-    agents claim it and how many attestations back those claims.
-
-    This is the entry point for capability composition: call it first to
-    discover what specialized work the local agent runtime can route,
-    then narrow with `get_capability_attestations` or pick a worker with
-    `find_best_agent_for_capability`.
-
-    Returns `{capabilities: [{capability, agent_count,
-    attestation_count, agents}], total, truncated,
-    rejected_attestation_count}`. A non-zero `rejected_attestation_count`
-    means the registry has refused attestations since boot (signature
-    mismatch or malformed payload) and is worth investigating.
-    """
-    return _rpc("tenzro_listCapabilities", {})
-
-
-def get_capability_attestations(capability: str,
-                                 verified_only: bool = False) -> dict:
-    """Fetch every capability attestation registered on this node for
-    `capability`.
-
-    capability: short-form tag (`nlp`, `vision`, `code`, `data`,
-        `blockchain`, `smart_contract`, `api_integration`,
-        `coordination`) or any custom-capability name registered by
-        an agent.
-    verified_only: when True, the node re-runs query-time signature +
-        expiry checks before returning (defence in depth on top of
-        submit-time verification per #52).
-
-    Returns `{capability, verified_only, attestations: [...], total}`.
-    """
-    return _rpc("tenzro_getCapabilityAttestations", {
-        "capability": capability,
-        "verified_only": verified_only,
-    })
-
-
-def get_agent_capability_attestations(agent_id: str) -> dict:
-    """Fetch every capability attestation issued for a specific agent.
-
-    agent_id: the agent ID to look up
-
-    Returns `{agent_id, capabilities, attestations: [...],
-    total_attestations, registered_address}`.
-    """
-    return _rpc("tenzro_getAgentCapabilityAttestations", {
-        "agent_id": agent_id,
-    })
-
-
-def find_best_agent_for_capability(capability: str) -> dict:
-    """Pick the "best" agent on this node for `capability`. Selection
-    prefers the most recent TEE-backed attestation, falling back to any
-    agent that has registered the capability.
-
-    capability: short-form tag or custom-capability name.
-
-    Returns `{capability, best_agent, total_candidates}` where
-    `best_agent` is the chosen agent_id or None.
-    """
-    return _rpc("tenzro_findBestAgentForCapability", {
-        "capability": capability,
-    })
-
+    return _rpc("tenzro_getAgentTerms", {"agent_did": agent_did})
 
 # ── Identity (Extended) ─────────────────────────────────────────
 
-
-def import_identity(did: str, private_key: str,
-                    key_type: str = "ed25519") -> dict:
-    """Import an existing identity by DID and private key.
-
-    did: the DID to import
-    private_key: hex-encoded private key
-    key_type: ed25519 or secp256k1
-    """
-    return _rpc("tenzro_importIdentity", [{
-        "did": did,
-        "private_key": private_key,
-        "key_type": key_type,
-    }])
-
-
 def register_machine_identity(controller_did: str,
-                               capabilities: list | None = None,
-                               display_name: str | None = None) -> dict:
-    """Register a machine identity controlled by a human DID.
+                               public_key: str,
+                               capabilities: list,
+                               did_envelope: str) -> dict:
+    """Register a machine identity under a controller DID.
 
-    controller_did: the human DID that controls this machine
+    controller_did: the DID that controls this machine
+    public_key: the machine's P-256 public key (hex x || y) from its TPM or
+        Secure Enclave
     capabilities: list of machine capabilities
-    display_name: optional display name
+    did_envelope: the controller's DID envelope (hex) over exactly these
+        fields, made on the controller's own device (a Tenzro SDK's
+        withRequestEnvelope / with_request_envelope, or
+        `tenzro identity register-machine --request-out`); the node refuses a
+        machine registration its controller did not sign
     """
-    params = {"controller": controller_did, "identity_type": "machine"}
-    if capabilities:
-        params["capabilities"] = capabilities
-    if display_name:
-        params["display_name"] = display_name
-    return _rpc("tenzro_registerMachineIdentity", params)
-
-
-def add_service(did: str, service_type: str, endpoint: str,
-                envelope: str) -> dict:
-    """Add a service endpoint to a DID document.
-
-    did: the DID to add the service to
-    service_type: service type (e.g. "LinkedDomains", "MessagingService")
-    endpoint: service endpoint URL
-    envelope: hex DID-envelope header signed by the subject (or its
-        controller) over the canonical service params, with method
-        "tenzro_addService"
-    """
-    params = {
-        "did": did,
-        "type": service_type,
-        "endpoint": endpoint,
-        "envelope": envelope,
-    }
-    return _rpc("tenzro_addService", [params])
-
-
-def add_credential(did: str, credential_type: str, issuer: str,
-                   envelope: str, claims: dict | None = None,
-                   proof_value: str | None = None, proof_type: str | None = None) -> dict:
-    """Add a verifiable credential to an identity.
-
-    did: the DID to add the credential to
-    credential_type: credential type (e.g. "KycAttestation")
-    issuer: issuer DID (must be the subject, its controller, or an active
-        trusted issuer; the envelope must be signed by this DID)
-    envelope: hex DID-envelope header signed by the issuer over the
-        canonical credential params, with method "tenzro_addCredential"
-    claims: optional claims dict
-    proof_value: optional hex Ed25519 issuer signature over the canonical
-        credential-subject bytes (durable proof, verified server-side)
-    proof_type: optional proof type (default "Ed25519Signature2020")
-    """
-    params = {
-        "did": did,
-        "type": credential_type,
-        "issuer": issuer,
-        "envelope": envelope,
-    }
-    if claims:
-        params["claims"] = claims
-    if proof_value:
-        params["proof_value"] = proof_value
-        params["proof_type"] = proof_type or "Ed25519Signature2020"
-    return _rpc("tenzro_addCredential", [params])
-
+    return _rpc("tenzro_registerMachineIdentity", {
+        "controller_did": controller_did,
+        "public_key": public_key,
+        "capabilities": capabilities,
+        "did_envelope": did_envelope,
+    })
 
 def list_identities(identity_type: str | None = None) -> dict:
     """List all registered identities on the node.
@@ -3580,216 +1078,29 @@ def list_identities(identity_type: str | None = None) -> dict:
         params["identity_type"] = identity_type
     return _rpc("tenzro_listIdentities", [params])
 
-
-# ── Payments (Extended) ─────────────────────────────────────────
-
-
-def pay_mpp(url: str, payer_did: str | None = None, wallet: str | None = None,
-            max_amount: int | None = None) -> dict:
-    """Pay for a resource using the MPP (Machine Payments Protocol).
-
-    url: resource URL to pay for
-    payer_did: optional payer DID
-    wallet: optional wallet ID
-    max_amount: optional maximum amount willing to pay
-    """
-    params = {"url": url}
-    if payer_did:
-        params["payer_did"] = payer_did
-    if wallet:
-        params["wallet"] = wallet
-    if max_amount is not None:
-        params["max_amount"] = max_amount
-    return _rpc("tenzro_payMpp", [params])
-
-
-def pay_x402(url: str, payer_did: str | None = None, wallet: str | None = None,
-             max_amount: int | None = None) -> dict:
-    """Pay for a resource using x402 (HTTP 402 Payment Protocol).
-
-    url: resource URL to pay for
-    payer_did: optional payer DID
-    wallet: optional wallet ID
-    max_amount: optional maximum amount willing to pay
-    """
-    params = {"url": url}
-    if payer_did:
-        params["payer_did"] = payer_did
-    if wallet:
-        params["wallet"] = wallet
-    if max_amount is not None:
-        params["max_amount"] = max_amount
-    return _rpc("tenzro_payX402", [params])
-
-
-def payment_gateway_info() -> dict:
-    """Get payment gateway info (supported protocols, networks, assets)."""
-    return _rpc("tenzro_paymentGatewayInfo")
-
-
-def list_x402_schemes() -> dict:
-    """List the x402 scheme backends registered on the connected node.
-
-    Each scheme corresponds to a different verification path under the x402
-    protocol: 'tenzro-hybrid' (Ed25519 hybrid signature over canonical
-    preimage), 'exact-eip3009' (USDC EIP-3009 meta-transaction via the CDP
-    facilitator), 'permit2' (Uniswap Permit2 via the CDP facilitator), and
-    'erc7710' (delegation redemption). Use the returned ids in the
-    'extra.scheme' field of an x402 PaymentRequirement.
-
-    Returns:
-        dict with keys 'default' (str), 'schemes' (list of {id, description}),
-        and 'count' (int).
-    """
-    return _rpc("tenzro_listX402Schemes")
-
-
-# ── x402 Bazaar — resource discovery & monetization ───────────────
-
-
-def x402_protocol_info() -> dict:
-    """Return x402 Bazaar protocol metadata (schemes, networks, assets)."""
-    return _rpc("tenzro_x402ProtocolInfo", [])
-
-
-def x402_register_resource(seller_did: str, resource: str, pay_to: str,
-                           max_amount_required: str,
-                           scheme: str = "tenzro-hybrid",
-                           network: str = "tenzro", asset: str = "TNZO",
-                           description: str | None = None, mime_type: str | None = None,
-                           max_timeout_seconds: int | None = None,
-                           tags: list | None = None, extra: dict | None = None) -> dict:
-    """Register an HTTP-402 monetized resource on the x402 Bazaar.
-
-    scheme: tenzro-hybrid | exact-eip3009 | permit2 | erc7710
-    Returns {listingId}.
-    """
-    params = {
-        "sellerDid": seller_did,
-        "resource": resource,
-        "scheme": scheme,
-        "network": network,
-        "asset": asset,
-        "payTo": pay_to,
-        "maxAmountRequired": max_amount_required,
-    }
-    if description is not None:
-        params["description"] = description
-    if mime_type is not None:
-        params["mimeType"] = mime_type
-    if max_timeout_seconds is not None:
-        params["maxTimeoutSeconds"] = max_timeout_seconds
-    if tags is not None:
-        params["tags"] = tags
-    if extra is not None:
-        params["extra"] = extra
-    return _rpc("tenzro_x402RegisterResource", params)
-
-
-def x402_discover_resources(scheme: str | None = None, network: str | None = None,
-                            asset: str | None = None, seller_did: str | None = None,
-                            tags: list | None = None, limit: int | None = None) -> dict:
-    """Discover registered x402 resources, filtered by any of the fields.
-
-    Returns {listings, count}.
-    """
-    params = {}
-    if scheme is not None:
-        params["scheme"] = scheme
-    if network is not None:
-        params["network"] = network
-    if asset is not None:
-        params["asset"] = asset
-    if seller_did is not None:
-        params["sellerDid"] = seller_did
-    if tags is not None:
-        params["tags"] = tags
-    if limit is not None:
-        params["limit"] = limit
-    return _rpc("tenzro_x402DiscoverResources", params)
-
-
-def x402_deregister_resource(listing_id: str, seller_did: str) -> dict:
-    """Remove a resource listing owned by seller_did. Returns {removed}."""
-    return _rpc("tenzro_x402DeregisterResource", {
-        "listingId": listing_id,
-        "sellerDid": seller_did,
-    })
-
-
-def x402_verify_offer(requirement: dict) -> dict:
-    """Verify an x402 payment requirement's offer signature.
-
-    Returns {valid, offerCommitment, offerSigner}.
-    """
-    return _rpc("tenzro_x402VerifyOffer", {"requirement": requirement})
-
-
-def x402_payment_id(payer_did: str, requirement: dict | None = None,
-                    offer_commitment: str | None = None) -> dict:
-    """Derive the deterministic payment id for a payer + offer.
-
-    Provide either `requirement` or `offer_commitment`. Returns `pay_<hex>`.
-    """
-    params = {"payerDid": payer_did}
-    if requirement is not None:
-        params["requirement"] = requirement
-    if offer_commitment is not None:
-        params["offerCommitment"] = offer_commitment
-    return _rpc("tenzro_x402PaymentId", params)
-
-
-def list_payment_sessions(include_closed: bool = False) -> dict:
-    """List active MPP payment sessions.
-
-    include_closed: if True, include closed sessions
-    """
-    return _rpc("tenzro_listPaymentSessions", [{"include_closed": include_closed}])
-
-
-def get_payment_receipt(receipt_id: str) -> dict:
-    """Get details of a payment receipt.
-
-    receipt_id: the receipt ID to look up
-    """
-    return _rpc("tenzro_getPaymentReceipt", [receipt_id])
-
-
 # ── Network & Node (Extended) ──────────────────────────────────
-
 
 def peer_count() -> dict:
     """Get the number of connected peers."""
     return _rpc("tenzro_peerCount")
 
-
 def syncing() -> dict:
     """Get the sync status of the node."""
     return _rpc("tenzro_syncing")
-
 
 def get_hardware_profile() -> dict:
     """Get the hardware profile of the node (CPU, RAM, GPU, TEE)."""
     return _rpc("tenzro_getHardwareProfile")
 
-
-def list_accounts() -> dict:
-    """List all accounts/wallets on the node."""
-    return _rpc("tenzro_listAccounts")
-
-
 def get_finalized_block() -> dict:
     """Get the latest finalized block."""
     return _rpc("tenzro_getFinalizedBlock")
-
 
 def export_config() -> dict:
     """Export the node configuration."""
     return _rpc("tenzro_exportConfig")
 
-
 # ── Transaction (Extended) ─────────────────────────────────────
-
 
 def get_transaction(tx_hash: str) -> dict:
     """Get transaction details by hash.
@@ -3798,14 +1109,12 @@ def get_transaction(tx_hash: str) -> dict:
     """
     return _rpc("tenzro_getTransaction", {"hash": tx_hash})
 
-
 def get_nonce(address: str) -> dict:
     """Get the nonce (transaction count) for an address.
 
     address: 0x-prefixed hex address
     """
     return _rpc("tenzro_getNonce", {"address": address})
-
 
 def get_transaction_history(address: str, limit: int = 50) -> dict:
     """Get transaction history for an address.
@@ -3817,22 +1126,18 @@ def get_transaction_history(address: str, limit: int = 50) -> dict:
         "address": address, "limit": limit,
     })
 
-
 # ── Settlement (Extended) ──────────────────────────────────────
 
+def settle(payee: str, amount: str, payment: dict, app_id: str | None = None) -> dict:
+    """Settle on the ledger with the payer's own signed authorization.
 
-def settle(settlement_request: dict) -> dict:
-    """Submit a settlement request.
-
-    settlement_request: dict with service_type, provider, consumer, amount, proof
+    payment: {payer, payment_id, authorization}, the payer's PaymentAuthorization
+    naming ``payee`` and a ceiling of at least ``amount``.
     """
-    return _rpc("tenzro_settle", settlement_request)
-
-
-def get_settlement(settlement_id: str) -> dict:
-    """Get details of a settlement by ID."""
-    return _rpc("tenzro_getSettlement", {"settlement_id": settlement_id})
-
+    params = {"payee": payee, "amount": amount, "payment": payment}
+    if app_id is not None:
+        params["app_id"] = app_id
+    return _rpc("tenzro_settle", params)
 
 def _release_conditions_payload(kind: str) -> Any:
     """Map a short release-condition keyword to the on-chain ReleaseConditions enum payload."""
@@ -3845,147 +1150,34 @@ def _release_conditions_payload(kind: str) -> Any:
         return "ConsumerSignature"
     if k in ("both", "both_signatures"):
         return "BothSignatures"
-    if k in ("verifier", "verifier_signature"):
-        return "VerifierSignature"
     if k == "custom":
         return {"Custom": {"condition": ""}}
     raise ValueError(
-        f"unsupported release condition '{kind}': use timeout|provider|consumer|both|verifier|custom"
+        f"unsupported release condition '{kind}': use timeout|provider|consumer|both|custom"
     )
 
+def _read_quantity(what: str, method: str, params: Any) -> int:
+    """Read a hex quantity a transaction is signed over (nonce, chain id).
 
-def _fetch_nonce_and_chain_id(address: str) -> tuple:
-    """Best-effort nonce + chain_id lookup. Returns (0, 1337) on failure."""
+    Never substitutes a default: a failed call or an answer that is not a hex
+    quantity raises, since a transaction signed over a guessed value is
+    refused by the network.
+    """
     try:
-        nonce_hex = _rpc("eth_getTransactionCount", [address, "latest"])
-        nonce = int(nonce_hex.replace("0x", ""), 16) if isinstance(nonce_hex, str) else 0
-    except Exception:
-        nonce = 0
-    try:
-        chain_id_hex = _rpc("eth_chainId", [])
-        chain_id = int(chain_id_hex.replace("0x", ""), 16) if isinstance(chain_id_hex, str) else 1337
-    except Exception:
-        chain_id = 1337
-    return nonce, chain_id
-
-
-def create_escrow(payer: str, payee: str, amount_wei: int,
-                  asset_id: str = "TNZO", expires_at_ms: int = 0,
-                  release_conditions: str = "timeout") -> dict:
-    """Create an on-chain escrow via signed CreateEscrow transaction.
-
-    Uses ambient OAuth/DPoP auth (TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF
-    env vars) — the server looks up the wallet bound to the bearer DID
-    and signs on its behalf. The bearer's wallet address must equal `payer`.
-
-    The escrow_id is derived deterministically by the VM as
-    SHA-256("tenzro/escrow/id" || payer || nonce_le); funds are locked at a
-    vault address derived from that id. Only the original payer can release or
-    refund.
-
-    payer: payer address (must match the bearer's wallet)
-    payee: payee address (recipient on successful release)
-    amount_wei: amount to lock in escrow (smallest unit; 1 TNZO = 10^18 wei)
-    asset_id: asset identifier (default "TNZO")
-    expires_at_ms: unix timestamp in milliseconds when the escrow expires (0 = never)
-    release_conditions: one of timeout|provider|consumer|both|verifier|custom
-
-    Returns the JSON-RPC result of tenzro_signAndSendTransaction (typically a tx_hash).
-    """
-    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
-    tx_type = {
-        "CreateEscrow": {
-            "payee": payee,
-            "amount": str(amount_wei),
-            "asset_id": asset_id,
-            "expires_at": expires_at_ms,
-            "release_conditions": _release_conditions_payload(release_conditions),
-        }
-    }
-    params = {
-        "from": payer,
-        "to": payee,
-        "value": 0,
-        "gas_limit": 75000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-def release_escrow(payer: str, escrow_id_hex: str,
-                   proof_data_hex: str = "") -> dict:
-    """Release an escrow to the payee via signed ReleaseEscrow transaction.
-
-    Uses ambient OAuth/DPoP auth — the bearer JWT must belong to the
-    original payer; the VM rejects releases from any other address.
-
-    payer: payer address (must match the bearer's wallet)
-    escrow_id_hex: 32-byte escrow id (hex, with or without 0x)
-    proof_data_hex: optional proof bytes (hex)
-    """
-    escrow_id_bytes = list(bytes.fromhex(escrow_id_hex.replace("0x", "")))
-    if len(escrow_id_bytes) != 32:
-        raise ValueError(f"escrow_id must be 32 bytes, got {len(escrow_id_bytes)}")
-    proof_bytes = list(bytes.fromhex(proof_data_hex.replace("0x", ""))) if proof_data_hex else []
-
-    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
-    tx_type = {
-        "ReleaseEscrow": {
-            "escrow_id": escrow_id_bytes,
-            "proof": {
-                "proof_type": "Cryptographic",
-                "proof_data": proof_bytes,
-                "signatures": [],
-                "attestation": None,
-            },
-        }
-    }
-    params = {
-        "from": payer,
-        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "value": 0,
-        "gas_limit": 60000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-def refund_escrow(payer: str, escrow_id_hex: str) -> dict:
-    """Refund an escrow back to the payer via signed RefundEscrow transaction.
-
-    Uses ambient OAuth/DPoP auth. Only the original payer can submit this,
-    AND the escrow must be expired (or use Timeout/Custom release conditions).
-    """
-    escrow_id_bytes = list(bytes.fromhex(escrow_id_hex.replace("0x", "")))
-    if len(escrow_id_bytes) != 32:
-        raise ValueError(f"escrow_id must be 32 bytes, got {len(escrow_id_bytes)}")
-
-    nonce, chain_id = _fetch_nonce_and_chain_id(payer)
-    tx_type = {"RefundEscrow": {"escrow_id": escrow_id_bytes}}
-    params = {
-        "from": payer,
-        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "value": 0,
-        "gas_limit": 50000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
+        result = _rpc(method, params)
+    except Exception as e:
+        raise RuntimeError(f"could not read the {what} from {RPC_URL}: {e}") from e
+    if isinstance(result, str) and result.startswith("0x"):
+        try:
+            return int(result, 16)
+        except ValueError:
+            pass
+    raise RuntimeError(f"could not read the {what} from {RPC_URL}: {result!r}")
 
 def get_escrow(escrow_id_hex: str) -> dict:
     """Inspect an escrow record by its 32-byte id (hex)."""
     eid = escrow_id_hex if escrow_id_hex.startswith("0x") else "0x" + escrow_id_hex
     return _rpc("tenzro_getEscrow", {"escrow_id": eid})
-
 
 def open_payment_channel(party_a: str, party_b: str,
                          deposit_wei: int) -> dict:
@@ -4001,7 +1193,6 @@ def open_payment_channel(party_a: str, party_b: str,
         "deposit": deposit_wei,
     })
 
-
 def close_payment_channel(channel_id: str) -> dict:
     """Close a micropayment channel and settle on-chain.
 
@@ -4009,9 +1200,7 @@ def close_payment_channel(channel_id: str) -> dict:
     """
     return _rpc("tenzro_closePaymentChannel", {"channel_id": channel_id})
 
-
 # ── Model Management (Extended) ────────────────────────────────
-
 
 def inference_request(model_id: str, input_text: str,
                       max_tokens: int = 512,
@@ -4030,7 +1219,6 @@ def inference_request(model_id: str, input_text: str,
         "temperature": temperature,
     })
 
-
 def register_model_endpoint(model_id: str, api_url: str,
                             mcp_url: str | None = None) -> dict:
     """Register a model service endpoint.
@@ -4044,14 +1232,12 @@ def register_model_endpoint(model_id: str, api_url: str,
         params["mcp_url"] = mcp_url
     return _rpc("tenzro_registerModelEndpoint", params)
 
-
 def get_model_endpoint(instance_id: str) -> dict:
     """Get details of a specific model endpoint.
 
     instance_id: model instance/endpoint ID
     """
     return _rpc("tenzro_getModelEndpoint", {"instance_id": instance_id})
-
 
 def unregister_model_endpoint(instance_id: str) -> dict:
     """Unregister a model service endpoint.
@@ -4060,86 +1246,60 @@ def unregister_model_endpoint(instance_id: str) -> dict:
     """
     return _rpc("tenzro_unregisterModelEndpoint", {"instance_id": instance_id})
 
+def get_model_provenance(name_or_root: str, file: str | None = None) -> dict:
+    """Get a model's provenance.
 
-def download_model(model_id: str, source: str | None = None) -> dict:
-    """Download a model's weights.
+    name_or_root: a model name (a Hub repository such as ``owner/name``, or a
+        model id outside the catalog) or a manifest root (64-hex)
+    file: optional path in the model; each manifest then carries that
+        file's entry and Merkle inclusion proof
 
-    model_id: model to download
-    source: 'network' (verified network providers only), 'huggingface'
-        (HuggingFace only), or omit for network-first with HuggingFace fallback
-
-    Fetch is peer-first: weights are pulled from Tenzro peers over iroh blobs
-    (BLAKE3-verified on transfer), falling back to HuggingFace when
-    no peer holds them. Downloaded weights are checked against the canonical
-    hash record before load.
+    Returns the model's content-addressed manifests (per-file SHA-256 and
+    BLAKE3 under a BLAKE3 Merkle root), the origins that observed each one,
+    and whether independent origins agree (``verified``). Loads are checked
+    against the verified manifest.
     """
-    params = {"model_id": model_id}
-    if source:
-        params["source"] = source
-    return _rpc("tenzro_downloadModel", params)
+    is_root = len(name_or_root) == 64 and all(c in "0123456789abcdef" for c in name_or_root)
+    params: dict = {"root": name_or_root} if is_root else {"name": name_or_root}
+    if file:
+        params["file"] = file
+    return _rpc("tenzro_getModelProvenance", params)
 
+def submit_trust_record(record: dict) -> dict:
+    """Submit a signed trust record.
 
-def get_download_progress(model_id: str) -> dict:
-    """Get download progress for a model.
+    record: a credential, revocation, operator policy, model
+        manifest, origin attestation or policy-violation proof, signed by its
+        author's hardware key or passkey (a manifest is content-addressed)
 
-    model_id: model being downloaded
+    Every node re-verifies the record before storing it. Certifications and
+    KYC are issued this way by any issuer; relying parties choose which
+    issuers they recognise.
     """
-    return _rpc("tenzro_getDownloadProgress", {"model_id": model_id})
-
-
-def get_model_hash(model_id: str) -> dict:
-    """Get the content-addressed hash record for a model.
-
-    model_id: model to look up
-
-    Returns the canonical record a fetcher verifies weights against before
-    load: the BLAKE3 root, the SHA-256, and the per-file manifest hash.
-    """
-    return _rpc("tenzro_getModelHash", {"model_id": model_id})
-
-
-def list_model_hashes() -> dict:
-    """List every recorded model hash.
-
-    Returns the full set of content-addressed weight records known to this
-    node (count + one entry per model_id).
-    """
-    return _rpc("tenzro_listModelHashes", {})
-
-
-def record_model_hash(model_id: str, files: list) -> dict:
-    """Record the content-addressed hash for a model (first-recorder-wins).
-
-    model_id: model the record is for
-    files: per-file manifest entries (name + hash) the record binds
-
-    The first record for a model_id wins; a conflicting later record is
-    rejected. Use the admin override RPC to replace an existing record.
-    """
-    return _rpc("tenzro_recordModelHash", {"model_id": model_id, "files": files})
-
+    return _rpc("tenzro_submitTrustRecord", {"record": record})
 
 def serve_model(model_id: str, force_cluster: bool = False,
-                force_single: bool = False, visibility: str = "network") -> dict:
+                force_single: bool = False, visibility: str | None = None) -> dict:
     """Start serving a model for inference.
 
     model_id: model to serve
     force_cluster: split across the LAN cluster even when the model fits one host
     force_single: never form a cluster; serve single-host
-    visibility: "network" (default) gossips the model; "private" keeps it
-        local/LAN-only
+    visibility: "public", "gated" or "private" for this model; omitted, the
+        model follows the node's visibility
 
     When the model is too large for one host the node auto-clusters: it reads
     the GGUF header for shape, discovers LAN members from gossip, and runs a
     layer-wise pipeline across them. No options are required for that path.
     """
-    params = {"model_id": model_id, "visibility": visibility}
+    params = {"model_id": model_id}
+    if visibility is not None:
+        params["visibility"] = visibility
     if force_cluster:
         params["user_forced"] = True
     if force_single:
         params["force_single"] = True
     return _rpc("tenzro_serveModel", params)
-
 
 def stop_model(model_id: str) -> dict:
     """Stop serving a model.
@@ -4148,7 +1308,6 @@ def stop_model(model_id: str) -> dict:
     """
     return _rpc("tenzro_stopModel", {"model_id": model_id})
 
-
 def delete_model(model_id: str) -> dict:
     """Delete a downloaded model.
 
@@ -4156,180 +1315,25 @@ def delete_model(model_id: str) -> dict:
     """
     return _rpc("tenzro_deleteModel", {"model_id": model_id})
 
-
-# ── Token (Extended) ───────────────────────────────────────────
-
-
-def swap_token(from_token: str, to_token: str, amount: int,
-               sender: str) -> dict:
-    """Swap one token for another.
-
-    from_token: source token symbol or ID
-    to_token: destination token symbol or ID
-    amount: amount in smallest unit
-    sender: sender address
-    """
-    return _rpc("tenzro_swapToken", {
-        "from_token": from_token,
-        "to_token": to_token,
-        "amount": amount,
-        "sender": sender,
-    })
-
-
-def agent_pay_for_inference(agent_id: str, model_id: str,
-                            amount: int) -> dict:
-    """Execute the agent payment pipeline for inference.
-
-    agent_id: agent paying for inference
-    model_id: model to pay for
-    amount: payment amount in wei
-    """
-    return _rpc("tenzro_agentPayForInference", {
-        "agent_id": agent_id,
-        "model_id": model_id,
-        "amount": amount,
-    })
-
-
-def wrap_tnzo(address: str, amount: int, vm_type: str = "evm") -> dict:
-    """Wrap native TNZO to a VM representation (no-op in pointer model).
-
-    address: address wrapping TNZO
-    amount: amount in wei
-    vm_type: target VM — evm | svm | daml
-    """
-    return _rpc("tenzro_wrapTnzo", {
-        "address": address,
-        "amount": amount,
-        "vm_type": vm_type,
-    })
-
-
 # ── Governance ─────────────────────────────────────────────────
 
+def list_proposals(kind: str | None = None, limit: int = 20, before: int | None = None) -> dict:
+    """List on-chain governance proposals, newest first.
 
-def list_proposals() -> dict:
-    """List governance proposals."""
-    return _rpc("tenzro_listProposals")
-
-
-def create_proposal(title: str, description: str,
-                    proposal_type: str = "parameter_change",
-                    params: dict | None = None) -> dict:
-    """Create a governance proposal.
-
-    title: proposal title
-    description: proposal description
-    proposal_type: parameter_change | treasury_spend | protocol_upgrade
-    params: optional proposal-specific parameters
+    kind: keep one action kind, e.g. policy_update, parameter_change, treasury_grant
+    before: continue from a previous page's `next`
     """
-    p = {
-        "title": title,
-        "description": description,
-        "proposal_type": proposal_type,
-    }
-    if params:
-        p["params"] = params
-    return _rpc("tenzro_createProposal", p)
-
-
-def vote(proposal_id: str, vote_value: str, voter: str | None = None) -> dict:
-    """Vote on a governance proposal.
-
-    proposal_id: proposal to vote on
-    vote_value: for | against | abstain
-    voter: optional voter address
-    """
-    p = {"proposal_id": proposal_id, "vote": vote_value}
-    if voter:
-        p["voter"] = voter
-    return _rpc("tenzro_vote", p)
+    return _rpc("tenzro_listProposals", {"limit": limit, "before": before, "kind": kind})
 
 
 def get_voting_power(address: str) -> dict:
-    """Get the voting power for an address.
+    """Get the bonded stake an address votes with, and the network total.
 
     address: 0x-prefixed hex address
     """
     return _rpc("tenzro_getVotingPower", {"address": address})
 
-
-def delegate_voting_power(from_addr: str, to_addr: str) -> dict:
-    """Delegate voting power to another address.
-
-    from_addr: delegator address
-    to_addr: delegate address
-    """
-    return _rpc("tenzro_delegateVotingPower", {
-        "from": from_addr,
-        "to": to_addr,
-    })
-
-
-# ── Canton / DAML ──────────────────────────────────────────────
-
-
-def list_canton_domains() -> dict:
-    """List Canton synchronizer domains configured on this node.
-
-    Returns the `{enabled, domains, message?}` envelope. Check `enabled`
-    before treating `domains` as live.
-    """
-    return _rpc("tenzro_listCantonDomains")
-
-
-def list_daml_contracts(template_ids: list,
-                        query: dict | None = None) -> dict:
-    """Query active DAML contracts on the shared Canton domain.
-
-    The Canton v2 active-contracts endpoint requires at least one template
-    id — pass them as a list.
-
-    template_ids: list of DAML template ids (required, non-empty)
-    query: optional structural filter applied against `createArguments`
-    """
-    if not template_ids:
-        raise ValueError("template_ids must contain at least one DAML template id")
-    params = {"template_ids": list(template_ids)}
-    if query is not None:
-        params["query"] = query
-    return _rpc("tenzro_listDamlContracts", params)
-
-
-def submit_daml_create(template_id: str, create_arguments: dict) -> dict:
-    """Submit a DAML `create` command on the shared Canton domain.
-
-    template_id: DAML template id (e.g. "Tenzro.Workflow:WorkflowAnchor")
-    create_arguments: contract payload
-    """
-    return _rpc("tenzro_submitDamlCommand", {
-        "command_type": "create",
-        "template_id": template_id,
-        "create_arguments": create_arguments,
-    })
-
-
-def submit_daml_exercise(template_id: str, contract_id: str,
-                         choice: str, choice_argument: dict) -> dict:
-    """Submit a DAML `exercise` command on an existing contract.
-
-    template_id: DAML template id
-    contract_id: existing contract id
-    choice: choice name to exercise
-    choice_argument: argument payload for the choice
-    """
-    return _rpc("tenzro_submitDamlCommand", {
-        "command_type": "exercise",
-        "template_id": template_id,
-        "contract_id": contract_id,
-        "choice": choice,
-        "choice_argument": choice_argument,
-    })
-
-
 # ── Provider Management (Extended) ─────────────────────────────
-
 
 def set_role(role: str) -> dict:
     """Set the node role.
@@ -4338,20 +1342,6 @@ def set_role(role: str) -> dict:
     """
     return _rpc("tenzro_setRole", {"role": role})
 
-
-def set_provider_schedule(schedule: dict) -> dict:
-    """Set provider availability schedule.
-
-    schedule: dict with day/time availability windows
-    """
-    return _rpc("tenzro_setProviderSchedule", schedule)
-
-
-def get_provider_schedule() -> dict:
-    """Get the current provider schedule."""
-    return _rpc("tenzro_getProviderSchedule")
-
-
 def set_provider_pricing(pricing: dict) -> dict:
     """Set provider pricing configuration.
 
@@ -4359,27 +1349,25 @@ def set_provider_pricing(pricing: dict) -> dict:
     """
     return _rpc("tenzro_setProviderPricing", pricing)
 
-
 def get_provider_pricing() -> dict:
     """Get the current provider pricing configuration."""
     return _rpc("tenzro_getProviderPricing")
 
-
-def list_providers(provider_type: str | None = None) -> dict:
-    """List all providers discovered via gossipsub.
+def list_providers(provider_type: str | None = None, cursor: str | None = None) -> dict:
+    """One page of the providers discovered via gossip: {providers, next_cursor}.
 
     provider_type: optional filter — ai | tee | storage | compute |
-                   database | cloud | general. 'llm' is accepted as a
-                   legacy alias for 'ai'.
+                   database | cloud | general.
+    cursor: the next_cursor of the page before.
     """
     params = {}
     if provider_type:
         params["provider_type"] = provider_type
+    if cursor:
+        params["cursor"] = cursor
     return _rpc("tenzro_listProviders", params)
 
-
 # ── EVM Compatibility ──────────────────────────────────────────
-
 
 def eth_block_number() -> dict:
     """Get the current block number (EVM-compatible)."""
@@ -4388,7 +1376,6 @@ def eth_block_number() -> dict:
         return {"block_number": int(result, 16), "hex": result}
     return result
 
-
 def eth_get_balance(address: str, block: str = "latest") -> dict:
     """Get balance via EVM-compatible method.
 
@@ -4396,7 +1383,6 @@ def eth_get_balance(address: str, block: str = "latest") -> dict:
     block: block number or "latest"
     """
     return _rpc("eth_getBalance", [address, block])
-
 
 def eth_get_transaction_count(address: str,
                                block: str = "latest") -> dict:
@@ -4407,7 +1393,6 @@ def eth_get_transaction_count(address: str,
     """
     return _rpc("eth_getTransactionCount", [address, block])
 
-
 def eth_gas_price() -> dict:
     """Get the current effective gas price (base fee + suggested priority tip).
 
@@ -4415,7 +1400,6 @@ def eth_gas_price() -> dict:
     parent gas usage vs. the 15M target.
     """
     return _rpc("eth_gasPrice")
-
 
 def eth_max_priority_fee_per_gas() -> dict:
     """Get the suggested EIP-1559 priority fee (tip) in wei.
@@ -4425,7 +1409,6 @@ def eth_max_priority_fee_per_gas() -> dict:
     `baseFeePerGas` field.
     """
     return _rpc("eth_maxPriorityFeePerGas")
-
 
 def eth_fee_history(block_count: int = 10,
                     newest_block: str = "latest",
@@ -4444,14 +1427,12 @@ def eth_fee_history(block_count: int = 10,
     percentiles = reward_percentiles if reward_percentiles is not None else []
     return _rpc("eth_feeHistory", [hex(block_count), newest_block, percentiles])
 
-
 def eth_estimate_gas(tx: dict) -> dict:
     """Estimate gas for a transaction.
 
     tx: transaction object with from, to, value, data fields
     """
     return _rpc("eth_estimateGas", [tx])
-
 
 def eth_call(tx: dict, block: str = "latest") -> dict:
     """Execute a read-only contract call.
@@ -4461,7 +1442,6 @@ def eth_call(tx: dict, block: str = "latest") -> dict:
     """
     return _rpc("eth_call", [tx, block])
 
-
 def eth_get_code(address: str, block: str = "latest") -> dict:
     """Get the bytecode at an address.
 
@@ -4469,7 +1449,6 @@ def eth_get_code(address: str, block: str = "latest") -> dict:
     block: block number or "latest"
     """
     return _rpc("eth_getCode", [address, block])
-
 
 def eth_get_storage_at(address: str, position: str,
                        block: str = "latest") -> dict:
@@ -4481,7 +1460,6 @@ def eth_get_storage_at(address: str, position: str,
     """
     return _rpc("eth_getStorageAt", [address, position, block])
 
-
 def eth_get_logs(filter_obj: dict) -> dict:
     """Get logs matching a filter.
 
@@ -4489,14 +1467,12 @@ def eth_get_logs(filter_obj: dict) -> dict:
     """
     return _rpc("eth_getLogs", [filter_obj])
 
-
 def eth_get_transaction_receipt(tx_hash: str) -> dict:
     """Get a transaction receipt by hash.
 
     tx_hash: 0x-prefixed hex transaction hash
     """
     return _rpc("eth_getTransactionReceipt", [tx_hash])
-
 
 def eth_get_block_by_number(block: str = "latest",
                             full_txs: bool = False) -> dict:
@@ -4507,7 +1483,6 @@ def eth_get_block_by_number(block: str = "latest",
     """
     return _rpc("eth_getBlockByNumber", [block, full_txs])
 
-
 def eth_get_block_by_hash(block_hash: str,
                           full_txs: bool = False) -> dict:
     """Get a block by hash.
@@ -4516,7 +1491,6 @@ def eth_get_block_by_hash(block_hash: str,
     full_txs: if True, return full transaction objects
     """
     return _rpc("eth_getBlockByHash", [block_hash, full_txs])
-
 
 def eth_get_transaction_by_block_number_and_index(
         block: str, index: str) -> dict:
@@ -4527,550 +1501,31 @@ def eth_get_transaction_by_block_number_and_index(
     """
     return _rpc("eth_getTransactionByBlockNumberAndIndex", [block, index])
 
-
 def eth_syncing() -> dict:
     """Get the sync status (EVM-compatible)."""
     return _rpc("eth_syncing")
-
 
 def eth_accounts() -> dict:
     """List accounts (EVM-compatible). Returns empty list."""
     return _rpc("eth_accounts")
 
-
 def net_peer_count() -> dict:
     """Get peer count (EVM-compatible)."""
     return _rpc("net_peerCount")
-
 
 def net_version() -> dict:
     """Get network version (EVM-compatible)."""
     return _rpc("net_version")
 
-
 def net_listening() -> dict:
     """Check if node is listening for connections."""
     return _rpc("net_listening")
-
 
 # ══════════════════════════════════════════════════════════════════
 # Ecosystem MCP Tools
 # ══════════════════════════════════════════════════════════════════
 
-
-# ── Solana (via solana-mcp.tenzro.xyz) ────────────────────────
-
-
-def solana_swap(input_mint: str, output_mint: str, amount: int,
-                slippage_bps: int = 100) -> dict:
-    """Swap tokens on Solana via Jupiter aggregator.
-
-    input_mint: input token mint address
-    output_mint: output token mint address
-    amount: amount in smallest unit (lamports / token decimals)
-    slippage_bps: slippage tolerance in basis points (default 100 = 1%)
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_swap", {
-        "input_mint": input_mint,
-        "output_mint": output_mint,
-        "amount": amount,
-        "slippage_bps": slippage_bps,
-    })
-
-
-def solana_get_price(token_id: str) -> dict:
-    """Get token price on Solana.
-
-    token_id: token mint address or symbol
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_price", {
-        "token_id": token_id,
-    })
-
-
-def solana_stake(amount_sol: float, validator_address: str) -> dict:
-    """Stake SOL to a validator.
-
-    amount_sol: amount of SOL to stake
-    validator_address: validator vote account address
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_stake", {
-        "amount_sol": amount_sol,
-        "validator_address": validator_address,
-    })
-
-
-def solana_get_yield(protocol: str | None = None) -> dict:
-    """Get Solana staking/DeFi yield information.
-
-    protocol: optional protocol filter
-    """
-    params = {}
-    if protocol:
-        params["protocol"] = protocol
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_yield", params)
-
-
-def solana_get_balance(address: str) -> dict:
-    """Get SOL balance for an address.
-
-    address: Solana public key (base58)
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_balance", {
-        "address": address,
-    })
-
-
-def solana_get_token_accounts(owner_address: str) -> dict:
-    """Get all SPL token accounts for an owner.
-
-    owner_address: Solana public key (base58)
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_token_accounts", {
-        "owner_address": owner_address,
-    })
-
-
-def solana_transfer(from_addr: str, to_addr: str,
-                    amount_lamports: int) -> dict:
-    """Transfer SOL between addresses.
-
-    from_addr: sender public key
-    to_addr: recipient public key
-    amount_lamports: amount in lamports
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_transfer", {
-        "from": from_addr,
-        "to": to_addr,
-        "amount": amount_lamports,
-    })
-
-
-def solana_get_token_info(mint_address: str) -> dict:
-    """Get SPL token metadata by mint address.
-
-    mint_address: token mint address
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_token_info", {
-        "mint_address": mint_address,
-    })
-
-
-def solana_get_nft(mint_address: str) -> dict:
-    """Get NFT metadata via Metaplex DAS API.
-
-    mint_address: NFT mint address
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_nft", {
-        "mint_address": mint_address,
-    })
-
-
-def solana_get_nfts_by_owner(owner_address: str) -> dict:
-    """Get all NFTs owned by an address.
-
-    owner_address: Solana public key (base58)
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_nfts_by_owner", {
-        "owner_address": owner_address,
-    })
-
-
-def solana_get_slot() -> dict:
-    """Get the current Solana slot number."""
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_slot", {})
-
-
-def solana_get_tps() -> dict:
-    """Get current Solana transactions per second."""
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_tps", {})
-
-
-def solana_get_transaction(signature: str) -> dict:
-    """Get a Solana transaction by signature.
-
-    signature: transaction signature (base58)
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_get_transaction", {
-        "signature": signature,
-    })
-
-
-def solana_resolve_domain(domain: str) -> dict:
-    """Resolve a Bonfida SNS domain to a Solana address.
-
-    domain: SNS domain name (e.g. "tenzro.sol")
-    """
-    return _mcp_tool_call(SOLANA_MCP_URL, "solana_resolve_domain", {
-        "domain": domain,
-    })
-
-
-# ── Ethereum (via ethereum-mcp.tenzro.xyz) ───────────────────
-
-
-def eth_get_price_chainlink(feed_address: str | None = None) -> dict:
-    """Get token price from Chainlink data feeds.
-
-    feed_address: optional Chainlink feed address (defaults to ETH/USD)
-    """
-    params = {}
-    if feed_address:
-        params["feed_address"] = feed_address
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_price", params)
-
-
-def eth_get_gas_price_ext() -> dict:
-    """Get current Ethereum gas price from the network."""
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_gas_price", {})
-
-
-def eth_estimate_gas_ext(to: str, data: str | None = None,
-                         value: str | None = None) -> dict:
-    """Estimate gas for an Ethereum transaction.
-
-    to: recipient address
-    data: optional calldata (hex)
-    value: optional value in wei (hex)
-    """
-    params = {"to": to}
-    if data:
-        params["data"] = data
-    if value:
-        params["value"] = value
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_estimate_gas", params)
-
-
-def eth_get_fee_history(block_count: int = 10) -> dict:
-    """Get Ethereum fee history for recent blocks.
-
-    block_count: number of blocks to look back
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_fee_history", {
-        "block_count": block_count,
-    })
-
-
-def eth_get_erc20_balance(token_address: str,
-                          owner_address: str) -> dict:
-    """Get ERC-20 token balance for an address.
-
-    token_address: ERC-20 contract address
-    owner_address: wallet address to check
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_token_balance", {
-        "token_address": token_address,
-        "owner_address": owner_address,
-    })
-
-
-def eth_get_tx(tx_hash: str) -> dict:
-    """Get an Ethereum transaction by hash.
-
-    tx_hash: 0x-prefixed transaction hash
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_transaction", {
-        "tx_hash": tx_hash,
-    })
-
-
-def eth_get_block_info(block_number: str | None = None) -> dict:
-    """Get an Ethereum block by number.
-
-    block_number: block number (hex or decimal) or "latest"
-    """
-    params = {}
-    if block_number:
-        params["block_number"] = block_number
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_block", params)
-
-
-def eth_get_receipt(tx_hash: str) -> dict:
-    """Get an Ethereum transaction receipt.
-
-    tx_hash: 0x-prefixed transaction hash
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_transaction_receipt", {
-        "tx_hash": tx_hash,
-    })
-
-
-def eth_resolve_ens(name: str) -> dict:
-    """Resolve an ENS name to an Ethereum address.
-
-    name: ENS name (e.g. "vitalik.eth")
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_resolve_ens", {
-        "name": name,
-    })
-
-
-def eth_lookup_ens(address: str) -> dict:
-    """Reverse-lookup an ENS name from an Ethereum address.
-
-    address: 0x-prefixed Ethereum address
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_lookup_ens", {
-        "address": address,
-    })
-
-
-def eth_call_contract(to: str, data: str) -> dict:
-    """Execute a read-only contract call on Ethereum.
-
-    to: contract address
-    data: ABI-encoded calldata (hex)
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_call_contract", {
-        "to": to,
-        "data": data,
-    })
-
-
-def eth_encode_function(function_sig: str, args: list) -> dict:
-    """ABI-encode a function call.
-
-    function_sig: function signature (e.g. "transfer(address,uint256)")
-    args: list of argument values
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_encode_function", {
-        "function_sig": function_sig,
-        "args": args,
-    })
-
-
-def eth_register_agent_8004(agent_name: str, capabilities: list,
-                            metadata_uri: str) -> dict:
-    """Register an AI agent via ERC-8004.
-
-    agent_name: agent display name
-    capabilities: list of capability strings
-    metadata_uri: URI pointing to agent metadata
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_register_agent_8004", {
-        "agent_name": agent_name,
-        "capabilities": capabilities,
-        "metadata_uri": metadata_uri,
-    })
-
-
-def eth_lookup_agent_8004(agent_id: str) -> dict:
-    """Look up an AI agent registered via ERC-8004.
-
-    agent_id: on-chain agent ID
-    """
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_lookup_agent_8004", {
-        "agent_id": agent_id,
-    })
-
-
-def eth_get_attestation(schema_id: str, attester: str | None = None) -> dict:
-    """Get an EAS (Ethereum Attestation Service) attestation.
-
-    schema_id: attestation schema ID
-    attester: optional attester address filter
-    """
-    params = {"schema_id": schema_id}
-    if attester:
-        params["attester"] = attester
-    return _mcp_tool_call(ETHEREUM_MCP_URL, "eth_get_attestation", params)
-
-
-# ── LayerZero (via layerzero-mcp.tenzro.xyz) ─────────────────
-
-
-def lz_quote_fee(src_eid: int, dst_eid: int, message: str,
-                 options: str | None = None) -> dict:
-    """Quote LayerZero messaging fee via EndpointV2.quote().
-
-    src_eid: source chain endpoint ID
-    dst_eid: destination chain endpoint ID
-    message: message payload (hex)
-    options: optional TYPE_3 options (hex)
-    """
-    params = {
-        "src_eid": src_eid,
-        "dst_eid": dst_eid,
-        "message": message,
-    }
-    if options:
-        params["options"] = options
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_quote_fee", params)
-
-
-def lz_send_message(src_eid: int, dst_eid: int, receiver: str,
-                    message: str, options: str | None = None) -> dict:
-    """Build LayerZero EndpointV2.send() calldata.
-
-    src_eid: source chain endpoint ID
-    dst_eid: destination chain endpoint ID
-    receiver: recipient address (bytes32 hex)
-    message: message payload (hex)
-    options: optional TYPE_3 options (hex)
-    """
-    params = {
-        "src_eid": src_eid,
-        "dst_eid": dst_eid,
-        "receiver": receiver,
-        "message": message,
-    }
-    if options:
-        params["options"] = options
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_send_message", params)
-
-
-def lz_track_message(tx_hash: str) -> dict:
-    """Track a LayerZero message by source transaction hash.
-
-    tx_hash: 0x-prefixed transaction hash
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_track_message", {
-        "tx_hash": tx_hash,
-    })
-
-
-def lz_oft_quote(src_eid: int, dst_eid: int, amount: int,
-                 token: str | None = None) -> dict:
-    """Quote an OFT (Omnichain Fungible Token) transfer.
-
-    src_eid: source chain endpoint ID
-    dst_eid: destination chain endpoint ID
-    amount: amount in shared decimals
-    token: optional OFT contract address
-    """
-    params = {
-        "src_eid": src_eid,
-        "dst_eid": dst_eid,
-        "amount": amount,
-    }
-    if token:
-        params["token"] = token
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_oft_quote", params)
-
-
-def lz_oft_send(src_eid: int, dst_eid: int, amount: int,
-                recipient: str, token: str | None = None) -> dict:
-    """Build OFT send() calldata with auto fee quoting.
-
-    src_eid: source chain endpoint ID
-    dst_eid: destination chain endpoint ID
-    amount: amount in shared decimals (uint64)
-    recipient: recipient address (bytes32 hex)
-    token: optional OFT contract address
-    """
-    params = {
-        "src_eid": src_eid,
-        "dst_eid": dst_eid,
-        "amount": amount,
-        "recipient": recipient,
-    }
-    if token:
-        params["token"] = token
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_oft_send", params)
-
-
-def lz_list_chains() -> dict:
-    """List all LayerZero-supported chains with endpoint IDs."""
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_list_chains", {})
-
-
-def lz_get_chain_rpc(chain: str) -> dict:
-    """Get RPC URL for a LayerZero-supported chain.
-
-    chain: chain name or endpoint ID
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_get_chain_rpc", {
-        "chain": chain,
-    })
-
-
-def lz_list_dvns(chain: str | None = None) -> dict:
-    """List LayerZero DVNs (Decentralized Verifier Networks).
-
-    chain: optional chain filter
-    """
-    params = {}
-    if chain:
-        params["chain"] = chain
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_list_dvns", params)
-
-
-def lz_get_deployments(chain: str | None = None) -> dict:
-    """Get LayerZero contract deployments.
-
-    chain: optional chain filter
-    """
-    params = {}
-    if chain:
-        params["chain"] = chain
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_get_deployments", params)
-
-
-def lz_transfer_quote(src_chain: str, dst_chain: str, token: str,
-                      amount: int) -> dict:
-    """Get a unified cross-chain transfer quote (130+ chains).
-
-    src_chain: source chain name or ID
-    dst_chain: destination chain name or ID
-    token: token symbol or address
-    amount: transfer amount
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_transfer_quote", {
-        "src_chain": src_chain,
-        "dst_chain": dst_chain,
-        "token": token,
-        "amount": amount,
-    })
-
-
-def lz_transfer_build(quote_id: str) -> dict:
-    """Build signable transaction steps from a transfer quote.
-
-    quote_id: quote ID returned by lz_transfer_quote
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_transfer_build", {
-        "quote_id": quote_id,
-    })
-
-
-def lz_stargate_quote(src_chain: str, dst_chain: str, token: str,
-                      amount: int) -> dict:
-    """Quote a Stargate V2 native bridge transfer.
-
-    src_chain: source chain name
-    dst_chain: destination chain name
-    token: token symbol (ETH, USDC, USDT)
-    amount: amount to bridge
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_stargate_quote", {
-        "src_chain": src_chain,
-        "dst_chain": dst_chain,
-        "token": token,
-        "amount": amount,
-    })
-
-
-def lz_stargate_send(src_chain: str, dst_chain: str, token: str,
-                     amount: int, recipient: str) -> dict:
-    """Build Stargate V2 sendToken() calldata with auto fee.
-
-    src_chain: source chain name
-    dst_chain: destination chain name
-    token: token symbol (ETH, USDC, USDT)
-    amount: amount to bridge
-    recipient: recipient address
-    """
-    return _mcp_tool_call(LAYERZERO_MCP_URL, "lz_stargate_send", {
-        "src_chain": src_chain,
-        "dst_chain": dst_chain,
-        "token": token,
-        "amount": amount,
-        "recipient": recipient,
-    })
-
-
-# ── Chainlink (via chainlink-mcp.tenzro.xyz) ─────────────────
-
+# ── Chainlink (via chainlink-mcp.tenzro.com) ─────────────────
 
 def chainlink_get_price(pair: str = "ETH/USD") -> dict:
     """Get price from Chainlink AggregatorV3 data feed.
@@ -5081,7 +1536,6 @@ def chainlink_get_price(pair: str = "ETH/USD") -> dict:
         "pair": pair,
     })
 
-
 def chainlink_list_feeds(chain: str = "ethereum") -> dict:
     """List available Chainlink price feeds.
 
@@ -5090,55 +1544,6 @@ def chainlink_list_feeds(chain: str = "ethereum") -> dict:
     return _mcp_tool_call(CHAINLINK_MCP_URL, "chainlink_list_feeds", {
         "chain": chain,
     })
-
-
-def ccip_get_fee(src_chain: str, dst_chain: str,
-                 data_size: int = 0) -> dict:
-    """Get CCIP messaging fee via Router.getFee().
-
-    src_chain: source chain name
-    dst_chain: destination chain name
-    data_size: payload size in bytes
-    """
-    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_get_fee", {
-        "src_chain": src_chain,
-        "dst_chain": dst_chain,
-        "data_size": data_size,
-    })
-
-
-def ccip_send_message(src_chain: str, dst_chain: str,
-                      receiver: str, data: str) -> dict:
-    """Build CCIP Router.ccipSend() calldata.
-
-    src_chain: source chain name
-    dst_chain: destination chain name
-    receiver: recipient address
-    data: message payload (hex)
-    """
-    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_send_message", {
-        "src_chain": src_chain,
-        "dst_chain": dst_chain,
-        "receiver": receiver,
-        "data": data,
-    })
-
-
-def ccip_track_message(message_id: str) -> dict:
-    """Track a CCIP message by ID.
-
-    message_id: CCIP message ID
-    """
-    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_track_message", {
-        "message_id": message_id,
-    })
-
-
-def ccip_get_supported_chains() -> dict:
-    """List chains supported by Chainlink CCIP."""
-    return _mcp_tool_call(CHAINLINK_MCP_URL, "ccip_get_supported_chains",
-                          {})
-
 
 def vrf_request_random(num_words: int = 1) -> dict:
     """Build VRF v2.5 requestRandomWords() calldata.
@@ -5149,7 +1554,6 @@ def vrf_request_random(num_words: int = 1) -> dict:
         "num_words": num_words,
     })
 
-
 def vrf_get_subscription(sub_id: str) -> dict:
     """Get VRF subscription details.
 
@@ -5158,7 +1562,6 @@ def vrf_get_subscription(sub_id: str) -> dict:
     return _mcp_tool_call(CHAINLINK_MCP_URL, "vrf_get_subscription", {
         "sub_id": sub_id,
     })
-
 
 def ds_get_report(feed_id: str) -> dict:
     """Get a Chainlink Data Streams report.
@@ -5169,11 +1572,9 @@ def ds_get_report(feed_id: str) -> dict:
         "feed_id": feed_id,
     })
 
-
 def ds_list_feeds() -> dict:
     """List available Chainlink Data Streams feeds."""
     return _mcp_tool_call(CHAINLINK_MCP_URL, "ds_list_feeds", {})
-
 
 def por_get_reserve(feed_address: str) -> dict:
     """Get Proof of Reserve data from a Chainlink PoR feed.
@@ -5184,330 +1585,11 @@ def por_get_reserve(feed_address: str) -> dict:
         "feed_address": feed_address,
     })
 
-
 def por_list_feeds() -> dict:
     """List available Chainlink Proof of Reserve feeds."""
     return _mcp_tool_call(CHAINLINK_MCP_URL, "por_list_feeds", {})
 
-
-# ── Canton (via canton-mcp.tenzro.xyz) ────────────────────────
-
-
-def canton_submit_command(command_type: str, template_id: str,
-                          party: str, payload: dict | None = None) -> dict:
-    """Submit a DAML command via Canton JSON Ledger API v2.
-
-    command_type: create | exercise
-    template_id: DAML template ID
-    party: acting party
-    payload: command payload
-    """
-    params = {
-        "command_type": command_type,
-        "template_id": template_id,
-        "party": party,
-    }
-    if payload:
-        params["payload"] = payload
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_submit_command", params)
-
-
-def canton_list_contracts(party: str | None = None,
-                          template_id: str | None = None) -> dict:
-    """List active DAML contracts.
-
-    party: optional party filter
-    template_id: optional template filter
-    """
-    params = {}
-    if party:
-        params["party"] = party
-    if template_id:
-        params["template_id"] = template_id
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_contracts", params)
-
-
-def canton_get_events(contract_id: str) -> dict:
-    """Get events for a DAML contract.
-
-    contract_id: DAML contract ID
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_events", {
-        "contract_id": contract_id,
-    })
-
-
-def canton_get_transaction(tx_id: str) -> dict:
-    """Get a Canton transaction by ID.
-
-    tx_id: transaction ID
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_transaction", {
-        "tx_id": tx_id,
-    })
-
-
-def canton_allocate_party(party_name: str) -> dict:
-    """Allocate a new Canton party.
-
-    party_name: display name for the party
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_allocate_party", {
-        "party_name": party_name,
-    })
-
-
-def canton_list_parties() -> dict:
-    """List all Canton parties."""
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_parties", {})
-
-
-def canton_list_domains_ext() -> dict:
-    """List Canton synchronizer domains (via MCP)."""
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_list_domains", {})
-
-
-def canton_get_health() -> dict:
-    """Get Canton participant health status."""
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_health", {})
-
-
-def canton_get_balance_ext(party: str, token: str | None = None) -> dict:
-    """Get CIP-56 token balance on Canton.
-
-    party: Canton party identifier
-    token: optional token filter
-    """
-    params = {"party": party}
-    if token:
-        params["token"] = token
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_balance", params)
-
-
-def canton_transfer(from_party: str, to_party: str, amount: str,
-                    token: str = "TNZO") -> dict:
-    """Transfer tokens on Canton.
-
-    from_party: sender party
-    to_party: recipient party
-    amount: transfer amount (DAML Decimal string)
-    token: token symbol (default TNZO)
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_transfer", {
-        "from_party": from_party,
-        "to_party": to_party,
-        "amount": amount,
-        "token": token,
-    })
-
-
-def canton_create_asset(party: str, asset_type: str,
-                        amount: str) -> dict:
-    """Create a tokenized asset on Canton.
-
-    party: issuing party
-    asset_type: type of asset
-    amount: asset amount (DAML Decimal string)
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_create_asset", {
-        "party": party,
-        "asset_type": asset_type,
-        "amount": amount,
-    })
-
-
-def canton_dvp_settle(buyer: str, seller: str, asset_id: str,
-                      payment_amount: str) -> dict:
-    """Execute DvP (Delivery versus Payment) settlement on Canton.
-
-    buyer: buyer party
-    seller: seller party
-    asset_id: asset contract ID
-    payment_amount: payment amount (DAML Decimal string)
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_dvp_settle", {
-        "buyer": buyer,
-        "seller": seller,
-        "asset_id": asset_id,
-        "payment_amount": payment_amount,
-    })
-
-
-def canton_upload_dar(dar_path: str) -> dict:
-    """Upload a DAR (DAML Archive) to Canton.
-
-    dar_path: path or URL to the DAR file
-    """
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_upload_dar", {
-        "dar_path": dar_path,
-    })
-
-
-def canton_get_fee_schedule(domain: str | None = None) -> dict:
-    """Get Canton fee schedule for a synchronizer domain.
-
-    domain: optional domain ID
-    """
-    params = {}
-    if domain:
-        params["domain"] = domain
-    return _mcp_tool_call(CANTON_MCP_URL, "canton_get_fee_schedule",
-                          params)
-
-
-# ── Canton 3.5+ JSON Ledger API extension wrappers ────────────────
-
-
-def canton_health() -> dict:
-    """Combined health probe — `/livez`, `/readyz`, `/v2/version`.
-    Returns `{alive, ready, ready_detail, version}` where `version`
-    carries Canton CIP feature flags when reachable."""
-    return _rpc("tenzro_canton_health", {})
-
-
-def canton_version() -> dict:
-    """Returns participant version + CIP feature flags via
-    `GET /v2/version` (Canton 3.5+)."""
-    return _rpc("tenzro_canton_version", {})
-
-
-def canton_list_packages() -> dict:
-    """List every DAML package installed on the participant via
-    `GET /v2/packages`. Returns `{packageIds: [<hex>...]}`."""
-    return _rpc("tenzro_canton_listPackages", {})
-
-
-def canton_get_my_user() -> dict:
-    """Returns the OAuth principal's Canton user record via
-    `GET /v2/users/me` (CIP-26). Returns `{user: {id, primaryParty,
-    isDeactivated, metadata, identityProviderId}}`."""
-    return _rpc("tenzro_canton_getMyUser", {})
-
-
-def canton_coin_balance() -> dict:
-    """Returns the Canton Coin (CIP-56) balance for the participant's
-    party by summing every `Splice.Amulet:Amulet` contract the party
-    is a stakeholder on. Returns `{party, amulet_count,
-    total_initial_amount, token_standard:'CIP-56'}`."""
-    return _rpc("tenzro_canton_coinBalance", {})
-
-
-def canton_connected_synchronizers() -> dict:
-    """Returns the synchronizers the participant's party is currently
-    connected to via `GET /v2/state/connected-synchronizers`. Each
-    entry includes `synchronizerAlias`, `synchronizerId`, and
-    `permission` (SUBMISSION / CONFIRMATION / OBSERVATION)."""
-    return _rpc("tenzro_canton_connectedSynchronizers", {})
-
-
-def canton_upload_dar_rpc(dar_content_base64: str) -> dict:
-    """Upload a DAR via the JSON-RPC route (Canton 3.5+ JSON Ledger
-    API: POST /v2/packages). Pass base64-encoded DAR bytes; the node
-    decodes + forwards. Returns Canton's structured response."""
-    return _rpc("tenzro_canton_uploadDar",
-                {"dar_content_base64": dar_content_base64})
-
-
-def canton_fee_schedule_rpc() -> dict:
-    """Returns the participant's Canton fee schedule via the JSON-RPC
-    route (Canton 3.5+: latest `Splice.AmuletRules:AmuletRules`
-    contract). Different from canton_get_fee_schedule (MCP-routed),
-    which proxies to the canton MCP server."""
-    return _rpc("tenzro_canton_feeSchedule", {})
-
-
-def canton_get_transaction_rpc(update_id: str) -> dict:
-    """Fetch a Canton transaction tree by hex update id via JSON-RPC.
-    Different from canton_get_transaction (MCP-routed) — Canton 3.5+
-    requires the update id to be a hex string."""
-    return _rpc("tenzro_canton_getTransaction", {"update_id": update_id})
-
-
-def canton_allocate_party_rpc(party_id_hint: str,
-                              display_name: str | None = None) -> dict:
-    """Allocate a new Canton party via the JSON-RPC route
-    (`POST /v2/parties`). Returns the fully-qualified party id
-    `<hint>::<participant-hash>`. The newly-allocated party has no
-    CanActAs / CanReadAs grants on any user by default — follow up
-    with `canton_grant_user_rights` so the bound tenant user can
-    submit DAML commands on behalf of the party."""
-    params: dict = {"party_id_hint": party_id_hint}
-    if display_name is not None:
-        params["display_name"] = display_name
-    return _rpc("tenzro_allocateParty", params)
-
-
-def canton_grant_user_rights(party: str,
-                             user_id: str | None = None,
-                             can_act_as: bool = True,
-                             can_read_as: bool = False) -> dict:
-    """Grant CanActAs / CanReadAs rights on a Canton party to a user
-    via the Canton 3.5+ User Management Service (CIP-26,
-    `POST /v2/users/{userId}/rights`). The `party` argument must be
-    the fully-qualified party id. Pass `user_id=None` to grant to the
-    calling principal's own Canton user.
-
-    This is the second step in the per-tenant provisioning flow:
-    allocate party → grant rights → submit commands."""
-    params: dict = {
-        "party": party,
-        "can_act_as": can_act_as,
-        "can_read_as": can_read_as,
-    }
-    if user_id is not None:
-        params["user_id"] = user_id
-    return _rpc("tenzro_canton_grantUserRights", params)
-
-
-def canton_list_user_rights(user_id: str | None = None) -> dict:
-    """List the rights granted to a Canton user via
-    `GET /v2/users/{userId}/rights`. Returns
-    `{rights: [{kind: {CanActAs: {value: {party}}}}, ...]}`. Pass
-    `user_id=None` to list rights for the OAuth principal's own user."""
-    params: dict = {}
-    if user_id is not None:
-        params["user_id"] = user_id
-    return _rpc("tenzro_canton_listUserRights", params)
-
-
-def canton_get_my_analytics() -> dict:
-    """Subject self-read: returns this tenant's Canton call aggregates
-    for the API key configured on this client. Counters are
-    maintained server-side in RocksDB (`CF_CANTON_ANALYTICS`) — every
-    canton-scoped JSON-RPC call increments calls_total (or
-    errors_total) plus the corresponding per-method bucket.
-
-    Returns `{key_id, canton_user_id, calls_total, errors_total,
-    calls_by_method, errors_by_method, first_seen_at,
-    last_called_at}`."""
-    return _rpc("tenzro_canton_getMyAnalytics", {})
-
-
-def canton_list_api_key_analytics(key_id: str | None = None) -> dict:
-    """Operator admin-read: returns per-tenant Canton call aggregates
-    for every API key (or just one when `key_id` is set). Requires
-    the operator admin token at the node level. Rows are sorted by
-    `last_called_at` descending."""
-    params: dict = {}
-    if key_id is not None:
-        params["key_id"] = key_id
-    return _rpc("tenzro_canton_listApiKeyAnalytics", params)
-
-
 # ── Crypto ────────────────────────────────────────────────────────
-
-
-def sign_message(message_hex: str) -> dict:
-    """Sign a message with the auth-bound wallet (FROST-Ed25519 + ML-DSA-65 hybrid).
-
-    The signer is resolved from the bearer DID via OAuth/DPoP; raw private
-    keys never travel over the wire. Returns the hybrid signature (classical
-    leg + post-quantum leg).
-    """
-    return _rpc("tenzro_signMessage", {
-        "message_hex": message_hex,
-    })
-
 
 def verify_signature(public_key: str, message_hex: str,
                      signature_hex: str) -> dict:
@@ -5518,309 +1600,65 @@ def verify_signature(public_key: str, message_hex: str,
         "signature_hex": signature_hex,
     })
 
-
-def encrypt_data(key_hex: str, plaintext_hex: str) -> dict:
-    """Encrypt data with AES-256-GCM. Returns ciphertext + nonce."""
-    return _rpc("tenzro_encrypt", {
-        "key_hex": key_hex,
-        "plaintext_hex": plaintext_hex,
-    })
-
-
-def decrypt_data(key_hex: str, ciphertext_hex: str,
-                 nonce_hex: str) -> dict:
-    """Decrypt AES-256-GCM ciphertext with key and nonce."""
-    return _rpc("tenzro_decrypt", {
-        "key_hex": key_hex,
-        "ciphertext_hex": ciphertext_hex,
-        "nonce_hex": nonce_hex,
-    })
-
-
-def derive_key(password: str) -> dict:
-    """Derive a 256-bit key from a password using Argon2id."""
-    return _rpc("tenzro_deriveKey", {"password": password})
-
-
-def generate_keypair(key_type: str = "ed25519") -> dict:
-    """Generate a new cryptographic keypair (Ed25519 or Secp256k1)."""
-    return _rpc("tenzro_generateKeypair", {"key_type": key_type})
-
-
-def hash_sha256(data_hex: str) -> dict:
-    """Compute SHA-256 hash of hex-encoded data."""
-    return _rpc("tenzro_hashSha256", {"data_hex": data_hex})
-
-
-def hash_keccak256(data_hex: str) -> dict:
-    """Compute Keccak-256 hash of hex-encoded data."""
-    return _rpc("tenzro_hashKeccak256", {"data_hex": data_hex})
-
-
-def x25519_key_exchange(private_key_hex: str,
-                        public_key_hex: str) -> dict:
-    """Perform X25519 Diffie-Hellman key exchange."""
-    return _rpc("tenzro_x25519KeyExchange", {
-        "private_key_hex": private_key_hex,
-        "public_key_hex": public_key_hex,
-    })
-
-
 # ── TEE ──────────────────────────────────────────────────────────
-
 
 def detect_tee() -> dict:
     """Detect available TEE hardware on this node."""
     return _rpc("tenzro_detectTee", {})
-
 
 def get_tee_attestation(tee_type: str | None = None) -> dict:
     """Generate a TEE attestation report."""
     params = {}
     if tee_type:
         params["tee_type"] = tee_type
-    return _rpc("tenzro_getAttestation", params)
-
-
-def seal_data(data_hex: str, key_id: str) -> dict:
-    """Seal (encrypt) data within the TEE enclave."""
-    return _rpc("tenzro_sealData", {
-        "data_hex": data_hex,
-        "key_id": key_id,
-    })
-
-
-def unseal_data(sealed_hex: str, key_id: str) -> dict:
-    """Unseal (decrypt) TEE-sealed data."""
-    return _rpc("tenzro_unsealData", {
-        "sealed_hex": sealed_hex,
-        "key_id": key_id,
-    })
-
+    return _rpc("tenzro_getTeeAttestation", params)
 
 def list_tee_providers() -> dict:
     """List all registered TEE providers on the network."""
     return _rpc("tenzro_listTeeProviders", {})
 
-
 # ── ZK ───────────────────────────────────────────────────────────
-
 
 def create_zk_proof(circuit_id: str, witness: dict) -> dict:
     """Create a Plonky3 STARK proof over KoalaBear.
 
-    circuit_id: one of "inference", "settlement", "identity"
-    witness: circuit-specific witness fields (numeric values), e.g.
-        - inference: {model_checksum, input_checksum, computed_output}
-        - settlement: {payer_balance, service_proof, nonce, prev_nonce, amount}
-        - identity: {private_key, capabilities, capability_blinding,
-                     actual_reputation, minimum_reputation}
+    circuit_id: "settlement" (an identity proof is made by the key holder,
+    never by a node)
+    witness: {"witness": 32-byte hex service result, "binding": 32-byte hex
+    request binding}
     """
     params = {"circuit_id": circuit_id, **witness}
     return _rpc("tenzro_createZkProof", params)
-
 
 def list_zk_circuits() -> dict:
     """List all available ZK circuits."""
     return _rpc("tenzro_listCircuits", {})
 
-
-# ── Custody ──────────────────────────────────────────────────────
-
-
-def create_mpc_wallet_advanced(threshold: int = 2,
-                               total_shares: int = 3,
-                               key_type: str = "ed25519") -> dict:
-    """Create a FROST-Ed25519 (RFC 9591) threshold wallet with custom config.
-
-    Pairs the FROST-Ed25519 classical leg with a mandatory ML-DSA-65
-    post-quantum signing key for hybrid signatures. `key_type` is `ed25519`
-    (default) or `secp256k1`; any other value is rejected with `-32602`.
-    """
-    return _rpc("tenzro_createMpcWallet", {
-        "threshold": threshold,
-        "total_shares": total_shares,
-        "key_type": key_type,
-    })
-
-
-def export_keystore(wallet_id: str, password: str) -> dict:
-    """Export a wallet as an encrypted keystore JSON."""
-    return _rpc("tenzro_exportKeystore", {
-        "wallet_id": wallet_id,
-        "password": password,
-    })
-
-
-def import_keystore(keystore_json: str, password: str) -> dict:
-    """Import a wallet from an encrypted keystore JSON."""
-    return _rpc("tenzro_importKeystore", {
-        "keystore_json": keystore_json,
-        "password": password,
-    })
-
-
-def get_key_shares(wallet_id: str) -> dict:
-    """Get key share metadata for an MPC wallet."""
-    return _rpc("tenzro_getKeyShares", {"wallet_id": wallet_id})
-
-
-def rotate_keys(wallet_id: str) -> dict:
-    """Rotate key shares of an MPC wallet."""
-    return _rpc("tenzro_rotateKeys", {"wallet_id": wallet_id})
-
-
-def set_spending_limits(wallet_id: str, daily_limit: float,
-                        per_tx_limit: float) -> dict:
-    """Set spending limits for a wallet."""
-    return _rpc("tenzro_setSpendingLimits", {
-        "wallet_id": wallet_id,
-        "daily_limit": daily_limit,
-        "per_tx_limit": per_tx_limit,
-    })
-
-
-def get_spending_limits(wallet_id: str) -> dict:
-    """Get current spending limits for a wallet."""
-    return _rpc("tenzro_getSpendingLimits", {"wallet_id": wallet_id})
-
-
-def authorize_session(wallet_id: str, did_envelope: str, duration_secs: int,
-                      operations: list) -> dict:
-    """Authorize a temporary wallet session with allowed operations.
-
-    did_envelope proves control of the DID that owns wallet_id, bound to
-    method `tenzro_authorizeSession` with the wallet id as the params hash.
-    Opening a session is an act on the wallet, so it belongs to the wallet's
-    owner; a wallet id names the subject and proves nothing about the caller.
-    """
-    return _rpc("tenzro_authorizeSession", {
-        "wallet_id": wallet_id,
-        "did_envelope": did_envelope,
-        "duration_secs": duration_secs,
-        "operations": operations,
-    })
-
-
-def revoke_session(session_id: str, did_envelope: str) -> dict:
-    """Revoke an active wallet session.
-
-    did_envelope proves control of the DID that owns the session's wallet,
-    bound to method `tenzro_revokeSession` with the session id as the params
-    hash. A session id is a handle the node hands back, not a credential.
-    """
-    return _rpc("tenzro_revokeSession", {
-        "session_id": session_id,
-        "did_envelope": did_envelope,
-    })
-
-
 # ── App registry + settlement authorization ──────────────────────
-
-
-def register_app(app_id: str, developer_did: str, app_wallet: str,
-                 signing_pubkeys: list, margin_bps: int, envelope: str,
-                 min_balance: str | None = None, active: bool = True) -> dict:
-    """Register a developer app in the on-chain app registry.
-
-    Permissionless: the developer signs a DID envelope with their own key; the
-    app wallet is the developer's own TNZO treasury (the network never holds
-    custody). ``signing_pubkeys`` is a list of {key_id, public_key (hex Ed25519),
-    daily_limit_tnzo (optional decimal string)}. ``envelope`` is the
-    developer-signed DID envelope (hex header value).
-    """
-    params = {
-        "app_id": app_id,
-        "developer_did": developer_did,
-        "app_wallet": app_wallet,
-        "signing_pubkeys": signing_pubkeys,
-        "margin_bps": margin_bps,
-        "active": active,
-        "envelope": envelope,
-    }
-    if min_balance is not None:
-        params["min_balance"] = min_balance
-    return _rpc("tenzro_registerApp", params)
-
-
-def set_app_status(app_id: str, active: bool, envelope: str) -> dict:
-    """Activate or deactivate a registered app (developer-signed DID envelope)."""
-    return _rpc("tenzro_setAppStatus", {
-        "app_id": app_id,
-        "active": active,
-        "envelope": envelope,
-    })
-
-
-def get_app(app_id: str) -> dict:
-    """Look up a registered app by id."""
-    return _rpc("tenzro_getApp", {"app_id": app_id})
-
-
-def list_apps() -> dict:
-    """List all apps registered in the on-chain app registry."""
-    return _rpc("tenzro_listApps", {})
-
-
-def settle_authorized(app_id: str, chain_id: int, payer_did: str,
-                      amount_tnzo: str, external_ref: str, nonce: str,
-                      expiry: int, key_id: str, signature: str) -> dict:
-    """Execute a developer-signed settlement authorization.
-
-    Moves TNZO from the app wallet to the payer, minus the settlement-authorization commission (50 bps).
-    Idempotent per (app_id, external_ref). ``signature`` (hex Ed25519 over the
-    authorization signing hash) must be from one of the app's registered keys.
-    """
-    return _rpc("tenzro_settleAuthorized", {
-        "app_id": app_id,
-        "chain_id": chain_id,
-        "payer_did": payer_did,
-        "amount_tnzo": amount_tnzo,
-        "external_ref": external_ref,
-        "nonce": nonce,
-        "expiry": expiry,
-        "key_id": key_id,
-        "signature": signature,
-    })
-
-
-def get_settle_authorized_outcome(app_id: str, external_ref: str) -> dict:
-    """Fetch the recorded outcome for a settlement authorization."""
-    return _rpc("tenzro_getSettleAuthorizedOutcome", {
-        "app_id": app_id,
-        "external_ref": external_ref,
-    })
-
 
 # ── Contract ABI ─────────────────────────────────────────────────
 
-
-def encode_function(function_sig: str, args: list | None = None) -> dict:
-    """ABI-encode a function call (e.g. 'transfer(address,uint256)')."""
-    return _rpc("tenzro_encodeFunction", {
-        "function_sig": function_sig,
-        "args": args or [],
-    })
-
-
-def decode_result(data_hex: str, output_types: list) -> dict:
-    """ABI-decode contract return data."""
-    return _rpc("tenzro_decodeResult", {
-        "data_hex": data_hex,
-        "output_types": output_types,
-    })
-
-
 # ── OAuth 2.1 + DPoP Onboarding ──────────────────────────────────
 
-def onboard_human(display_name, dpop_jkt=None):
-    """Onboard a new human — provisions a TDIP DID + MPC wallet, returns
-    a DPoP-bound OAuth 2.1 access token."""
-    params = {"display_name": display_name}
+def onboard_human(display_name, credential_id, public_key, authorization,
+                  dpop_jkt=None):
+    """Onboard a new human — provisions a TDIP DID + permissionless wallet rooted
+    in a passkey, returns a DPoP-bound OAuth 2.1 access token.
+
+    ``authorization`` is the proof that the caller holds the passkey: its
+    assertion over the ``webauthn_challenge`` of a
+    ``tenzro_createCustodyChallenge`` challenge with operation
+    ``enroll_passkey``, ``account_address`` the P-256 public key (x || y) and
+    ``target_hex`` the credential id."""
+    params = {
+        "display_name": display_name,
+        "credential_id": credential_id,
+        "public_key": public_key,
+        "authorization": authorization,
+    }
     if dpop_jkt:
         params["dpop_jkt"] = dpop_jkt
     return _rpc("tenzro_onboardHuman", params)
-
 
 def onboard_delegated_agent(controller_did, capabilities, delegation_scope, dpop_jkt=None):
     """Onboard an agent that acts on behalf of `controller_did`. Inherits the
@@ -5838,50 +1676,39 @@ def onboard_delegated_agent(controller_did, capabilities, delegation_scope, dpop
         params["dpop_jkt"] = dpop_jkt
     return _rpc("tenzro_onboardDelegatedAgent", params)
 
-
-def onboard_autonomous_agent(bond_funding_address, dpop_jkt=None):
-    """Onboard a fully autonomous agent — requires a slashable TNZO bond
-    posted at `bond_funding_address`."""
-    params = {"bond_funding_address": bond_funding_address}
+def onboard_autonomous_agent(device_public_key, machine_id, dpop_jkt=None):
+    """Onboard a fully autonomous agent rooted in its secure element. Its
+    bond must already be locked on chain: an active PostAgentBond of at
+    least 1 TNZO for the DID the device key derives."""
+    params = {"device_public_key": device_public_key, "machine_id": machine_id}
     if dpop_jkt:
         params["dpop_jkt"] = dpop_jkt
     return _rpc("tenzro_onboardAutonomousAgent", params)
 
-
-def refresh_token(refresh_token_value, dpop_jkt=None):
+def refresh_token(refresh_token_value, dpop_proof):
     """Exchange an opaque refresh token for a fresh access JWT.
 
-    Mirrors OAuth 2.1 ``grant_type=refresh_token``. The refresh token is
-    re-usable until its absolute 30-day expiry (no rotation in V1). Pass
-    ``dpop_jkt`` to upgrade a previously-unbound session to DPoP-bound,
-    or to rotate the bound key.
+    Mirrors OAuth 2.1 ``grant_type=refresh_token``. ``dpop_proof`` is a
+    DPoP proof over this request from the key the refresh token is bound to
+    (``tenzro auth dpop-proof``); the request carries no access token. Each
+    refresh token is good for one exchange: keep the ``refresh_token`` the
+    answer carries for the next one.
     """
-    params = {"refresh_token": refresh_token_value}
-    if dpop_jkt:
-        params["dpop_jkt"] = dpop_jkt
-    return _rpc("tenzro_refreshToken", params)
-
-
-def link_wallet_for_auth(wallet_id, dpop_jkt=None, display_name=None, ttl_secs=None):
-    """Bind an existing MPC wallet to a fresh self-custody TDIP identity
-    and mint an access JWT scoped for self-custody.
-
-    Bridges ``tenzro_createWallet`` (which only returns ``wallet_id`` +
-    ``address``) to the auth-mediated signing path: callers who created
-    a wallet first can later obtain an access token bound to that
-    wallet by passing back ``wallet_id`` plus an optional DPoP key
-    thumbprint. Returns the same envelope as ``onboard_human``
-    (``access_token`` + ``refresh_token`` + ``dpop_bound``).
-    """
-    params = {"wallet_id": wallet_id}
-    if dpop_jkt:
-        params["dpop_jkt"] = dpop_jkt
-    if display_name:
-        params["display_name"] = display_name
-    if ttl_secs:
-        params["ttl_secs"] = ttl_secs
-    return _rpc("tenzro_linkWalletForAuth", params)
-
+    global _request_id
+    _request_id += 1
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "tenzro_refreshToken",
+        "params": {"refresh_token": refresh_token_value},
+        "id": _request_id,
+    }
+    headers = {"Content-Type": "application/json", "DPoP": dpop_proof}
+    resp = requests.post(RPC_URL, json=payload, headers=headers, timeout=RPC_TIMEOUT)
+    resp.raise_for_status()
+    data = resp.json()
+    if "error" in data:
+        return {"error": data["error"]}
+    return data.get("result", {})
 
 def revoke_jwt(jti, did_envelope, reason="revoked"):
     """Revoke a single JWT by its `jti` claim.
@@ -5897,32 +1724,30 @@ def revoke_jwt(jti, did_envelope, reason="revoked"):
         "reason": reason,
     })
 
-
 def revoke_did(did, did_envelope, reason="revoked"):
     """Revoke an entire identity by DID — cascades through the act-chain.
 
     Requires both the operator admin token on the transport and a
     did_envelope from the DID itself or, for a machine, its controller,
-    bound to method `tenzro_revokeDid` with the DID string as the params
+    bound to method `tenzro_revokeIdentity` with the DID string as the params
     hash. The revocation is gossiped network-wide, so neither the operator
     nor the owner gets to make that call alone.
     """
-    return _rpc("tenzro_revokeDid", {
+    return _rpc("tenzro_revokeIdentity", {
         "did": did,
         "did_envelope": did_envelope,
         "reason": reason,
     })
 
+# ── Passkey-first wallet custody (WebAuthn P-256) ──
 
-# ── Passkey-first wallet custody (WebAuthn P-256 + ML-DSA-65 hybrid) ──
-
-
-def enroll_passkey(passkey_public_key_hex, credential_id_hex,
-                   ml_dsa_public_key_hex, display_name=None, salt=0):
+def enroll_passkey(passkey_public_key_hex, credential_id_hex, authorization,
+                   display_name=None, salt=0):
     """Enroll a passkey-bound smart account.
 
     Consumes a WebAuthn registration credential (P-256 public key + opaque
-    credential id + ML-DSA-65 verifying key for the hybrid PQ leg), creates a
+    credential id) with ``authorization``, the passkey's assertion over the
+    ``webauthn_challenge`` of an ``enroll_passkey`` custody challenge, creates a
     TDIP human identity, deploys a smart account via the shared AccountFactory,
     and installs the WebAuthnValidator as the primary signer. The signing key
     never leaves the user's hardware secure element.
@@ -5930,91 +1755,33 @@ def enroll_passkey(passkey_public_key_hex, credential_id_hex,
     params = {
         "passkey_public_key_hex": passkey_public_key_hex,
         "credential_id_hex": credential_id_hex,
-        "ml_dsa_public_key_hex": ml_dsa_public_key_hex,
+        "authorization": authorization,
         "salt": salt,
     }
     if display_name:
         params["display_name"] = display_name
     return _rpc("tenzro_enrollPasskey", params)
 
+def get_keystore(account, anchor=None):
+    """A passkey account's keystore from consensus state: its linked passkeys
+    (each with the wallet provider's relying party), policy, recovery signers
+    and its commitment. Linking, unlinking and recovery are KeystoreUpdate
+    transactions the account's devices approve."""
+    params = {"account": account}
+    if anchor:
+        params["anchor"] = anchor
+    return _rpc("tenzro_getKeystore", params)
 
-def add_passkey(account_address, new_passkey_public_key_hex,
-                new_credential_id_hex, label=None):
-    """Add an additional WebAuthn device credential to an existing account.
-
-    The account must already carry at least one enrolled credential. The new
-    credential only carries its P-256 WebAuthn key; the node mints the
-    credential's ML-DSA-65 post-quantum leg in its TEE.
-    """
-    params = {
-        "account_address": account_address,
-        "new_passkey_public_key_hex": new_passkey_public_key_hex,
-        "new_credential_id_hex": new_credential_id_hex,
-    }
-    if label:
-        params["label"] = label
-    return _rpc("tenzro_addPasskey", params)
-
-
-def list_passkeys(account_address):
-    """List the WebAuthn credential ids enrolled on a smart account."""
-    return _rpc("tenzro_listPasskeys", {"account_address": account_address})
-
-
-def remove_passkey(account_address, credential_id_hex):
-    """Revoke a single credential from a smart account by credential id.
-
-    The account stays usable while at least one other credential survives.
-    Removing the last one leaves it recoverable-only until a guardian
-    finalizes a recovery.
-    """
-    return _rpc("tenzro_removePasskey", {
-        "account_address": account_address,
-        "credential_id_hex": credential_id_hex,
-    })
-
-
-def sign_with_passkey(account_address, op_hash_hex, assertion,
-                      credential_id_hex, ml_dsa_signature_hex=None):
-    """Verify a WebAuthn assertion against a registered passkey.
-
-    Returns verified=true iff the P-256 leg validates and the embedded
-    challenge matches the supplied op hash.
-    """
-    params = {
-        "account_address": account_address,
-        "op_hash_hex": op_hash_hex,
-        "assertion": assertion,
-        "credential_id_hex": credential_id_hex,
-    }
-    if ml_dsa_signature_hex:
-        params["ml_dsa_signature_hex"] = ml_dsa_signature_hex
-    return _rpc("tenzro_signWithPasskey", params)
-
-
-def set_passkey_policy(account_address, second_factor):
-    """Set a smart account's second-factor policy.
-
-    `second_factor` is "single_credential" (one enrolled passkey approves
-    each operation) or "two_credentials" (two distinct enrolled passkeys
-    must both sign every operation).
-    """
-    return _rpc("tenzro_setPasskeyPolicy", {
-        "account_address": account_address,
-        "second_factor": second_factor,
-    })
-
-
-def get_passkey_policy(account_address):
-    """Get a smart account's second-factor policy and enrolled-credential count."""
-    return _rpc("tenzro_getPasskeyPolicy", {"account_address": account_address})
-
+def resolve_credential(credential_id, rp_id=None):
+    """The accounts whose keystore links the passkey with this credential id."""
+    params = {"credential_id": credential_id}
+    if rp_id:
+        params["rp_id"] = rp_id
+    return _rpc("tenzro_resolveCredential", params)
 
 # ── Browser-launch passkey auth sessions (gcloud-style device flow) ──
 
-
-def create_passkey_session(kind, display_name=None, ml_dsa_public_key_hex=None,
-                           salt=0, account_address=None, label=None,
+def create_passkey_session(kind, display_name=None, salt=0, account_address=None, label=None,
                            op_hash_hex=None, ml_dsa_signature_hex=None):
     """Create a pending browser-launch passkey ceremony session.
 
@@ -6026,8 +1793,6 @@ def create_passkey_session(kind, display_name=None, ml_dsa_public_key_hex=None,
     params = {"kind": kind, "salt": salt}
     if display_name:
         params["display_name"] = display_name
-    if ml_dsa_public_key_hex:
-        params["ml_dsa_public_key_hex"] = ml_dsa_public_key_hex
     if account_address:
         params["account_address"] = account_address
     if label:
@@ -6038,7 +1803,6 @@ def create_passkey_session(kind, display_name=None, ml_dsa_public_key_hex=None,
         params["ml_dsa_signature_hex"] = ml_dsa_signature_hex
     return _rpc("tenzro_createPasskeySession", params)
 
-
 def get_passkey_session(session_id):
     """Poll a browser-launch passkey ceremony session by id.
 
@@ -6047,43 +1811,6 @@ def get_passkey_session(session_id):
     """
     return _rpc("tenzro_getPasskeySession", {"session_id": session_id})
 
-
-# ── MPC distributed key generation (DKLS23 secp256k1; admin-token-gated) ──
-
-
-def mpc_keygen(local_did, participant_dids, threshold,
-               finalized_block_hash, session_nonce, peer_bindings=None):
-    """Start a DKLS23 secp256k1 distributed-key-generation ceremony.
-
-    Operator-only — set TENZRO_ADMIN_TOKEN. Every participant's operator posts
-    identical params (same participant_dids, finalized_block_hash,
-    session_nonce, threshold) so the derived InstanceId matches byte-for-byte;
-    `peer_bindings` maps every remote participant DID to its libp2p PeerId (a
-    missing binding for any remote DID is rejected). Idempotent — re-posting
-    the same session returns the existing record.
-    """
-    return _rpc("tenzro_mpcKeygen", {
-        "local_did": local_did,
-        "participant_dids": participant_dids,
-        "threshold": threshold,
-        "finalized_block_hash": finalized_block_hash,
-        "session_nonce": session_nonce,
-        "peer_bindings": peer_bindings or {},
-    })
-
-
-def mpc_keygen_status(instance_id=None):
-    """Query MPC keygen session state.
-
-    Pass `instance_id` for a single session, or omit it to list every keygen
-    session on this node.
-    """
-    params = {}
-    if instance_id:
-        params["instance_id"] = instance_id
-    return _rpc("tenzro_mpcKeygenStatus", params)
-
-
 def forget_identity(did):
     """TDIP/GDPR Article 17 right-to-erasure. Hard-deletes a previously
     revoked identity from the registry and persistent storage. The DID
@@ -6091,38 +1818,6 @@ def forget_identity(did):
     cascading revocation to propagate, then call this. Distinct from
     `revoke_did` which is a logical delete."""
     return _rpc("tenzro_forgetIdentity", {"did": did})
-
-
-def list_pending_approvals(approver_did):
-    """List approvals in `Pending` status for the given approver DID."""
-    return _rpc("tenzro_listPendingApprovals", {"approver_did": approver_did})
-
-
-def decide_approval(approval_id, decision, approver_did, deny_reason=None):
-    """Decide a pending approval — `decision` is `"approved"` or `"denied"`.
-
-    `deny_reason` is recorded on a denial and returned to the requesting
-    agent when it retries, so the agent can act on why it was refused. It
-    is ignored for an approval.
-    """
-    params = {
-        "approval_id": approval_id,
-        "decision": decision,
-        "approver_did": approver_did,
-    }
-    if deny_reason is not None:
-        params["deny_reason"] = deny_reason
-    return _rpc("tenzro_decideApproval", params)
-
-
-def get_approval(approval_id):
-    """Fetch a single approval record by id.
-
-    The engine lazy-transitions an expired `Pending` record to `Expired`
-    on this read path, so a returned `Pending` record is guaranteed to
-    still be live. Returns JSON-RPC `-32000` if the id is unknown."""
-    return _rpc("tenzro_getApproval", {"approval_id": approval_id})
-
 
 def exchange_token(
     subject_token,
@@ -6160,7 +1855,6 @@ def exchange_token(
         params["requested_ttl_secs"] = requested_ttl_secs
     return _rpc("tenzro_exchangeToken", params)
 
-
 def introspect_token(token):
     """RFC 7662 OAuth 2.0 Token Introspection.
 
@@ -6172,7 +1866,6 @@ def introspect_token(token):
     inactive.
     """
     return _rpc("tenzro_introspectToken", {"token": token})
-
 
 def oauth_discovery():
     """RFC 8414 / RFC 9728 OAuth Authorization Server / Protected
@@ -6186,350 +1879,43 @@ def oauth_discovery():
     """
     return _rpc("tenzro_oauthDiscovery", None)
 
-
 # ── AP2 (Agent Payments Protocol) ────────────────────────────────
 
-
-def ap2_protocol_info() -> dict:
-    """Return AP2 protocol identifiers and supported VDC types."""
-    return _rpc("tenzro_ap2ProtocolInfo", {})
-
-
-def ap2_sign_mandate(mandate_kind: str, mandate: dict, signer_did: str) -> dict:
-    """Sign an AP2 v0.2 Checkout or Payment mandate via the auth-bound wallet's Ed25519 key.
-
-    Args:
-        mandate_kind: ``"checkout"`` (principal-signed pre-authorization) or
-            ``"payment"`` (agent-signed final-offer commit) per AP2 v0.2.
-        mandate: The full mandate object (CheckoutMandate or PaymentMandate JSON).
-        signer_did: Signer DID — must match the controller of the auth-bound
-            wallet (principal for checkout, agent for payment).
-
-    Returns the assembled, self-verified Vdc JSON.
-    """
-    return _rpc(
-        "tenzro_ap2SignMandate",
-        {"mandate_kind": mandate_kind, "mandate": mandate, "signer_did": signer_did},
-    )
-
-
-def ap2_verify_mandate(vdc: dict) -> dict:
-    """Verify a single AP2 Verifiable Digital Credential envelope."""
-    return _rpc("tenzro_ap2VerifyMandate", {"vdc": vdc})
-
-
-def ap2_validate_mandate_pair(
-    checkout_vdc: dict,
-    payment_vdc: dict,
-    enforce_delegation: bool = False,
-) -> dict:
-    """Validate that a CheckoutMandate + PaymentMandate VDC pair are consistent (AP2 v0.2).
-
-    When ``enforce_delegation`` is True, the node additionally cross-checks
-    the agent's TDIP ``DelegationScope`` against the payment total via
-    ``IdentityRegistry.enforce_operation(agent_did, "payment", total)``.
-    Both layers must admit the payment for ``valid: true``. The response
-    includes ``delegation_enforced`` so callers can confirm which path ran.
-    """
-    return _rpc("tenzro_ap2ValidateMandatePair", {
-        "checkout_vdc": checkout_vdc,
-        "payment_vdc": payment_vdc,
-        "enforce_delegation": enforce_delegation,
-    })
-
-
-def ap2_create_session(agent_did: str, provider_did: str, service: str,
-                       max_amount: int, asset: str = "TNZO") -> dict:
-    """Create a new AP2 session authorizing the agent to pay the provider."""
-    return _rpc("tenzro_ap2CreateSession", {
-        "agent_did": agent_did,
-        "provider_did": provider_did,
-        "service": service,
-        "max_amount": max_amount,
-        "asset": asset,
-    })
-
-
-def ap2_authorize_payment(session_id: str, amount: int) -> dict:
-    """Request a payment authorization under an existing AP2 session."""
-    return _rpc("tenzro_ap2AuthorizePayment", {
-        "session_id": session_id,
-        "amount": amount,
-    })
-
-
-def ap2_execute_payment(session_id: str, authorization_id: str) -> dict:
-    """Execute a previously-authorized AP2 payment."""
-    return _rpc("tenzro_ap2ExecutePayment", {
-        "session_id": session_id,
-        "authorization_id": authorization_id,
-    })
-
-
-def ap2_cancel_session(session_id: str) -> dict:
-    """Cancel an AP2 session, revoking remaining authorizations."""
-    return _rpc("tenzro_ap2CancelSession", {"session_id": session_id})
-
-
-def ap2_get_session(session_id: str) -> dict:
-    """Fetch AP2 session state."""
-    return _rpc("tenzro_ap2GetSession", {"session_id": session_id})
-
-
-def ap2_list_agent_sessions(agent_did: str) -> dict:
-    """List all AP2 sessions for an agent DID."""
-    return _rpc("tenzro_ap2ListAgentSessions", {"agent_did": agent_did})
-
-
-def ap2_list_mandates(controller_did: str) -> dict:
-    """List the persisted AP2 mandates authorized by a controller DID.
-
-    Each record captures the validated intent/cart pair — amounts, asset,
-    chain, merchant, expiry, and the stored checkout/payment VDCs — so a
-    controller can audit what its agents were authorized to spend.
-    """
-    return _rpc("tenzro_listMandates", {"controller_did": controller_did})
-
+def governance_get(kind: str, ident: str) -> dict:
+    """Read a proposal, an enacted policy (ident = its kind) or a grant."""
+    clean = ident[2:] if ident.startswith("0x") else ident
+    method, params = {
+        "proposal": ("tenzro_getProposal", {"proposal_id": clean}),
+        "policy": ("tenzro_getPolicy", {"kind": ident}),
+        "grant": ("tenzro_getGrant", {"grant_id": clean}),
+    }[kind]
+    return _rpc(method, params)
 
 # ── ERC-8004 (Trustless Agents Registry — full Jan 2026 revision surface) ────
 
-
 # -- Identity registry --------------------------------------------------
-
-def erc8004_encode_register() -> dict:
-    """Encode calldata for IdentityRegistry.register() (Jan 2026 revision no-arg overload — caller becomes agent owner; registry allocates a sequential uint256 agentId)."""
-    return _rpc("tenzro_erc8004EncodeRegister", {})
-
-
-def erc8004_encode_register_with_uri(agent_uri: str) -> dict:
-    """Encode calldata for IdentityRegistry.register(string agentURI) (Jan 2026 revision overload with agent URI)."""
-    return _rpc("tenzro_erc8004EncodeRegisterWithUri", {"agent_uri": agent_uri})
-
-
-def erc8004_encode_register_with_metadata(agent_uri: str, metadata: list) -> dict:
-    """Encode calldata for IdentityRegistry.register(string agentURI, (string,bytes)[] metadata) (Jan 2026 revision overload with metadata entries).
-
-    metadata: list of {"key": str, "value": str (hex-encoded bytes)}.
-    """
-    return _rpc("tenzro_erc8004EncodeRegisterWithMetadata", {
-        "agent_uri": agent_uri,
-        "metadata": metadata,
-    })
-
-
-def erc8004_encode_get_agent(agent_id) -> dict:
-    """Encode calldata for IdentityRegistry.getAgent(uint256 agentId).
-
-    agent_id: uint256 — accepts int, decimal string, or 0x-prefixed hex.
-    """
-    return _rpc("tenzro_erc8004EncodeGetAgent", {"agent_id": agent_id})
-
-
-def erc8004_decode_get_agent(return_data: str) -> dict:
-    """Decode (address, string) returndata from getAgent() into {agent_address, metadata_uri}."""
-    return _rpc("tenzro_erc8004DecodeGetAgent", {"return_data": return_data})
-
-
-def erc8004_encode_set_agent_uri(agent_id: str, metadata_uri: str) -> dict:
-    """Encode calldata for IdentityRegistry.setAgentURI(uint256 agentId, string metadataURI) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeSetAgentURI", {
-        "agent_id": agent_id,
-        "metadata_uri": metadata_uri,
-    })
-
-
-def erc8004_encode_set_agent_wallet(agent_id: str, new_wallet: str,
-                                     deadline: int, signature: str) -> dict:
-    """Encode calldata for IdentityRegistry.setAgentWallet(uint256, address, uint256, bytes) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeSetAgentWallet", {
-        "agent_id": agent_id,
-        "new_wallet": new_wallet,
-        "deadline": deadline,
-        "signature": signature,
-    })
-
-
-def erc8004_encode_set_metadata(agent_id: str, metadata_key: str,
-                                 metadata_value: str) -> dict:
-    """Encode calldata for IdentityRegistry.setMetadata(uint256, string, bytes) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeSetMetadata", {
-        "agent_id": agent_id,
-        "metadata_key": metadata_key,
-        "metadata_value": metadata_value,
-    })
-
-
-def erc8004_encode_get_metadata(agent_id: str, metadata_key: str) -> dict:
-    """Encode calldata for IdentityRegistry.getMetadata(uint256, string) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeGetMetadata", {
-        "agent_id": agent_id,
-        "metadata_key": metadata_key,
-    })
-
-
-def erc8004_decode_get_metadata(return_data: str) -> dict:
-    """Decode bytes returndata from getMetadata() into {metadata_value} (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004DecodeGetMetadata", {"return_data": return_data})
-
-
-def erc8004_encode_get_agent_uri(agent_id: str) -> dict:
-    """Encode calldata for IdentityRegistry.getAgentURI(uint256 agentId) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeGetAgentURI", {"agent_id": agent_id})
-
-
-def erc8004_encode_get_agent_wallet(agent_id: str) -> dict:
-    """Encode calldata for IdentityRegistry.getAgentWallet(uint256 agentId) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeGetAgentWallet", {"agent_id": agent_id})
-
 
 # -- Reputation registry ------------------------------------------------
 
-def erc8004_encode_feedback(subject_agent_id: str, rating: int,
-                            context_uri: str) -> dict:
-    """Encode calldata for ReputationRegistry.submitFeedback(bytes32, int8, string).
-
-    `rating` is in -100..=100 (Tenzro convention).
-    """
-    return _rpc("tenzro_erc8004EncodeFeedback", {
-        "subject_agent_id": subject_agent_id,
-        "rating": rating,
-        "context_uri": context_uri,
-    })
-
-
-def erc8004_encode_get_feedback(subject_agent_id: str, index: int) -> dict:
-    """Encode calldata for ReputationRegistry.getFeedback(bytes32 subject, uint256 index)."""
-    return _rpc("tenzro_erc8004EncodeGetFeedback", {
-        "subject_agent_id": subject_agent_id,
-        "index": index,
-    })
-
-
-def erc8004_encode_get_feedback_count(subject_agent_id: str) -> dict:
-    """Encode calldata for ReputationRegistry.getFeedbackCount(bytes32 subject)."""
-    return _rpc("tenzro_erc8004EncodeGetFeedbackCount", {
-        "subject_agent_id": subject_agent_id,
-    })
-
-
-def erc8004_encode_revoke_feedback(agent_id: str, feedback_id: str) -> dict:
-    """Encode calldata for ReputationRegistry.revokeFeedback(uint256, bytes32) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeRevokeFeedback", {
-        "agent_id": agent_id,
-        "feedback_id": feedback_id,
-    })
-
-
-def erc8004_encode_append_response(agent_id: str, feedback_id: str,
-                                    response_uri: str) -> dict:
-    """Encode calldata for ReputationRegistry.appendResponse(uint256, bytes32, string) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeAppendResponse", {
-        "agent_id": agent_id,
-        "feedback_id": feedback_id,
-        "response_uri": response_uri,
-    })
-
-
-def erc8004_encode_is_feedback_revoked(agent_id: str, feedback_id: str) -> dict:
-    """Encode calldata for ReputationRegistry.isFeedbackRevoked(uint256, bytes32) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeIsFeedbackRevoked", {
-        "agent_id": agent_id,
-        "feedback_id": feedback_id,
-    })
-
-
-def erc8004_encode_get_feedback_responses(agent_id: str, feedback_id: str) -> dict:
-    """Encode calldata for ReputationRegistry.getFeedbackResponses(uint256, bytes32) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeGetFeedbackResponses", {
-        "agent_id": agent_id,
-        "feedback_id": feedback_id,
-    })
-
-
 # -- Validation registry -----------------------------------------------
-
-def erc8004_encode_validation_request(validator_address: str, agent_id: str,
-                                       request_uri: str,
-                                       request_hash: str) -> dict:
-    """Encode calldata for ValidationRegistry.validationRequest(address, uint256, string, bytes32)."""
-    return _rpc("tenzro_erc8004EncodeValidationRequest", {
-        "validator_address": validator_address,
-        "agent_id": agent_id,
-        "request_uri": request_uri,
-        "request_hash": request_hash,
-    })
-
-
-def erc8004_encode_validation_response(request_hash: str, response: int,
-                                        response_uri: str,
-                                        response_hash: str,
-                                        tag: str = "") -> dict:
-    """Encode calldata for ValidationRegistry.validationResponse(bytes32, uint8, string, bytes32, string).
-
-    `response` is a 0..=100 quality score per the canonical ERC-8004 spec.
-    """
-    return _rpc("tenzro_erc8004EncodeValidationResponse", {
-        "request_hash": request_hash,
-        "response": response,
-        "response_uri": response_uri,
-        "response_hash": response_hash,
-        "tag": tag,
-    })
-
-
-def erc8004_encode_get_validation(request_hash: str) -> dict:
-    """Encode calldata for ValidationRegistry.getValidation(bytes32 requestHash) (Jan 2026 revision)."""
-    return _rpc("tenzro_erc8004EncodeGetValidation", {"request_hash": request_hash})
-
-
-# ── Wormhole (Cross-Chain Bridge) ────────────────────────────────
-
-
-def wormhole_chain_id(chain: str) -> dict:
-    """Look up the Wormhole chain id for a chain name (e.g. 'ethereum')."""
-    return _rpc("tenzro_wormholeChainId", {"chain": chain})
-
-
-def wormhole_parse_vaa_id(vaa_id: str) -> dict:
-    """Parse a Wormhole VAA id (chain/emitter/sequence) into components."""
-    return _rpc("tenzro_wormholeParseVaaId", {"vaa_id": vaa_id})
-
-
-def wormhole_bridge(source_chain: str, dest_chain: str, asset: str,
-                    amount: int, sender: str, recipient: str) -> dict:
-    """Execute a Wormhole cross-chain bridge transfer."""
-    return _rpc("tenzro_wormholeBridge", {
-        "source_chain": source_chain,
-        "dest_chain": dest_chain,
-        "asset": asset,
-        "amount": amount,
-        "sender": sender,
-        "recipient": recipient,
-    })
-
 
 # ── Iroh (Content-Addressed Transport) ────────────────────────────
 #
 # Wraps the tenzro_iroh_* JSON-RPC namespace. The same shared
-# IrohBackedResolver backs the storage DA backend, training gradient
-# distribution, sealed-shard distribution, model-weight peer fetch,
-# the agent-memory archive DA path, and A2A-over-iroh.
-
+# IrohBackedResolver backs the storage DA backend, model-weight peer fetch,
+# and A2A-over-iroh.
 
 def iroh_get_info() -> dict:
     """Return endpoint id, Pkarr relay, docs flag, and bound ALPNs."""
     return _rpc("tenzro_iroh_getInfo", {})
 
-
 def iroh_get_endpoint_id() -> dict:
     """Return just the iroh EndpointId (z-base-32 + 32-byte hex)."""
     return _rpc("tenzro_iroh_getEndpointId", {})
 
-
 def iroh_list_alpns() -> dict:
     """List ALPNs bound on the shared iroh router."""
     return _rpc("tenzro_iroh_listAlpns", {})
-
 
 def iroh_publish_blob(data: bytes) -> dict:
     """Publish raw bytes as a tenzro://blob/<blake3-hex> URI.
@@ -6541,9 +1927,8 @@ def iroh_publish_blob(data: bytes) -> dict:
     b64 = base64.b64encode(data).decode("ascii")
     return _rpc("tenzro_iroh_publishBlob", {"bytes_b64": b64})
 
-
 def iroh_fetch_blob(tenzro_uri: str) -> bytes:
-    """Fetch a tenzro://{blob,model,gradient,shard,receipt}/... URI to bytes.
+    """Fetch a tenzro://{blob,model,receipt}/... URI to bytes.
 
     Returns the decoded payload (the base64 envelope on the wire is
     unwrapped here so callers get raw bytes back).
@@ -6552,18 +1937,16 @@ def iroh_fetch_blob(tenzro_uri: str) -> bytes:
     resp = _rpc("tenzro_iroh_fetchBlob", {"tenzro_uri": tenzro_uri})
     return base64.b64decode(resp.get("bytes_b64", ""))
 
-
 def iroh_resolve(tenzro_uri: str) -> bytes:
     """Alias for iroh_fetch_blob for code that thinks of the URI as a name."""
     return iroh_fetch_blob(tenzro_uri)
-
 
 # ── App hosting (sites / functions / machines) ────────────────────
 #
 # Wraps the tenzro_site* / tenzro_function* / tenzro_machine* / lease
 # JSON-RPC surface. Deploy a static site, a wasi:http function, or a
 # Firecracker microVM and serve it under a public hostname
-# (myapp.apps.tenzro.xyz) routed from the operator's ingress edge to any
+# (myapp.apps.tenzro.com) routed from the operator's ingress edge to any
 # serving node over the tenzro/http ALPN. Content is uploaded as
 # content-addressed blobs first (iroh_publish_blob); deploy calls
 # reference each blob by hash.
@@ -6572,7 +1955,6 @@ def iroh_resolve(tenzro_uri: str) -> bytes:
 # DID-owner authenticated: pass did_envelope=<signed envelope value>.
 # The node verifies the envelope's did equals the owner_did.
 
-
 def _with_env(params: dict, did_envelope: str | None) -> dict:
     """Attach the signed DID envelope to a mutation's params when supplied."""
     if did_envelope is not None:
@@ -6580,348 +1962,19 @@ def _with_env(params: dict, did_envelope: str | None) -> dict:
         params["did_envelope"] = did_envelope
     return params
 
-
 # Static sites ---------------------------------------------------------
-
-
-def site_publish(
-    name: str,
-    owner_did: str,
-    routes: list[dict],
-    index_path: str | None = None,
-    not_found_path: str | None = None,
-    spa: bool | None = None,
-    price_per_request: str | None = None,
-    replicas: int | None = None,
-    region_hint: str | None = None,
-    max_price_per_hour: str | None = None,
-    did_envelope: str | None = None,
-) -> dict:
-    """Publish a static site from a route map.
-
-    Each entry in `routes` is a dict:
-    {"path", "blob_hash", "content_type", "size"} — the blob_hash comes
-    from `iroh_publish_blob`. Optional: `index_path` (default
-    "/index.html"), `not_found_path`, `spa` (single-page-app routing),
-    `price_per_request` (x402, stringified integer base units),
-    `replicas`, `region_hint`, `max_price_per_hour`.
-    """
-    params: dict = {"name": name, "owner_did": owner_did, "routes": routes}
-    if index_path is not None:
-        params["index_path"] = index_path
-    if not_found_path is not None:
-        params["not_found_path"] = not_found_path
-    if spa is not None:
-        params["spa"] = spa
-    if price_per_request is not None:
-        params["price_per_request"] = price_per_request
-    if replicas is not None:
-        params["replicas"] = replicas
-    if region_hint is not None:
-        params["region_hint"] = region_hint
-    if max_price_per_hour is not None:
-        params["max_price_per_hour"] = max_price_per_hour
-    return _rpc("tenzro_sitePublish", _with_env(params, did_envelope))
-
-
-def site_get(site_id: str) -> dict:
-    """Fetch a site manifest by site_id."""
-    return _rpc("tenzro_siteGet", {"site_id": site_id})
-
-
-def list_sites(owner_did: str | None = None) -> dict:
-    """List sites, optionally filtered by owner DID."""
-    return _rpc("tenzro_listSites", {"owner_did": owner_did} if owner_did else {})
-
-
-def site_remove(site_id: str, owner_did: str, did_envelope: str | None = None) -> dict:
-    """Remove a site. Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteRemove",
-        _with_env({"site_id": site_id, "owner_did": owner_did}, did_envelope),
-    )
-
 
 # Hostname aliases -----------------------------------------------------
 
-
-def site_set_alias(
-    hostname: str, site_id: str, owner_did: str, did_envelope: str | None = None
-) -> dict:
-    """Point a public hostname at a site so it serves by name. Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteSetAlias",
-        _with_env(
-            {"hostname": hostname, "site_id": site_id, "owner_did": owner_did},
-            did_envelope,
-        ),
-    )
-
-
-def site_get_alias(hostname: str) -> dict:
-    """Resolve a hostname to its alias record."""
-    return _rpc("tenzro_siteGetAlias", {"hostname": hostname})
-
-
-def list_site_aliases(owner_did: str | None = None) -> dict:
-    """List hostname aliases, optionally filtered by owner DID."""
-    return _rpc(
-        "tenzro_listSiteAliases", {"owner_did": owner_did} if owner_did else {}
-    )
-
-
-def site_remove_alias(
-    hostname: str, owner_did: str, did_envelope: str | None = None
-) -> dict:
-    """Remove a hostname alias. Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteRemoveAlias",
-        _with_env({"hostname": hostname, "owner_did": owner_did}, did_envelope),
-    )
-
-
 # Ingress placement ----------------------------------------------------
-
-
-def site_set_placement(
-    site_id: str, serving_nodes: list[str], did_envelope: str | None = None
-) -> dict:
-    """Set the serving nodes (iroh EndpointId strings) that answer
-    tenzro/http forwards for a site. An empty list serves locally.
-    Owner-authenticated (owner resolved from the manifest).
-    """
-    return _rpc(
-        "tenzro_siteSetPlacement",
-        _with_env(
-            {"site_id": site_id, "serving_nodes": serving_nodes}, did_envelope
-        ),
-    )
-
-
-def site_get_placement(site_id: str) -> dict:
-    """Get the ingress placement record for a site."""
-    return _rpc("tenzro_siteGetPlacement", {"site_id": site_id})
-
-
-def list_site_placements() -> dict:
-    """List all ingress placement records."""
-    return _rpc("tenzro_listSitePlacements", {})
-
-
-def site_remove_placement(site_id: str, did_envelope: str | None = None) -> dict:
-    """Remove a site's ingress placement (reverts to local serving). Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteRemovePlacement", _with_env({"site_id": site_id}, did_envelope)
-    )
-
 
 # Custom domains -------------------------------------------------------
 
-
-def site_claim_domain(
-    hostname: str, site_id: str, owner_did: str, did_envelope: str | None = None
-) -> dict:
-    """Claim a custom domain for a site. Returns the DNS records the owner
-    must publish (`dns_records` + `ownership_txt_name`). Owner-authenticated.
-    """
-    return _rpc(
-        "tenzro_siteClaimDomain",
-        _with_env(
-            {"hostname": hostname, "site_id": site_id, "owner_did": owner_did},
-            did_envelope,
-        ),
-    )
-
-
-def site_verify_domain(
-    hostname: str, owner_did: str, did_envelope: str | None = None
-) -> dict:
-    """Verify a claimed domain against its published DNS TXT proof. Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteVerifyDomain",
-        _with_env({"hostname": hostname, "owner_did": owner_did}, did_envelope),
-    )
-
-
-def site_get_domain(hostname: str) -> dict:
-    """Get a custom-domain record (status + DNS records)."""
-    return _rpc("tenzro_siteGetDomain", {"hostname": hostname})
-
-
-def list_site_domains(owner_did: str | None = None) -> dict:
-    """List custom domains, optionally filtered by owner DID."""
-    return _rpc(
-        "tenzro_listSiteDomains", {"owner_did": owner_did} if owner_did else {}
-    )
-
-
-def site_remove_domain(
-    hostname: str, owner_did: str, did_envelope: str | None = None
-) -> dict:
-    """Remove a custom domain. Owner-authenticated."""
-    return _rpc(
-        "tenzro_siteRemoveDomain",
-        _with_env({"hostname": hostname, "owner_did": owner_did}, did_envelope),
-    )
-
-
 # Functions (wasi:http components) -------------------------------------
-
-
-def function_deploy(
-    name: str,
-    owner_did: str,
-    wasm_blob_hash: str,
-    capabilities: dict | None = None,
-    fuel_limit: int | None = None,
-    deadline_ms: int | None = None,
-    price_per_request: str | None = None,
-    replicas: int | None = None,
-    region_hint: str | None = None,
-    max_price_per_hour: str | None = None,
-    did_envelope: str | None = None,
-) -> dict:
-    """Deploy a wasi:http function from a component blob hash."""
-    params: dict = {
-        "name": name,
-        "owner_did": owner_did,
-        "wasm_blob_hash": wasm_blob_hash,
-    }
-    if capabilities is not None:
-        params["capabilities"] = capabilities
-    if fuel_limit is not None:
-        params["fuel_limit"] = fuel_limit
-    if deadline_ms is not None:
-        params["deadline_ms"] = deadline_ms
-    if price_per_request is not None:
-        params["price_per_request"] = price_per_request
-    if replicas is not None:
-        params["replicas"] = replicas
-    if region_hint is not None:
-        params["region_hint"] = region_hint
-    if max_price_per_hour is not None:
-        params["max_price_per_hour"] = max_price_per_hour
-    return _rpc("tenzro_functionDeploy", _with_env(params, did_envelope))
-
-
-def function_get(id: str) -> dict:
-    """Fetch a function deployment by id."""
-    return _rpc("tenzro_functionGet", {"id": id})
-
-
-def list_functions(owner_did: str | None = None) -> dict:
-    """List function deployments, optionally filtered by owner DID."""
-    return _rpc("tenzro_listFunctions", {"owner_did": owner_did} if owner_did else {})
-
-
-def function_remove(id: str, owner_did: str, did_envelope: str | None = None) -> dict:
-    """Remove a function deployment. Owner-authenticated."""
-    return _rpc(
-        "tenzro_functionRemove",
-        _with_env({"id": id, "owner_did": owner_did}, did_envelope),
-    )
-
 
 # Machines (Firecracker microVMs) --------------------------------------
 
-
-def machine_deploy(
-    name: str,
-    owner_did: str,
-    artifact_caid: str,
-    internal_port: int,
-    resources: dict | None = None,
-    sealed_env: dict | None = None,
-    tee_required: bool | None = None,
-    price_per_request: str | None = None,
-    replicas: int | None = None,
-    region_hint: str | None = None,
-    max_price_per_hour: str | None = None,
-    did_envelope: str | None = None,
-) -> dict:
-    """Deploy a microVM from an image artifact CAID and the loopback port
-    the guest server listens on. Wrap each secret in `sealed_env` to the
-    node's X25519 sealing key first (see `machine_sealing_key`).
-    """
-    params: dict = {
-        "name": name,
-        "owner_did": owner_did,
-        "artifact_caid": artifact_caid,
-        "internal_port": internal_port,
-    }
-    if resources is not None:
-        params["resources"] = resources
-    if sealed_env is not None:
-        params["sealed_env"] = sealed_env
-    if tee_required is not None:
-        params["tee_required"] = tee_required
-    if price_per_request is not None:
-        params["price_per_request"] = price_per_request
-    if replicas is not None:
-        params["replicas"] = replicas
-    if region_hint is not None:
-        params["region_hint"] = region_hint
-    if max_price_per_hour is not None:
-        params["max_price_per_hour"] = max_price_per_hour
-    return _rpc("tenzro_machineDeploy", _with_env(params, did_envelope))
-
-
-def machine_get(id: str) -> dict:
-    """Fetch a machine deployment by id."""
-    return _rpc("tenzro_machineGet", {"id": id})
-
-
-def list_machines(owner_did: str | None = None) -> dict:
-    """List machine deployments, optionally filtered by owner DID."""
-    return _rpc("tenzro_listMachines", {"owner_did": owner_did} if owner_did else {})
-
-
-def machine_remove(id: str, owner_did: str, did_envelope: str | None = None) -> dict:
-    """Remove a machine deployment (stops any running microVM first). Owner-authenticated."""
-    return _rpc(
-        "tenzro_machineRemove",
-        _with_env({"id": id, "owner_did": owner_did}, did_envelope),
-    )
-
-
-def machine_status(id: str) -> dict:
-    """Live run-state of a machine deployment."""
-    return _rpc("tenzro_machineStatus", {"id": id})
-
-
-def machine_sealing_key() -> dict:
-    """This node's X25519 machine-sealing public key. Wrap each environment
-    secret to this key before `machine_deploy` so plaintext never leaves
-    the deployer. Returns {sealing_public_key (hex), alg}.
-    """
-    return _rpc("tenzro_machineSealingKey", {})
-
-
 # Placement leases -----------------------------------------------------
-
-
-def list_leases() -> dict:
-    """All placement leases across every hosted app on this node's scheduler."""
-    return _rpc("tenzro_listLeases", {})
-
-
-def get_leases_for_app(app_id: str) -> dict:
-    """Placement leases for a single app (site / function / machine) id."""
-    return _rpc("tenzro_getLeasesForApp", {"app_id": app_id})
-
-
-# ── CCT (Chainlink Cross-Chain Token) Pool Registry ──────────────
-
-
-def cct_list_pools() -> dict:
-    """List all registered TNZO CCT pools across chains."""
-    return _rpc("tenzro_cctListPools", {})
-
-
-def cct_get_pool(chain: str) -> dict:
-    """Get CCT pool details for a specific chain."""
-    return _rpc("tenzro_cctGetPool", {"chain": chain})
-
 
 # ── Multi-modal inference ─────────────────────────────────────────
 #
@@ -6935,23 +1988,29 @@ def list_forecast_catalog() -> dict:
     """List the curated timeseries forecast model catalog."""
     return _rpc("tenzro_listForecastCatalog", {})
 
-
-def list_forecast_models() -> dict:
-    """List timeseries forecast models currently loaded on this node."""
-    return _rpc("tenzro_listForecastModels", {})
+def _routed(params: dict, verification: str | None, provider: str | None) -> dict:
+    """Add the verification level (none, receipt, optimistic, tee) and the
+    provider pin to a modality call. A model the node does not serve goes to
+    a provider offering it; an optimistic answer may be re-executed on
+    another provider and a mismatch refunds the caller."""
+    if verification is not None:
+        params["verification"] = verification
+    if provider is not None:
+        params["provider"] = provider
+    return params
 
 
 def forecast(model_id: str, history: list, horizon: int,
              quantiles: list | None = None,
-             frequency_seconds: int | None = None) -> dict:
+             frequency_seconds: int | None = None,
+             verification: str | None = None, provider: str | None = None) -> dict:
     """Run a probabilistic forecast. `history` is oldest-first observations."""
     params = {"model_id": model_id, "history": history, "horizon": horizon}
     if quantiles is not None:
         params["quantiles"] = quantiles
     if frequency_seconds is not None:
         params["frequency_seconds"] = frequency_seconds
-    return _rpc("tenzro_forecast", params)
-
+    return _rpc("tenzro_forecast", _routed(params, verification, provider))
 
 # Vision embeddings -----------------------------------------------------
 
@@ -6959,24 +2018,18 @@ def list_vision_catalog() -> dict:
     """List the curated vision encoder catalog."""
     return _rpc("tenzro_listVisionCatalog", {})
 
-
-def list_vision_models() -> dict:
-    """List vision encoders currently loaded on this node."""
-    return _rpc("tenzro_listVisionModels", {})
-
-
 def vision_embed(model_id: str, image_b64: str,
-                 normalize: bool = True) -> dict:
+                 normalize: bool = True,
+                 verification: str | None = None, provider: str | None = None) -> dict:
     """Embed a base64-encoded image with the named vision encoder.
 
     Returns a dense embedding vector (e.g. 768-dim for DINOv3-base).
     """
-    return _rpc("tenzro_imageEmbed", {
+    return _rpc("tenzro_imageEmbed", _routed({
         "model_id": model_id,
         "image_base64": image_b64,
         "normalize": normalize,
-    })
-
+    }, verification, provider))
 
 def vision_similarity(image_embedding: list, text_embedding: list) -> dict:
     """Pure cosine similarity between two embeddings.
@@ -6990,28 +2043,26 @@ def vision_similarity(image_embedding: list, text_embedding: list) -> dict:
         "text_embedding": text_embedding,
     })
 
-
 # Text embeddings -------------------------------------------------------
 
 def list_text_embedding_catalog() -> dict:
     """List the curated text embedding catalog (Qwen3-Embedding, EmbeddingGemma, BGE-M3, ...)."""
     return _rpc("tenzro_listTextEmbeddingCatalog", {})
 
-
-def list_text_embedding_models() -> dict:
-    """List text embedding models currently loaded on this node."""
-    return _rpc("tenzro_listTextEmbeddingModels", {})
-
-
 def text_embed(model_id: str, inputs: list,
                requested_dim: int | None = None,
-               normalize: bool = False) -> dict:
-    """Embed a batch of strings; optional Matryoshka truncation."""
+               normalize: bool = False,
+               verification: str | None = None, provider: str | None = None) -> dict:
+    """Embed a batch of inputs; optional Matryoshka truncation.
+
+    An input is a string, or a dict with `text`, `image` (base64) and/or
+    `video` (base64 frames) embedded as one item; pictures and video need a
+    vision-language embedder.
+    """
     params = {"model_id": model_id, "inputs": inputs, "normalize": normalize}
     if requested_dim is not None:
         params["requested_dim"] = requested_dim
-    return _rpc("tenzro_textEmbed", params)
-
+    return _rpc("tenzro_textEmbed", _routed(params, verification, provider))
 
 # Segmentation ----------------------------------------------------------
 
@@ -7023,25 +2074,19 @@ def list_segmentation_catalog() -> dict:
     """
     return _rpc("tenzro_listSegmentationCatalog", {})
 
-
-def list_segmentation_models() -> dict:
-    """List segmentation models currently loaded on this node."""
-    return _rpc("tenzro_listSegmentationModels", {})
-
-
-def segment(model_id: str, image_b64: str, prompts: list) -> dict:
+def segment(model_id: str, image_b64: str, prompts: list,
+            verification: str | None = None, provider: str | None = None) -> dict:
     """Run promptable segmentation.
 
     Prompts are original-image pixel coordinates, either
     `{"type": "point", "x": .., "y": .., "is_foreground": true}` or
     `{"type": "box", "x0": .., "y0": .., "x1": .., "y1": ..}`.
     """
-    return _rpc("tenzro_segment", {
+    return _rpc("tenzro_segment", _routed({
         "model_id": model_id,
         "image_base64": image_b64,
         "prompts": prompts,
-    })
-
+    }, verification, provider))
 
 # Text-promptable segmentation (SAM 3) ----------------------------------
 
@@ -7049,29 +2094,18 @@ def list_text_segmentation_catalog() -> dict:
     """List the curated open-vocabulary segmentation catalog (SAM 3 family)."""
     return _rpc("tenzro_listTextSegmentationCatalog", {})
 
-
-def list_text_segmentation_models() -> dict:
-    """List text-promptable segmenters currently loaded on this node."""
-    return _rpc("tenzro_listTextSegmentationModels", {})
-
-
-def load_text_segmentation_model(model_id: str) -> dict:
-    """Load a SAM-3-family segmenter by catalog id.
-
-    The node fetches the ONNX bundle from HuggingFace Hub (or reuses its
-    cache) and registers it under the same id — no filesystem path needed.
-    """
-    return _rpc("tenzro_loadTextSegmentationModel", {"model_id": model_id})
-
+def load_text_segmentation_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog SAM-3-family segmenter by `model_id`."""
+    return _load_catalog_model("tenzro_loadTextSegmentationModel", model_id, visibility)
 
 def unload_text_segmentation_model(model_id: str) -> dict:
     """Drop a registered text-promptable segmenter."""
     return _rpc("tenzro_unloadTextSegmentationModel", {"model_id": model_id})
 
-
 def text_segment(model_id: str, image_b64: str, text_prompt: str,
                  box_prompt: dict | None = None,
-                 score_threshold: float = 0.5) -> dict:
+                 score_threshold: float = 0.5,
+                 verification: str | None = None, provider: str | None = None) -> dict:
     """Segment by free-text label (e.g. "dog", "sofa") — no click needed.
 
     Pass an empty `text_prompt` with a `box_prompt` of
@@ -7085,8 +2119,7 @@ def text_segment(model_id: str, image_b64: str, text_prompt: str,
     }
     if box_prompt is not None:
         params["box_prompt"] = box_prompt
-    return _rpc("tenzro_textSegment", params)
-
+    return _rpc("tenzro_textSegment", _routed(params, verification, provider))
 
 # Detection -------------------------------------------------------------
 
@@ -7094,20 +2127,53 @@ def list_detection_catalog() -> dict:
     """List the curated detection catalog (RF-DETR, D-FINE)."""
     return _rpc("tenzro_listDetectionCatalog", {})
 
-
-def list_detection_models() -> dict:
-    """List detection models currently loaded on this node."""
-    return _rpc("tenzro_listDetectionModels", {})
-
-
 def detect(model_id: str, image_b64: str,
-           score_threshold: float = 0.5) -> dict:
+           score_threshold: float = 0.5,
+           verification: str | None = None, provider: str | None = None) -> dict:
     """Run object detection on the given image."""
-    return _rpc("tenzro_detect", {
+    return _rpc("tenzro_detect", _routed({
         "model_id": model_id,
         "image_base64": image_b64,
         "score_threshold": score_threshold,
-    })
+    }, verification, provider))
+
+
+# Rerank ----------------------------------------------------------------
+
+def list_rerank_catalog() -> dict:
+    """List the reranker catalog."""
+    return _rpc("tenzro_listRerankCatalog", {})
+
+
+def rerank(model_id: str, query: str | dict, documents: list,
+           top_n: int | None = None, verification: str | None = None,
+           provider: str | None = None) -> dict:
+    """Score documents against a query, best first.
+
+    The query and every document are a string, or a dict with `text`,
+    `image` (base64) and/or `video` (base64 frames); pictures and video need
+    a vision-language reranker. Billed per (query, document) pair.
+    """
+    return _rpc("tenzro_rerank", _routed({
+        "model_id": model_id,
+        "query": query,
+        "documents": documents,
+        "top_n": top_n,
+    }, verification, provider))
+
+
+# Speech synthesis -------------------------------------------------------
+
+def speak(model_id: str, text: str, language: str | None = None,
+          seed: int | None = None, verification: str | None = None,
+          provider: str | None = None) -> dict:
+    """Speak text with a loaded speech model; returns base64 WAV."""
+    return _rpc("tenzro_speak", _routed({
+        "model_id": model_id,
+        "input": text,
+        "language": language,
+        "seed": seed,
+    }, verification, provider))
 
 
 # Audio (ASR) -----------------------------------------------------------
@@ -7116,15 +2182,10 @@ def list_audio_catalog() -> dict:
     """List the curated ASR catalog (Moonshine, Distil-Whisper, Whisper-turbo, Parakeet, Canary)."""
     return _rpc("tenzro_listAudioCatalog", {})
 
-
-def list_audio_models() -> dict:
-    """List audio models currently loaded on this node."""
-    return _rpc("tenzro_listAudioModels", {})
-
-
 def transcribe(model_id: str, audio_b64: str, language: str | None = None,
                timestamps: bool = False,
-               temperature: float | None = None) -> dict:
+               temperature: float | None = None,
+               verification: str | None = None, provider: str | None = None) -> dict:
     """Transcribe a base64-encoded audio buffer (WAV/MP3/FLAC)."""
     params = {
         "model_id": model_id,
@@ -7135,8 +2196,7 @@ def transcribe(model_id: str, audio_b64: str, language: str | None = None,
         params["language"] = language
     if temperature is not None:
         params["temperature"] = temperature
-    return _rpc("tenzro_transcribe", params)
-
+    return _rpc("tenzro_transcribe", _routed(params, verification, provider))
 
 # Video -----------------------------------------------------------------
 
@@ -7144,14 +2204,50 @@ def list_video_catalog() -> dict:
     """List the curated video encoder catalog (V-JEPA 2 ViT-L / ViT-H / ViT-g)."""
     return _rpc("tenzro_listVideoCatalog", {})
 
+def transcribe_stream(model_id: str, pcm_chunks, sample_rate: int = 16000,
+                      language: str | None = None,
+                      verification: str | None = None):
+    """Transcribe live audio as it is captured.
 
-def list_video_models() -> dict:
-    """List video models currently loaded on this node."""
-    return _rpc("tenzro_listVideoModels", {})
+    `pcm_chunks` yields mono 16-bit little-endian PCM byte chunks (from a
+    microphone, or a file read piece by piece). The node answers on the
+    realtime transport with `partial` transcripts of the open segment and
+    `final` segments committed at pauses (each billed by the second of
+    audio and receipted), then `done`. Yields `{"event", "data"}` dicts.
+    The node must serve the model.
+    """
+    import base64
+
+    def lines():
+        opening = {"model_id": model_id, "sample_rate": sample_rate,
+                   "language": language, "verification": verification}
+        yield (json.dumps(opening) + "\n").encode()
+        for chunk in pcm_chunks:
+            line = {"pcm_s16le_base64": base64.b64encode(chunk).decode()}
+            yield (json.dumps(line) + "\n").encode()
+
+    headers = {"Content-Type": "application/x-ndjson"}
+    bearer = os.environ.get("TENZRO_BEARER_JWT")
+    if bearer:
+        headers["Authorization"] = f"DPoP {bearer}"
+    dpop = os.environ.get("TENZRO_DPOP_PROOF")
+    if dpop:
+        headers["DPoP"] = dpop
+    url = RPC_URL.rstrip("/") + "/tenzro/realtime/transcribe"
+    with requests.post(url, data=lines(), headers=headers, stream=True,
+                       timeout=RPC_TIMEOUT) as resp:
+        resp.raise_for_status()
+        event = None
+        for raw in resp.iter_lines(decode_unicode=True):
+            if raw.startswith("event:"):
+                event = raw[len("event:"):].strip()
+            elif raw.startswith("data:"):
+                yield {"event": event, "data": json.loads(raw[len("data:"):].strip())}
 
 
 def video_embed(model_id: str, video_b64: str, normalize: bool = False,
-                frame_stride: int | None = None) -> dict:
+                frame_stride: int | None = None,
+                verification: str | None = None, provider: str | None = None) -> dict:
     """Embed a base64-encoded video clip into one clip-level vector.
 
     The node extracts evenly-spaced frames, embeds each through the image
@@ -7165,193 +2261,77 @@ def video_embed(model_id: str, video_b64: str, normalize: bool = False,
     }
     if frame_stride is not None:
         params["frame_stride"] = frame_stride
-    return _rpc("tenzro_videoEmbed", params)
-
+    return _rpc("tenzro_videoEmbed", _routed(params, verification, provider))
 
 # Multi-modal load / unload --------------------------------------------
 #
-# Symmetric load/unload pair per modality. `load_*_model` registers an
-# ONNX file with the node's runtime; `unload_*_model` drops the ORT
-# session.
-#
-# Most loaders need the ONNX already on the node's filesystem — the paths
-# are node-local, not client-local. Two exceptions fetch from HuggingFace
-# Hub themselves: `load_text_embedding_model` when called with a catalog
-# id and no path, and `load_text_segmentation_model` always.
-#
-# `catalog_id` inherits the structural parameters from the curated catalog
-# entry and enforces its license tier: the node refuses with JSON-RPC
-# -32010 when the operator has not accepted that entry's terms (started
-# with `--accept-license <id>` or `--accept-non-commercial`). Those are
-# node-operator startup flags, never client parameters.
-#
-# The ORT-backed runtimes are feature-gated. A node built without
-# `tenzro-model/onnx` answers every load and inference call with
-# JSON-RPC -32011 (ProviderNotAvailable).
+# Symmetric load/unload pair per modality. Every catalog loader takes the
+# same two parameters: the catalog `model_id` and an optional `visibility`
+# ('public', 'gated' or 'private'; omitted follows the node). The node
+# fetches and verifies the files the signed catalog entry names, takes every
+# shape from the entry, and enforces its licence tier: it refuses with
+# JSON-RPC -32010 when the operator has not accepted that entry's terms
+# (started with `--accept-license <id>` or `--accept-non-commercial`).
+# Those are node-operator startup flags, never client parameters.
+# `list_models(loaded=True)` lists every loaded model of every type.
 
+def _load_catalog_model(method: str, model_id: str, visibility: str | None) -> dict:
+    params = {"model_id": model_id}
+    if visibility is not None:
+        params["visibility"] = visibility
+    return _rpc(method, params)
 
-def load_forecast_model(model_id: str, path: str, catalog_id: str | None = None,
-                        context_length: int | None = None, max_horizon: int | None = None,
-                        output_name: str | None = None,
-                        batch_size: int | None = None) -> dict:
-    """Load a forecast (timeseries) ONNX. Pass catalog_id to inherit context_length/max_horizon/output_name/batch_size and enforce the entry's license tier."""
-    params = {"model_id": model_id, "path": path}
-    if catalog_id is not None:
-        params["catalog_id"] = catalog_id
-    if context_length is not None:
-        params["context_length"] = context_length
-    if max_horizon is not None:
-        params["max_horizon"] = max_horizon
-    if output_name is not None:
-        params["output_name"] = output_name
-    if batch_size is not None:
-        params["batch_size"] = batch_size
-    return _rpc("tenzro_loadForecastModel", params)
-
+def load_forecast_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog forecast (timeseries) model by `model_id`."""
+    return _load_catalog_model("tenzro_loadForecastModel", model_id, visibility)
 
 def unload_forecast_model(model_id: str) -> dict:
     """Drop a registered forecast model from the node."""
     return _rpc("tenzro_unloadForecastModel", {"model_id": model_id})
 
-
-def load_vision_model(model_id: str, path: str, catalog_id: str | None = None,
-                      input_size: int | None = None, embedding_dim: int | None = None,
-                      normalization: str | None = None) -> dict:
-    """Load a vision encoder ONNX. Pass catalog_id to inherit input_size/embedding_dim/normalization."""
-    params = {"model_id": model_id, "path": path}
-    if catalog_id is not None: params["catalog_id"] = catalog_id
-    if input_size is not None: params["input_size"] = input_size
-    if embedding_dim is not None: params["embedding_dim"] = embedding_dim
-    if normalization is not None: params["normalization"] = normalization
-    return _rpc("tenzro_loadVisionModel", params)
-
+def load_vision_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog vision encoder (CLIP, SigLIP, DINO) by `model_id`."""
+    return _load_catalog_model("tenzro_loadVisionModel", model_id, visibility)
 
 def unload_vision_model(model_id: str) -> dict:
     """Drop a registered vision encoder."""
     return _rpc("tenzro_unloadVisionModel", {"model_id": model_id})
 
-
-def load_text_embedding_model(model_id: str, path: str | None = None,
-                              tokenizer_path: str | None = None,
-                              family: str | None = None,
-                              catalog_id: str | None = None,
-                              embedding_dim: int | None = None,
-                              max_sequence_length: int | None = None) -> dict:
-    """Load a text encoder. Two paths.
-
-    Pass a catalog id as `model_id` and omit `path`, and the node fetches
-    the ONNX graph and tokenizer from HuggingFace onto its models
-    directory. Or pass `path` + `tokenizer_path` + `family` ('qwen3',
-    'cls', 'mean', 'sentence_embedding') for files already on the node,
-    with `catalog_id` supplying embedding_dim and max_sequence_length —
-    or set those two explicitly.
-    """
-    params = {"model_id": model_id}
-    if path is not None: params["path"] = path
-    if tokenizer_path is not None: params["tokenizer_path"] = tokenizer_path
-    if family is not None: params["family"] = family
-    if catalog_id is not None: params["catalog_id"] = catalog_id
-    if embedding_dim is not None: params["embedding_dim"] = embedding_dim
-    if max_sequence_length is not None:
-        params["max_sequence_length"] = max_sequence_length
-    return _rpc("tenzro_loadTextEmbeddingModel", params)
-
+def load_text_embedding_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog text encoder by `model_id`."""
+    return _load_catalog_model("tenzro_loadTextEmbeddingModel", model_id, visibility)
 
 def unload_text_embedding_model(model_id: str) -> dict:
     """Drop a registered text encoder."""
     return _rpc("tenzro_unloadTextEmbeddingModel", {"model_id": model_id})
 
-
-def load_segmentation_model(model_id: str, encoder_path: str,
-                            decoder_path: str, family: str | None = None,
-                            input_size: int | None = None,
-                            catalog_id: str | None = None) -> dict:
-    """Load a segmenter (SAM 2 / EdgeSAM / MobileSAM) from node-local ONNX.
-
-    Pass `catalog_id` to inherit family and input_size from the catalog,
-    or set both yourself. `family` is 'sam1' (EdgeSAM, MobileSAM —
-    6-input decoder) or 'sam2' (7-input decoder with high-res taps).
-    """
-    params = {
-        "model_id": model_id,
-        "encoder_path": encoder_path,
-        "decoder_path": decoder_path,
-    }
-    if family is not None: params["family"] = family
-    if input_size is not None: params["input_size"] = input_size
-    if catalog_id is not None: params["catalog_id"] = catalog_id
-    return _rpc("tenzro_loadSegmentationModel", params)
-
+def load_segmentation_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog segmenter (SAM 2 / EdgeSAM / MobileSAM) by `model_id`."""
+    return _load_catalog_model("tenzro_loadSegmentationModel", model_id, visibility)
 
 def unload_segmentation_model(model_id: str) -> dict:
     """Drop a registered segmenter."""
     return _rpc("tenzro_unloadSegmentationModel", {"model_id": model_id})
 
-
-def load_detection_model(model_id: str, path: str, family: str | None = None,
-                         input_size: int | None = None, num_classes: int | None = None,
-                         catalog_id: str | None = None) -> dict:
-    """Load a detector from a node-local ONNX file.
-
-    Pass `catalog_id` to inherit family, input_size and num_classes from
-    the catalog, or set all three. `family` is 'rf_detr' (90-class COCO
-    indexing) or 'd_fine' (80-class). Both are NMS-free.
-    """
-    params = {"model_id": model_id, "path": path}
-    if family is not None: params["family"] = family
-    if input_size is not None: params["input_size"] = input_size
-    if num_classes is not None: params["num_classes"] = num_classes
-    if catalog_id is not None: params["catalog_id"] = catalog_id
-    return _rpc("tenzro_loadDetectionModel", params)
-
+def load_detection_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog detector (RF-DETR, D-FINE) by `model_id`."""
+    return _load_catalog_model("tenzro_loadDetectionModel", model_id, visibility)
 
 def unload_detection_model(model_id: str) -> dict:
     """Drop a registered detector."""
     return _rpc("tenzro_unloadDetectionModel", {"model_id": model_id})
 
-
-def load_audio_model(model_id: str, encoder_path: str, decoder_path: str,
-                     tokenizer_path: str | None = None,
-                     preprocessor_path: str | None = None, vocab_path: str | None = None,
-                     catalog_id: str | None = None,
-                     family: str | None = None, max_audio_seconds: int | None = None,
-                     whisper_variant: str | None = None,
-                     source_lang: str | None = None,
-                     target_lang: str | None = None) -> dict:
-    """Load an ASR model from node-local ONNX files.
-
-    Which auxiliary paths are required depends on the family: 'moonshine'
-    and 'whisper' need `tokenizer_path`; 'parakeet' and 'canary' need
-    `preprocessor_path` + `vocab_path`. For 'canary', `source_lang` and
-    `target_lang` (both default 'en', one of en/de/es/fr) build the
-    decoder prefix — set them differently to translate rather than
-    transcribe. Pass `catalog_id` to inherit family, max_audio_seconds
-    and whisper_variant from the catalog.
-    """
-    params = {
-        "model_id": model_id,
-        "encoder_path": encoder_path,
-        "decoder_path": decoder_path,
-    }
-    if tokenizer_path is not None: params["tokenizer_path"] = tokenizer_path
-    if preprocessor_path is not None: params["preprocessor_path"] = preprocessor_path
-    if vocab_path is not None: params["vocab_path"] = vocab_path
-    if catalog_id is not None: params["catalog_id"] = catalog_id
-    if family is not None: params["family"] = family
-    if max_audio_seconds is not None: params["max_audio_seconds"] = max_audio_seconds
-    if whisper_variant is not None: params["whisper_variant"] = whisper_variant
-    if source_lang is not None: params["source_lang"] = source_lang
-    if target_lang is not None: params["target_lang"] = target_lang
-    return _rpc("tenzro_loadAudioModel", params)
-
+def load_audio_model(model_id: str, visibility: str | None = None) -> dict:
+    """Load a catalog speech-recognition model by `model_id`."""
+    return _load_catalog_model("tenzro_loadAudioModel", model_id, visibility)
 
 def unload_audio_model(model_id: str) -> dict:
     """Drop a registered ASR model."""
     return _rpc("tenzro_unloadAudioModel", {"model_id": model_id})
 
-
 def load_video_model(model_id: str, vision_model_id: str,
-                     num_frames: int | None = None) -> dict:
+                     num_frames: int | None = None,
+                     visibility: str | None = None) -> dict:
     """Register a clip encoder over an already-loaded image encoder.
 
     Video embedding is frame-based: the node extracts `num_frames`
@@ -7362,13 +2342,12 @@ def load_video_model(model_id: str, vision_model_id: str,
     """
     params = {"model_id": model_id, "vision_model_id": vision_model_id}
     if num_frames is not None: params["num_frames"] = num_frames
+    if visibility is not None: params["visibility"] = visibility
     return _rpc("tenzro_loadVideoModel", params)
-
 
 def unload_video_model(model_id: str) -> dict:
     """Drop a registered video encoder."""
     return _rpc("tenzro_unloadVideoModel", {"model_id": model_id})
-
 
 # Agent memory tier ----------------------------------------------------
 #
@@ -7378,57 +2357,7 @@ def unload_video_model(model_id: str) -> dict:
 # controller_did for delegated agents) and rejects cross-agent reads
 # with JSON-RPC -32001.
 
-
-def memory_grant(agent_did: str, text: str, kind: str = "granted",
-                 source: str = "controller", metadata: dict | None = None) -> dict:
-    """Grant a memory to an agent. Embeds via TextEmbeddingRuntime + writes to Lance + Tantivy.
-
-    Requires DPoP+JWT bearer auth — see module-level note above.
-    """
-    params = {
-        "agent_did": agent_did,
-        "text": text,
-        "kind": kind,
-        "source": source,
-    }
-    if metadata is not None:
-        params["metadata"] = metadata
-    return _rpc("tenzro_memoryGrant", params)
-
-
-def memory_recall(agent_did: str, query: str, mode: str = "hybrid",
-                  limit: int = 10, kind: str | None = None) -> dict:
-    """Recall memories via vector kNN / BM25 / hybrid RRF (k=60). mode in {'vector','text','hybrid'}."""
-    params = {
-        "agent_did": agent_did,
-        "query": query,
-        "mode": mode,
-        "limit": limit,
-    }
-    if kind is not None:
-        params["kind"] = kind
-    return _rpc("tenzro_memoryRecall", params)
-
-
-def memory_archive(agent_did: str, record_id: str) -> dict:
-    """Archive a memory: pushes payload to DA backend, rewrites on-tier row as kind='archived' + pointer."""
-    return _rpc("tenzro_memoryArchive", {
-        "agent_did": agent_did,
-        "record_id": record_id,
-    })
-
-
-def list_memory_records(agent_did: str, limit: int | None = None,
-                        kind: str | None = None) -> dict:
-    """List newest-first memories for an agent; optional kind filter."""
-    params = {"agent_did": agent_did}
-    if limit is not None: params["limit"] = limit
-    if kind is not None: params["kind"] = kind
-    return _rpc("tenzro_listMemoryRecords", params)
-
-
-# ── AgentBond (Spec 9) ────────────────────────────────────────────
-
+# ── AgentBond ────────────────────────────────────────────
 
 def get_agent_bond(agent_did: str) -> dict:
     """Read the AgentBond state for `agent_did`.
@@ -7438,7 +2367,6 @@ def get_agent_bond(agent_did: str) -> dict:
     has no bond posted.
     """
     return _rpc("tenzro_getAgentBond", {"agent_did": agent_did})
-
 
 def list_agent_bonds_by_controller(controller_did: str) -> dict:
     """List every AgentBond posted by `controller_did`.
@@ -7451,138 +2379,21 @@ def list_agent_bonds_by_controller(controller_did: str) -> dict:
         "controller_did": controller_did,
     })
 
-
-def post_agent_bond(controller_address: str, agent_did: str,
-                    controller_did: str, amount_wei: int) -> dict:
-    """Post a new AgentBond via signed `PostAgentBond` transaction.
-
-    Locks `amount_wei` TNZO from `controller_address` (the bearer wallet)
-    into the bond vault for `agent_did`. The bond enters Active state and
-    promotes the agent to the Delegated admission lane while ≥ the
-    configured `bond_min_for_promotion`.
-
-    Uses ambient OAuth/DPoP auth — `controller_address` must match the
-    bearer's wallet. The VM enforces that `agent_did` either has no prior
-    bond or its prior bond is in a terminal state.
-    """
-    nonce, chain_id = _fetch_nonce_and_chain_id(controller_address)
-    tx_type = {
-        "PostAgentBond": {
-            "agent_did": agent_did,
-            "controller_did": controller_did,
-            "amount": str(amount_wei),
-        }
-    }
-    params = {
-        "from": controller_address,
-        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "value": 0,
-        "gas_limit": 90000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-def increase_agent_bond(controller_address: str, agent_did: str,
-                        amount_wei: int) -> dict:
-    """Top up an existing Active AgentBond by `amount_wei`.
-
-    Uses ambient OAuth/DPoP auth — `controller_address` must equal the
-    original poster (the bond's controller). Locks additional TNZO into
-    the same bond vault.
-    """
-    nonce, chain_id = _fetch_nonce_and_chain_id(controller_address)
-    tx_type = {
-        "IncreaseAgentBond": {
-            "agent_did": agent_did,
-            "amount": str(amount_wei),
-        }
-    }
-    params = {
-        "from": controller_address,
-        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "value": 0,
-        "gas_limit": 75000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-def withdraw_agent_bond(controller_address: str, agent_did: str) -> dict:
-    """Initiate cooldown on an Active AgentBond via `WithdrawAgentBond`.
-
-    Funds are not released by the VM — finalisation happens off-VM via the
-    node-side BondManager once `cooldown_ms` has elapsed. Uses ambient
-    OAuth/DPoP auth — `controller_address` must equal the bond's controller.
-    """
-    nonce, chain_id = _fetch_nonce_and_chain_id(controller_address)
-    tx_type = {"WithdrawAgentBond": {"agent_did": agent_did}}
-    params = {
-        "from": controller_address,
-        "to": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "value": 0,
-        "gas_limit": 60000,
-        "gas_price": 1_000_000_000,
-        "nonce": nonce,
-        "chain_id": chain_id,
-        "tx_type": tx_type,
-    }
-    return _rpc("tenzro_signAndSendTransaction", params)
-
-
-# ── Insurance (Spec 9) ────────────────────────────────────────────
-
-
-def file_insurance_claim(claimant_did: str, claimant_address: str,
-                         against_agent_did: str, amount_requested_wei: int,
-                         nonce: int,
-                         receipt_refs: list | None = None,
-                         narrative: str | None = None) -> dict:
-    """Open a new insurance claim against a bonded agent.
-
-    The claim enters `Open` status awaiting governance adjudication; payout
-    (if approved) is settled via a separate `PayInsuranceClaim` transaction.
-    `nonce` is a per-claim disambiguator used in the deterministic claim_id
-    derivation. `receipt_refs` is an optional list of receipt-id strings;
-    `narrative` is capped at 1024 bytes server-side.
-    """
-    params = {
-        "claimant_did": claimant_did,
-        "claimant_address": claimant_address,
-        "against_agent_did": against_agent_did,
-        "amount_requested": str(amount_requested_wei),
-        "nonce": nonce,
-    }
-    if receipt_refs is not None:
-        params["receipt_refs"] = receipt_refs
-    if narrative is not None:
-        params["narrative"] = narrative
-    return _rpc("tenzro_fileInsuranceClaim", params)
-
+# ── Insurance ────────────────────────────────────────────
 
 def list_insurance_claims() -> dict:
     """List every insurance claim (Open + Approved + Rejected + Paid)."""
     return _rpc("tenzro_listInsuranceClaims", {})
 
-
 def get_insurance_claim(claim_id: str) -> dict:
     """Fetch a single insurance claim by its id."""
     return _rpc("tenzro_getInsuranceClaim", {"claim_id": claim_id})
-
 
 def get_insurance_pool_balance() -> dict:
     """Read the current insurance pool vault balance."""
     return _rpc("tenzro_getInsurancePoolBalance", {})
 
-
 # ── Devices and machine ownership ─────────────────────────────────
-
 
 def bind_device(identity_did: str, label: str, attestation_object_b64: str) -> dict:
     """Bind a device to an identity from a WebAuthn registration.
@@ -7606,23 +2417,16 @@ def bind_device(identity_did: str, label: str, attestation_object_b64: str) -> d
         },
     )
 
-
-
-
-
-def mirror_settlement(
-    interaction_id: str,
-    targets: list[dict],
-    primary_committed: bool = True,
-) -> dict:
-    """Record an anchored settlement on other chains, in parallel.
+def mirror_settlement(from_addr: str, interaction: dict, targets: list, primary_committed: bool = True) -> dict:
+    """Record an anchored settlement on other chains, in parallel, as Bridge
+    transactions the wallet ``from_addr`` (the payer or a relayer) signs.
 
     `targets` is `[{"chain": "eip155:8453", "self_contained": True}, ...]`.
 
     A self-contained mirror writes the canonical settlement bytes, so the
     record stays readable with no Tenzro node in existence — the only form that
-    survives the Tenzro Ledger losing state, which matters while Tenzro is on
-    testnet. A digest-only mirror is cheaper and proves a payload you already
+    survives the Tenzro Ledger losing state, which matters while Tenzro is a
+    preview network. A digest-only mirror is cheaper and proves a payload you already
     hold is the one that settled, but cannot tell you what settled.
 
     Each target is dispatched independently. There is no two-phase commit
@@ -7632,37 +2436,12 @@ def mirror_settlement(
     return _rpc(
         "tenzro_mirrorSettlement",
         {
-            "interaction_id": interaction_id,
+            "from": from_addr,
+            "interaction": interaction,
             "targets": targets,
             "primary_committed": primary_committed,
         },
     )
-
-def get_interaction(interaction_id: str) -> dict:
-    """Read an anchored interaction receipt and its attestation digest.
-
-    This is the accounting layer. An edge gateway can meter a request and
-    charge for it; what it cannot do is answer, afterwards and to somebody who
-    trusts neither party, which party consumed what, under whose authority, and
-    whether the payment that cleared corresponds to the work that happened.
-
-    One record covers every interaction kind — access, inference, storage,
-    marketplace — so an audit is a lookup rather than a reconciliation across
-    per-surface logs.
-    """
-    return _rpc("tenzro_getInteraction", {"interaction_id": interaction_id})
-
-
-def verify_interaction(interaction: dict) -> dict:
-    """Check a receipt you were handed against what the node anchored.
-
-    Compares content addresses rather than checking a signature, so the answer
-    does not depend on trusting the verifying node: the same digest can be
-    recomputed offline from the same published rule. A record altered after
-    issue produces a different digest and is reported as `digest_mismatch`,
-    with both digests returned.
-    """
-    return _rpc("tenzro_verifyInteraction", {"interaction": interaction})
 
 def settlement_networks() -> dict:
     """The rails a payment can settle on, and the smallest worthwhile payment on each.
@@ -7674,7 +2453,6 @@ def settlement_networks() -> dict:
     declaring what asset you want to be paid in.
     """
     return _rpc("tenzro_settlementNetworks", {})
-
 
 def route_payment(
     amount_wei: str,
@@ -7711,7 +2489,6 @@ def list_bound_devices(identity_did: str) -> dict:
     """
     return _rpc("tenzro_listBoundDevices", {"identity_did": identity_did})
 
-
 def revoke_bound_device(identity_did: str, credential_id: str) -> dict:
     """Unbind a device and end every session it authorised, in one action.
 
@@ -7723,7 +2500,6 @@ def revoke_bound_device(identity_did: str, credential_id: str) -> dict:
         "tenzro_revokeBoundDevice",
         {"identity_did": identity_did, "credential_id": credential_id},
     )
-
 
 def wallet_readiness(identity_did: str, this_device_credential_id: str | None = None) -> dict:
     """Whether a wallet may be created for this identity, and if not, why.
@@ -7740,7 +2516,6 @@ def wallet_readiness(identity_did: str, this_device_credential_id: str | None = 
             "this_device_credential_id": this_device_credential_id,
         },
     )
-
 
 def transfer_machine_ownership(
     machine_did: str,
@@ -7769,16 +2544,14 @@ def transfer_machine_ownership(
         },
     )
 
-
 # ── Economics ─────────────────────────────────────────────────────
-
 
 def get_economic_policy() -> dict:
     """Read the economic policy this node applies to every settlement.
 
     Returns the live `EconomicPolicy` — the validating split (operator /
     treasury), the delegated split (operator / rpc-provider / treasury), the
-    marketplace commission, the network's default settlement asset, and the
+    network's default settlement asset, and the
     micro-settlement floor beneath which a charge settles through a payment
     channel rather than its own transaction.
 
@@ -7793,9 +2566,7 @@ def get_economic_policy() -> dict:
     """
     return _rpc("tenzro_getEconomicPolicy", {})
 
-
-# ── Adaptive Burn (Spec 8) ────────────────────────────────────────
-
+# ── Adaptive Burn ────────────────────────────────────────
 
 def get_burn_rate_config() -> dict:
     """Read the current adaptive-burn configuration and supply targets.
@@ -7807,7 +2578,6 @@ def get_burn_rate_config() -> dict:
     """
     return _rpc("tenzro_getBurnRateConfig", {})
 
-
 def get_supply_metrics() -> dict:
     """Read the latest SupplyMetricsSnapshot.
 
@@ -7815,7 +2585,6 @@ def get_supply_metrics() -> dict:
     BurnBreakdown (per-rail), and EmissionBreakdown.
     """
     return _rpc("tenzro_getSupplyMetrics", {})
-
 
 def get_burn_rate_recommendation() -> dict:
     """Read the latest BurnRateRecommendation.
@@ -7827,162 +2596,18 @@ def get_burn_rate_recommendation() -> dict:
     """
     return _rpc("tenzro_getBurnRateRecommendation", {})
 
-
-def list_adaptive_burn_proposals() -> dict:
-    """List adaptive-burn governance proposals.
-
-    Surfaces auto-generated burn-rate adjustment proposals queued by the
-    governance executor. Returns `{ proposals: [...], count }`.
-    """
-    return _rpc("tenzro_listAdaptiveBurnProposals", {})
-
-
-# ── SeedAgent (Spec 10) ───────────────────────────────────────────
-
-
-def get_treasury_earmark(name: str | None = None) -> dict:
-    """Read the SeedAgent treasury earmark singleton.
-
-    Returns the genesis-funded TNZO allocation, decay schedule, remaining
-    balance, drawn-to-date, and master `enabled` switch. Only one earmark
-    exists (`name == "SeedAgent"`); the optional `name` arg is a
-    forward-compat filter.
-    """
-    params = {}
-    if name is not None:
-        params["name"] = name
-    return _rpc("tenzro_getTreasuryEarmark", params)
-
-
-def get_seed_agent_charter(charter_id: str) -> dict:
-    """Read a SeedAgent governance charter by hex `charter_id`.
-
-    Returns the operations whitelist, spend caps (daily/monthly/per-tx),
-    target throughput, counterparty filter, sunset, and enabled flag.
-    """
-    return _rpc("tenzro_getSeedAgentCharter", {"charter_id": charter_id})
-
-
-def list_seed_agent_charters() -> dict:
-    """List every governance-signed SeedAgent charter."""
-    return _rpc("tenzro_listSeedAgentCharters", {})
-
-
-def list_seed_agents(charter_id: str | None = None) -> dict:
-    """List SeedAgent registry records, optionally filtered by `charter_id`.
-
-    Returns per-DID provisioning state: agent_did, controller_did,
-    charter_id, status (Active|Paused|Quarantined|Terminated), bond_id,
-    allocation_used, provisioned_at, last_active.
-    """
-    params = {}
-    if charter_id is not None:
-        params["charter_id"] = charter_id
-    return _rpc("tenzro_listSeedAgents", params)
-
-
-def get_network_activity(window: str | None = None,
-                         exclude_seed: bool = False) -> dict:
-    """Read aggregated network-activity counters.
-
-    `window` is a string like "24h" / "7d"; `exclude_seed` filters out
-    transactions where either side is flagged `is_seed_agent` (so organic
-    activity can be measured against the bootstrap baseline). Returns
-    inference / settlement / bridge / 7683 counts plus seed-agent totals.
-    """
-    params = {}
-    if window is not None:
-        params["window"] = window
-    if exclude_seed:
-        params["exclude_seed"] = exclude_seed
-    return _rpc("tenzro_getNetworkActivity", params)
-
-
-# ── ERC-7683 cross-chain intents (Spec 4) ─────────────────────────
-
-
-def get_7683_order(order_id: str) -> dict:
-    """Fetch a Tenzro7683Order envelope by 32-byte hex `order_id`.
-
-    Returns the persisted envelope from the `7683_origin:` keyspace.
-    Order state machine: Open → AwaitingProof → Settled / Refunded /
-    ForceRefundEligible.
-    """
-    return _rpc("tenzro_get7683Order", {"order_id": order_id})
-
-
-def list_7683_orders(state: str | None = None,
-                     dest_chain: int | None = None,
-                     limit: int | None = None) -> dict:
-    """Paginated scan of persisted ERC-7683 cross-chain orders.
-
-    `state` filters by one of: open, awaiting_proof, settled, refunded,
-    force_refund_eligible. `dest_chain` is the CAIP-2 numeric destination
-    chain id. Returns `{ orders: [...], count: N }`.
-    """
-    params: dict = {}
-    if state is not None:
-        params["state"] = state
-    if dest_chain is not None:
-        params["dest_chain"] = dest_chain
-    if limit is not None:
-        params["limit"] = limit
-    return _rpc("tenzro_list7683Orders", params)
-
-
-def record_fill_7683(order_id: str,
-                     origin_chain_id: int,
-                     origin_settler: str,
-                     filler: str,
-                     recipient: str,
-                     fill_tx_hash: str,
-                     filled_at_ms: int,
-                     proof_route: str,
-                     outputs: list) -> dict:
-    """Destination-side commit of an ERC-7683 FillRecord.
-
-    `proof_route` is one of: layerzero, wormhole, debridge, hyperlane.
-    `outputs` is a list of `{ token, amount, recipient, chain_id }`.
-    Single-shot per `order_id` — duplicate returns JSON-RPC -32010
-    (OrderAlreadyFilled).
-    """
-    return _rpc("tenzro_recordFill7683", {
-        "order_id": order_id,
-        "origin_chain_id": origin_chain_id,
-        "origin_settler": origin_settler,
-        "filler": filler,
-        "recipient": recipient,
-        "fill_tx_hash": fill_tx_hash,
-        "filled_at_ms": filled_at_ms,
-        "proof_route": proof_route,
-        "outputs": outputs,
-    })
-
-
-def get_fill_7683(order_id: str, origin_chain_id: int) -> dict:
-    """Fetch a FillRecord by (order_id, origin_chain_id).
-
-    Returns the record JSON, or JSON-RPC -32000 if no fill has been
-    recorded for this order.
-    """
-    return _rpc("tenzro_getFill7683", {
-        "order_id": order_id,
-        "origin_chain_id": origin_chain_id,
-    })
-
-
-def list_fills_7683() -> dict:
-    """List every recorded destination-side FillRecord on this node.
-
-    Returns `{ fills: [...], count: N }` with no pagination — the
-    registry is bounded (one FillRecord per cross-chain order ever
-    filled here).
-    """
-    return _rpc("tenzro_listFills7683", {})
-
+def list_adaptive_burn_proposals() -> list:
+    """List burn-dial governance proposals, newest first: the policy updates
+    that set the burn shares or the supply targets the dial steers by."""
+    page = _rpc("tenzro_listProposals", {"kind": "policy_update", "limit": 100})
+    return [
+        p
+        for p in (page or {}).get("proposals", [])
+        if {"AdaptiveBurnConfigUpdate", "SupplyTargetsUpdate"}
+        & set(((p.get("proposal") or {}).get("action") or {}).get("update", {}))
+    ]
 
 # ── Escrow listing ────────────────────────────────────────────────
-
 
 def list_escrows_by_payer(payer: str) -> dict:
     """List every escrow opened by `payer` (hex address).
@@ -7991,7 +2616,6 @@ def list_escrows_by_payer(payer: str) -> dict:
     """
     return _rpc("tenzro_listEscrowsByPayer", {"payer": payer})
 
-
 def list_escrows_by_payee(payee: str) -> dict:
     """List every escrow whose recipient is `payee` (hex address).
 
@@ -7999,62 +2623,16 @@ def list_escrows_by_payee(payee: str) -> dict:
     """
     return _rpc("tenzro_listEscrowsByPayee", {"payee": payee})
 
-
-def prepaid_deposit(renter: str, amount_wei: int, asset: str = "TNZO") -> dict:
-    """Lock `amount_wei` of the renter's on-chain balance into the prepaid
-    streaming ledger. Storage deals and compute rentals stream per epoch out
-    of this balance.
-
-    Returns `{ renter, asset, deposited, balance }`.
-    """
-    return _rpc(
-        "tenzro_prepaidDeposit",
-        {"renter": renter, "amount": str(amount_wei), "asset": asset},
-    )
-
-
-def prepaid_withdraw(renter: str, amount_wei: int, asset: str = "TNZO") -> dict:
-    """Withdraw up to `amount_wei` of the renter's unspent prepaid balance back
-    to their on-chain account. `withdrawn` is capped at the available balance.
-
-    Returns `{ renter, asset, withdrawn, balance }`.
-    """
-    return _rpc(
-        "tenzro_prepaidWithdraw",
-        {"renter": renter, "amount": str(amount_wei), "asset": asset},
-    )
-
-
-def prepaid_balance(renter: str, asset: str = "TNZO") -> dict:
-    """Read the renter's current prepaid streaming balance (wei).
-
-    Returns `{ renter, asset, balance }`.
-    """
-    return _rpc("tenzro_prepaidBalance", {"renter": renter, "asset": asset})
-
-
-# ── Burn quota & mempool (Specs 3 + 6) ────────────────────────────
-
-
-def get_burn_quota() -> dict:
-    """Read the singleton BurnQuota state (Spec 3 — dual-rail gas+burn).
-
-    Returns balance / cap / daily_target / min_reserve_bps / min_reserve /
-    last_refill / total_drained / total_refilled / deficit / can_drain_one.
-    This is read-only — drains/refills happen in-process.
-    """
-    return _rpc("tenzro_getBurnQuota", {})
-
+# ── Mempool ────────────────────────────────────────────────────────
 
 def get_mempool_stats() -> dict:
-    """Read per-lane mempool statistics (Spec 2 — admission control).
+    """Read per-lane mempool statistics (admission control).
 
     Returns admitted / rejected_rate_limited / rejected_fee_floor /
     rejected_mempool_full counters plus refill_per_sec / burst_capacity /
     fee_floor_mult / weight per lane (Verified, Delegated, Open).
     """
     return _rpc("tenzro_getMempoolStats", {})
-
 
 def get_mempool_lane(address: str) -> dict:
     """Inspect the lane assignment and bucket state for `address`.
@@ -8066,9 +2644,8 @@ def get_mempool_lane(address: str) -> dict:
     """
     return _rpc("tenzro_getMempoolLane", {"address": address})
 
-
 def get_account_contention(address: str) -> dict:
-    """Read the hot-state local fee market score for `address` (Spec 6).
+    """Read the hot-state local fee market score for `address`.
 
     Returns score / reexecutions / writes / is_hot / multiplier and the
     current effective base fee + per-gas surcharge for transactions
@@ -8076,81 +2653,28 @@ def get_account_contention(address: str) -> dict:
     """
     return _rpc("tenzro_getAccountContention", {"address": address})
 
-
-# ── DA offload (Spec 7) ───────────────────────────────────────────
-
+# ── DA offload ───────────────────────────────────────────
 
 def get_da_backends() -> dict:
     """List configured DA backends and their health status.
 
-    Only `inline_fallback` is configured today; EigenDA / Celestia / Avail
+    Only `inline` is configured today; EigenDA / Celestia / Avail
     entries appear once their feature-gated adapters are wired.
     """
     return _rpc("tenzro_getDaBackends", {})
 
-
 def verify_da_pointer(pointer: dict) -> dict:
     """Probe whether a DA pointer is dereferenceable right now.
 
-    `pointer` is a dict with `backend` (`inline_fallback` | `eigenda` |
+    `pointer` is a dict with `backend` (`inline` | `eigenda` |
     `celestia` | `avail`), hex `namespace`, hex `locator`, and optional
     hex `commitment_kzg` / `attestation_root` (32 bytes).
     """
     return _rpc("tenzro_verifyDaPointer", {"pointer": pointer})
 
-
-# ── Receipts & principal chain (Spec 5) ───────────────────────────
-
-
-def get_receipt_principal_chain(receipt_id: str) -> dict:
-    """Walk the principal chain for a settlement receipt.
-
-    Returns the ordered chain of acting DIDs from the leaf actor up to the
-    terminal controller, reconstructed from the receipt's delegation graph.
-    """
-    return _rpc("tenzro_getReceiptPrincipalChain", {"receipt_id": receipt_id})
-
-
-def list_receipts_by_actor(actor_did: str) -> dict:
-    """List receipt ids whose acting DID matches `actor_did`. Oldest first."""
-    return _rpc("tenzro_listReceiptsByActor", {"did": actor_did})
-
-
-def list_receipts_by_controller(controller_did: str) -> dict:
-    """List receipt ids whose principal chain terminates at `controller_did`.
-
-    Oldest first.
-    """
-    return _rpc("tenzro_listReceiptsByController", {"did": controller_did})
-
-
-def summarize_controller(controller_did: str,
-                        since: int | None = None,
-                        until: int | None = None) -> dict:
-    """Aggregate a controller's activity across an optional unix-second window.
-
-    Returns receipt count, total settled value, distinct delegated agents,
-    KYC-tier evolution, and bond extremes.
-    """
-    params = {"did": controller_did}
-    if since is not None:
-        params["since"] = since
-    if until is not None:
-        params["until"] = until
-    return _rpc("tenzro_summarizeController", params)
-
+# ── Receipts & principal chain ───────────────────────────
 
 # ── Agent lifecycle & kill-switch ─────────────────────────────────
-
-
-def get_agent_lifecycle(agent_id: str) -> dict:
-    """Read the lifecycle state machine for `agent_id`.
-
-    Returns current state (Created|Active|Suspended|Terminated), last
-    state-change timestamp, last heartbeat, and the full state history.
-    """
-    return _rpc("tenzro_getAgentLifecycle", {"agent_id": agent_id})
-
 
 def list_kill_switch_by_agent(agent_did: str) -> dict:
     """List every kill-switch receipt targeting `agent_did`.
@@ -8159,7 +2683,6 @@ def list_kill_switch_by_agent(agent_did: str) -> dict:
     of a `PauseAgent` / `QuarantineAgent` / `TerminateAgent` execution.
     """
     return _rpc("tenzro_listKillSwitchByAgent", {"agent_did": agent_did})
-
 
 def list_kill_switch_by_controller(controller_did: str) -> dict:
     """List every kill-switch receipt authorised by `controller_did`.
@@ -8170,7 +2693,6 @@ def list_kill_switch_by_controller(controller_did: str) -> dict:
         "controller_did": controller_did,
     })
 
-
 def get_kill_switch_receipt(receipt_id: str) -> dict:
     """Fetch a single kill-switch receipt by hex `receipt_id`.
 
@@ -8178,9 +2700,7 @@ def get_kill_switch_receipt(receipt_id: str) -> dict:
     """
     return _rpc("tenzro_getKillSwitchReceipt", {"receipt_id": receipt_id})
 
-
 # ── Inference usage & provider reputation ─────────────────────────
-
 
 def list_inference_usage(model_id: str | None = None,
                          provider: str | None = None) -> dict:
@@ -8196,7 +2716,6 @@ def list_inference_usage(model_id: str | None = None,
     if provider is not None:
         params["provider"] = provider
     return _rpc("tenzro_listInferenceUsage", params)
-
 
 def get_generation(generation_id: str) -> dict:
     """Read the recorded stats for one generation by the id you already hold.
@@ -8215,17 +2734,7 @@ def get_generation(generation_id: str) -> dict:
     return _rpc("tenzro_getGeneration", {"id": generation_id})
 
 
-def get_provider_reputation(provider_address: str) -> dict:
-    """Read the current reputation score for an inference provider.
-
-    Returns `{ provider, reputation }` where `reputation` is a u64 in
-    [0, 1000]. The score moves +1 / -5 per success/failure.
-    """
-    return _rpc("tenzro_getProviderReputation", {"provider": provider_address})
-
-
 # ── Provenance & disputes ─────────────────────────────────────────
-
 
 def get_provenance(content_hash: str) -> dict:
     """Look up a cached ContentProvenanceManifest by 32-byte hex `content_hash`.
@@ -8236,27 +2745,7 @@ def get_provenance(content_hash: str) -> dict:
     """
     return _rpc("tenzro_getContentProvenance", {"content_hash": content_hash})
 
-
-def get_dispute(dispute_id: str) -> dict:
-    """Fetch a single channel dispute record by id.
-
-    Returns the full ChannelDispute (challenger, evidence, status,
-    timestamps, resolution).
-    """
-    return _rpc("tenzro_getDispute", {"dispute_id": dispute_id})
-
-
-def list_disputes_by_channel(channel_id: str) -> dict:
-    """List every dispute (open or historical) attached to a channel.
-
-    Returns `{ channel_id, count, disputes: [...] }`. Empty list is not
-    an error.
-    """
-    return _rpc("tenzro_listDisputesByChannel", {"channel_id": channel_id})
-
-
 # ── Validator registry (read-only) ────────────────────────────────
-
 
 def get_validator_state(address: str) -> dict:
     """Fetch a single validator's registry entry by 32-byte address.
@@ -8268,7 +2757,6 @@ def get_validator_state(address: str) -> dict:
     """
     return _rpc("tenzro_getValidatorState", {"address": address})
 
-
 def list_validators(status: str | None = None) -> dict:
     """List validators, optionally filtered by status.
 
@@ -8277,7 +2765,6 @@ def list_validators(status: str | None = None) -> dict:
     """
     params = {"status": status} if status else {}
     return _rpc("tenzro_listValidators", params)
-
 
 def list_active_validators() -> dict:
     """List only the currently-Active validators producing blocks.
@@ -8288,107 +2775,6 @@ def list_active_validators() -> dict:
     return _rpc("tenzro_listActiveValidators", {})
 
 
-def rotate_validator_key(
-    address: str,
-    new_consensus_pubkey: str,
-    new_pq_pubkey: str,
-    new_bls_pubkey: str,
-    nonce: int,
-    signature: str,
-) -> dict:
-    """Rotate a validator's consensus + PQ + BLS keys.
-
-    All hex parameters are 0x-prefixed. The signature is produced
-    offline with the *current* Ed25519 consensus key over::
-
-        SHA-256("tenzro/rotate-validator-key" || address(32) ||
-                new_consensus(32) || new_pq(1952) || new_bls(48) ||
-                nonce_le(8))
-
-    The rotation applies to the receiving node only. There is no
-    consensus-mediated typed transaction for it, so operators must fan
-    out the same call to every active validator before the next epoch
-    boundary or consensus will fork. See
-    `tools/deploy/rotate-validator-key.sh` in the network repo for the
-    fan-out script.
-
-    Returns `{ address, status, new_consensus_pubkey, new_pq_pubkey,
-    new_bls_pubkey, nonce, message }`.
-    """
-    return _rpc(
-        "tenzro_rotateValidatorKey",
-        {
-            "address": address,
-            "new_consensus_pubkey": new_consensus_pubkey,
-            "new_pq_pubkey": new_pq_pubkey,
-            "new_bls_pubkey": new_bls_pubkey,
-            "nonce": nonce,
-            "signature": signature,
-        },
-    )
-
-
-# ── Tenzro Train read-side inspection ─────────────────────────────
-
-
-def training_list_runs() -> dict:
-    """List every active training run this node is syncing.
-
-    Returns `{ runs: [...] }`. Each run carries task_id, current_round,
-    state_root, status, enrolled_trainers, and timestamps.
-    """
-    return _rpc("tenzro_training_listRuns", {})
-
-
-def training_get_run(task_id: str) -> dict:
-    """Look up a single training run by task_id.
-
-    Throws JSON-RPC -32602 if the run is unknown.
-    """
-    return _rpc("tenzro_training_getRun", {"task_id": task_id})
-
-
-def training_get_receipt(task_id: str) -> dict:
-    """Fetch the sealed receipt for a finalized training run.
-
-    Returns `null` when the run is still active (no receipt has been
-    written yet).
-    """
-    return _rpc("tenzro_training_getReceipt", {"task_id": task_id})
-
-
-def training_get_sealed_manifest(task_id: str) -> dict:
-    """Fetch the installed sealed-shard manifest for a Confidential-tier task.
-
-    Returns `null` when no manifest has been installed (Open and Verified
-    tiers never have a manifest).
-    """
-    return _rpc("tenzro_training_getSealedManifest", {"task_id": task_id})
-
-
-def training_decide_round(task_id: str) -> dict:
-    """Ask the syncer for its round decision on a training run.
-
-    The decision follows the grace window: `{decision: "wait",
-    remaining_ms}` while the window is open, `{decision: "finalize", round}`
-    once a witness quorum endorses the round, and `{decision: "no_quorum",
-    round}` when the window elapses without a quorum (the run advances,
-    carrying the prior state root forward).
-    """
-    return _rpc("tenzro_training_decideRound", {"task_id": task_id})
-
-
-def get_trainer_daemon_status() -> dict:
-    """Report the trainer auto-provisioning daemon status.
-
-    When the node has no `[training]` section (or `enabled = false`),
-    `running` is `false` and the DID / concurrency fields are absent.
-    Otherwise returns `{running, trainer_did, live_trainers,
-    max_concurrent_trainers}`.
-    """
-    return _rpc("tenzro_getTrainerDaemonStatus", {})
-
-
 def get_router_metrics() -> dict:
     """Read the inference router's live metrics snapshot.
 
@@ -8397,172 +2783,31 @@ def get_router_metrics() -> dict:
     """
     return _rpc("tenzro_getRouterMetrics", {})
 
-
 # ── CLI ───────────────────────────────────────────────────────────
 
 # ---------------------------------------------------------------------------
-# Saga workflow coordination + DID envelope verification
+# DID envelope verification
 # ---------------------------------------------------------------------------
-
-
-def workflow_open(workflow_id: str, orchestrator_did: str, steps_json: str) -> dict:
-    """Open a saga workflow. steps_json = JSON array of {id,executor_did?,compensation?}."""
-    return _rpc("tenzro_workflowOpen", {
-        "workflow_id": workflow_id,
-        "orchestrator_did": orchestrator_did,
-        "saga_steps": json.loads(steps_json),
-    })
-
-
-def workflow_step_execute(workflow_id: str, step_idx: int) -> dict:
-    return _rpc("tenzro_workflowStepExecute", {"workflow_id": workflow_id, "step_idx": step_idx})
-
-
-def workflow_step_verify(workflow_id: str, step_idx: int) -> dict:
-    return _rpc("tenzro_workflowStepVerify", {"workflow_id": workflow_id, "step_idx": step_idx})
-
-
-def workflow_step_compensate(workflow_id: str, step_idx: int, cascade: bool = False) -> dict:
-    return _rpc("tenzro_workflowStepCompensate", {
-        "workflow_id": workflow_id, "step_idx": step_idx, "cascade": cascade,
-    })
-
-
-def workflow_finalize(workflow_id: str) -> dict:
-    return _rpc("tenzro_workflowFinalize", {"workflow_id": workflow_id})
-
-
-def get_workflow_saga(workflow_id: str) -> dict:
-    return _rpc("tenzro_getWorkflowSaga", {"workflow_id": workflow_id})
-
 
 def verify_did_envelope(envelope_hex: str) -> dict:
     """Verify a Tenzro DID envelope (hex header value) — did:tenzro/key/ethr/web."""
     return _rpc("tenzro_verifyDidEnvelope", {"envelope": envelope_hex})
 
-
-# ---------------------------------------------------------------------------
-# Capital Intent + Reserve attestations (regulated capital allocation)
-# ---------------------------------------------------------------------------
-
-
-def capital_intent_open(intent: dict) -> dict:
-    """Open a Capital Intent — capital-markets analog of an AP2 Intent Mandate."""
-    return _rpc("tenzro_capitalIntentOpen", {"intent": intent})
-
-
-def capital_intent_quote(intent_id: str, solver_did: str, plan: str,
-                         price: int, eta_secs: int) -> dict:
-    return _rpc("tenzro_capitalIntentQuote", {
-        "intent_id": intent_id, "solver_did": solver_did,
-        "plan": plan, "price": price, "eta_secs": eta_secs,
-    })
-
-
-def capital_intent_assign(intent_id: str, solver_did: str | None = None,
-                          auto: bool = False, payer: str | None = None,
-                          payee: str | None = None) -> dict:
-    params = {"intent_id": intent_id}
-    if solver_did is not None:
-        params["solver_did"] = solver_did
-    if auto:
-        params["auto"] = True
-    if payer is not None:
-        params["payer"] = payer
-    if payee is not None:
-        params["payee"] = payee
-    return _rpc("tenzro_capitalIntentAssign", params)
-
-
-def capital_intent_execute(intent_id: str, leg: dict) -> dict:
-    return _rpc("tenzro_capitalIntentExecute", {"intent_id": intent_id, "leg": leg})
-
-
-def capital_intent_verify(intent_id: str) -> dict:
-    return _rpc("tenzro_capitalIntentVerify", {"intent_id": intent_id})
-
-
-def capital_intent_compensate(intent_id: str) -> dict:
-    return _rpc("tenzro_capitalIntentCompensate", {"intent_id": intent_id})
-
-
-def capital_intent_settle(intent_id: str, payee: str | None = None) -> dict:
-    params = {"intent_id": intent_id}
-    if payee is not None:
-        params["payee"] = payee
-    return _rpc("tenzro_capitalIntentSettle", params)
-
-
-def get_capital_intent(intent_id: str) -> dict:
-    return _rpc("tenzro_getCapitalIntent", {"intent_id": intent_id})
-
-
 def submit_reserve_attestation(attestation: dict) -> dict:
     return _rpc("tenzro_submitReserveAttestation", {"attestation": attestation})
 
-
 def get_reserve(asset_id: str) -> dict:
     return _rpc("tenzro_getReserve", {"asset_id": asset_id})
-
-
-def attested_mint(token_id: str, to: str, amount: str, caller: str) -> dict:
-    """1:1 backed token mint, gated by a fresh reserve attestation."""
-    return _rpc("tenzro_attestedMint", {
-        "token_id": token_id, "to": to, "amount": amount, "caller": caller,
-    })
-
 
 # ---------------------------------------------------------------------------
 # Workflow durable reads (extends the saga write surface above)
 # ---------------------------------------------------------------------------
 
-
-def get_workflow(workflow_id: str) -> dict:
-    return _rpc("tenzro_getWorkflow", {"workflow_id": workflow_id})
-
-
-def get_workflow_lifecycle(workflow_id: str) -> dict:
-    return _rpc("tenzro_getWorkflowLifecycle", {"workflow_id": workflow_id})
-
-
-def get_workflow_receipt(workflow_id: str) -> dict:
-    return _rpc("tenzro_getWorkflowReceipt", {"workflow_id": workflow_id})
-
-
-def get_workflow_operational_metrics(workflow_id: str) -> dict:
-    return _rpc("tenzro_getWorkflowOperationalMetrics", {"workflow_id": workflow_id})
-
-
-def list_workflow_receipts(limit: int | None = None) -> dict:
-    params = {}
-    if limit is not None:
-        params["limit"] = limit
-    return _rpc("tenzro_listWorkflowReceipts", params)
-
-
-def list_workflows_by_creator(creator_did: str) -> dict:
-    return _rpc("tenzro_listWorkflowsByCreator", {"creator_did": creator_did})
-
-
-def list_workflows_by_participant(participant_did: str) -> dict:
-    return _rpc("tenzro_listWorkflowsByParticipant", {"participant_did": participant_did})
-
-
-def list_workflows_by_status(status: str) -> dict:
-    return _rpc("tenzro_listWorkflowsByStatus", {"status": status})
-
-
-def mirror_workflow_to_canton(workflow_id: str) -> dict:
-    return _rpc("tenzro_mirrorWorkflowToCanton", {"workflow_id": workflow_id})
-
-
 # ── Institutional primitives ──────────────────────────────────────
-
 
 def urwa_is_kill_switched(token_id_hex: str) -> dict:
     """Read the ERC-7943 (uRWA) kill-switch state for a 32-byte token id."""
     return _rpc("tenzro_urwaIsKillSwitched", {"token_id_hex": token_id_hex})
-
 
 def urwa_get_frozen_tokens(token_id_hex: str, account_hex: str) -> dict:
     """Read the ERC-7943 frozen-amount for a (token, account) pair."""
@@ -8570,60 +2815,6 @@ def urwa_get_frozen_tokens(token_id_hex: str, account_hex: str) -> dict:
         "tenzro_urwaGetFrozenTokens",
         {"token_id_hex": token_id_hex, "account_hex": account_hex},
     )
-
-
-def urwa_set_frozen_tokens(token_id_hex: str, account_hex: str,
-                           amount: str, reason: str | None = None) -> dict:
-    """(Admin) Freeze a specific amount on an ERC-7943 token account."""
-    return _rpc(
-        "tenzro_urwaSetFrozenTokens",
-        {
-            "token_id_hex": token_id_hex,
-            "account_hex": account_hex,
-            "amount": amount,
-            "reason": reason,
-        },
-    )
-
-
-def urwa_trigger_kill_switch(token_id_hex: str,
-                             triggered_by_did: str | None = None,
-                             reason: str | None = None) -> dict:
-    """(Admin) Activate the ERC-7943 kill-switch on a token."""
-    return _rpc(
-        "tenzro_urwaTriggerKillSwitch",
-        {
-            "token_id_hex": token_id_hex,
-            "triggered_by_did": triggered_by_did,
-            "reason": reason,
-        },
-    )
-
-
-def urwa_clear_kill_switch(token_id_hex: str) -> dict:
-    """(Admin) Clear the ERC-7943 kill-switch on a token."""
-    return _rpc("tenzro_urwaClearKillSwitch", {"token_id_hex": token_id_hex})
-
-
-def ivms101_hash(envelope: dict) -> dict:
-    """Compute the canonical SHA-256 hash for an IVMS101 Travel Rule envelope."""
-    return _rpc("tenzro_ivms101Hash", envelope)
-
-
-def attested_clock_now() -> dict:
-    """Return the current node wall-clock as a Tenzro AttestedTimestamp envelope."""
-    return _rpc("tenzro_attestedClockNow", [])
-
-
-def signed_agent_card_canonical_hash(agent_card: dict) -> dict:
-    """Compute the canonical hash for an A2A v1.0 SignedAgentCard payload."""
-    return _rpc("tenzro_signedAgentCardCanonicalHash", agent_card)
-
-
-def wormhole_ntt_list_chains() -> dict:
-    """Enumerate the registered Wormhole NTT chain catalog."""
-    return _rpc("tenzro_wormholeNttListChains", [])
-
 
 def quote_bridge_fee_in_tnzo(adapter: str, dest_chain: str,
                              native_fee_smallest_unit: str) -> dict:
@@ -8637,83 +2828,7 @@ def quote_bridge_fee_in_tnzo(adapter: str, dest_chain: str,
         },
     )
 
-
-def list_bridge_sponsorship_pools() -> dict:
-    """Enumerate per-adapter bridge sponsorship-pool vault addresses."""
-    return _rpc("tenzro_listBridgeSponsorshipPools", [])
-
-
-def set_bridge_fee_rate(adapter: str, dest_chain: str, rate_q18: str,
-                        markup_bps: int = 100, valid_window_ms: int = 60_000) -> dict:
-    """(Admin) Register a governance-set fee-rate row."""
-    return _rpc(
-        "tenzro_setBridgeFeeRate",
-        {
-            "adapter": adapter,
-            "dest_chain": dest_chain,
-            "rate_q18": rate_q18,
-            "markup_bps": markup_bps,
-            "valid_window_ms": valid_window_ms,
-        },
-    )
-
-
-def sponsor_bridge_fee(quote_id_hex: str, adapter: str, dest_chain: str,
-                       native_fee_smallest_unit: str, tnzo_amount_wei: str,
-                       rate_q18_hex: str, issued_at_ms: int, valid_until_ms: int,
-                       payer_did: str, oracle_backing: str = "governance") -> dict:
-    """Sponsor a previously-quoted destination-native bridge fee in TNZO."""
-    return _rpc(
-        "tenzro_sponsorBridgeFee",
-        {
-            "quote_id_hex": quote_id_hex,
-            "adapter": adapter,
-            "dest_chain": dest_chain,
-            "native_fee_smallest_unit": native_fee_smallest_unit,
-            "tnzo_amount_wei": tnzo_amount_wei,
-            "rate_q18_hex": rate_q18_hex,
-            "issued_at_ms": issued_at_ms,
-            "valid_until_ms": valid_until_ms,
-            "oracle_backing": oracle_backing,
-            "payer_did": payer_did,
-        },
-    )
-
-
-def set_sponsorship_refill_threshold(adapter: str, refill_threshold_bps: int) -> dict:
-    """(Admin) Set the refill-threshold bps for an adapter's pool."""
-    return _rpc(
-        "tenzro_setSponsorshipRefillThreshold",
-        {"adapter": adapter, "refill_threshold_bps": refill_threshold_bps},
-    )
-
-
-def get_bridge_analytics() -> dict:
-    """Subject self-read of caller's Chainlink/bridge analytics."""
-    return _rpc("tenzro_getBridgeAnalytics", [])
-
-
-def list_bridge_analytics(key_id: str | None = None) -> dict:
-    """(Admin) Cross-tenant Chainlink/bridge analytics."""
-    params = {"key_id": key_id} if key_id else None
-    return _rpc("tenzro_listBridgeAnalytics", params)
-
-
-def workflow_set_step_deadline(workflow_id: str, step_idx: int,
-                               attested_deadline: dict) -> dict:
-    """Bind a TEE-attested deadline to a saga step."""
-    return _rpc(
-        "tenzro_workflowSetStepDeadline",
-        {
-            "workflow_id": workflow_id,
-            "step_idx": step_idx,
-            "attested_deadline": attested_deadline,
-        },
-    )
-
-
 # ── Storage Market ────────────────────────────────────────────────
-
 
 def storage_store_object(object_id: str, data: str, owner: str = "",
                          data_shards: int = 4,
@@ -8732,17 +2847,15 @@ def storage_store_object(object_id: str, data: str, owner: str = "",
         params["owner"] = owner
     return _rpc("tenzro_storageStoreObject", params)
 
-
 # ── Universal RPC gateway ─────────────────────────────────────────
 #
-# The ~690 wrappers in this module cover what the node served when each was
+# The wrappers in this module cover what the node served when each was
 # written. These two cover everything, including methods added to a node newer
 # than this file — the directory comes from the node, not from a list here.
 #
 # Authorization is unchanged: a call through the gateway runs behind the same
 # admin-token gate, API-key scope gate, and default-deny classification as any
 # other call, so it reaches exactly what your credentials already allow.
-
 
 def list_rpc_methods(namespace: str | None = None, contains: str | None = None) -> dict:
     """Enumerate every JSON-RPC method this node serves.
@@ -8751,7 +2864,8 @@ def list_rpc_methods(namespace: str | None = None, contains: str | None = None) 
     scope it needs, so you can tell "I need a differently-scoped key" from "I
     need the operator's token" without provoking the error first.
 
-    `namespace` and `contains` narrow the listing; unfiltered it is ~900 rows.
+    `namespace` and `contains` narrow the listing; unfiltered it lists every
+    method the node serves.
     """
     params = {}
     if namespace is not None:
@@ -8760,7 +2874,6 @@ def list_rpc_methods(namespace: str | None = None, contains: str | None = None) 
         params["contains"] = contains
     return _rpc("tenzro_listRpcMethods", params)
 
-
 def call_rpc(method: str, params: dict | None = None) -> dict:
     """Invoke any JSON-RPC method by name.
 
@@ -8768,7 +2881,6 @@ def call_rpc(method: str, params: dict | None = None) -> dict:
     with `list_rpc_methods` first.
     """
     return _rpc(method, params if params is not None else {})
-
 
 def supports(method: str) -> bool:
     """Whether this node serves `method`.
@@ -8780,107 +2892,6 @@ def supports(method: str) -> bool:
     rows = result.get("methods") or []
     return any(r.get("method") == method for r in rows)
 
-
-# ── Tenant Files (/v1/files) ──────────────────────────────────────
-#
-# The tenant-facing layer over the storage market above. Where
-# `storage_store_object` addresses an object by an id you choose and
-# leaves ownership, deals, and naming to you, these carry all three: the
-# subject on your `TENZRO_API_KEY` owns the file, a deal is opened for
-# you, and the filename comes back on every listing.
-#
-# Every function here needs an API key carrying the `storage` scope.
-# There is no unauthenticated path, including for reads — a file with no
-# owner is one nobody can list, retrieve, or be billed for.
-
-
-def upload_file(filename: str, data: str, purpose: str | None = None) -> dict:
-    """Store a file owned by your API key's subject.
-
-    `data` is the base64-encoded payload. `purpose` is one of assistants,
-    batch, fine_tune, vision, user_data (default). The bytes are
-    erasure-coded across independent providers and a storage deal is
-    opened to fund the shards — check `deal_id` on the result: a null
-    there means the file is stored but unbilled, and its shards are not
-    funded.
-    """
-    params = {"filename": filename, "data": data}
-    if purpose is not None:
-        params["purpose"] = purpose
-    return _rpc("tenzro_uploadFile", params)
-
-
-def list_files(purpose: str | None = None, limit: int | None = None) -> dict:
-    """List your own files, newest first, with your total stored bytes.
-
-    Never returns another tenant's files — the listing is scoped
-    server-side to the subject on the presented key.
-    """
-    params = {}
-    if purpose is not None:
-        params["purpose"] = purpose
-    if limit is not None:
-        params["limit"] = limit
-    return _rpc("tenzro_listFiles", params)
-
-
-def get_file(file_id: str) -> dict:
-    """Fetch one file's record.
-
-    A file belonging to another tenant reports the same "no such file" as
-    one that never existed, so ownership cannot be probed by guessing ids.
-    """
-    return _rpc("tenzro_getFile", {"file_id": file_id})
-
-
-def download_file(file_id: str) -> dict:
-    """Retrieve a file's contents, rebuilt from its erasure-coded shards.
-
-    Returns `{file_id, filename, bytes, data}` where `data` is base64.
-    """
-    return _rpc("tenzro_downloadFile", {"file_id": file_id})
-
-
-def delete_file(file_id: str) -> dict:
-    """Unlink a file and stop its storage deal.
-
-    This is NOT erasure. Objects are content-addressed and erasure-coded
-    across independent providers, so deletion cannot reach into every
-    provider holding a shard. Shards expire when the deal stops paying
-    for them. The returned `note` says so on every call — do not treat
-    deletion as redaction.
-    """
-    return _rpc("tenzro_deleteFile", {"file_id": file_id})
-
-
-def file_storage_usage() -> dict:
-    """What you are storing: file count, total bytes, how many files have
-    an open deal (and how many do not), and your derived billing address.
-    """
-    return _rpc("tenzro_fileStorageUsage", {})
-
-
-def storage_open_deal(object_id: str, renter: str, size_bytes: int,
-                      total_epochs: int) -> dict:
-    """Open a streaming storage deal for a stored object."""
-    return _rpc("tenzro_storageOpenDeal", {
-        "object_id": object_id,
-        "renter": renter,
-        "size_bytes": size_bytes,
-        "total_epochs": total_epochs,
-    })
-
-
-def storage_charge_epoch(deal_id: str) -> dict:
-    """Run one proof-of-retrievability-gated charge epoch for a deal."""
-    return _rpc("tenzro_storageChargeEpoch", {"deal_id": deal_id})
-
-
-def storage_get_deal(deal_id: str) -> dict:
-    """Look up a storage deal by id."""
-    return _rpc("tenzro_storageGetDeal", {"deal_id": deal_id})
-
-
 def storage_set_pricing(mode: str = "dynamic", capacity: str = "0",
                         min_rate: str | None = None, max_rate: str | None = None) -> dict:
     """Set the byte-epoch storage pricing policy."""
@@ -8891,217 +2902,17 @@ def storage_set_pricing(mode: str = "dynamic", capacity: str = "0",
         params["max_rate"] = max_rate
     return _rpc("tenzro_storageSetPricing", params)
 
-
 def storage_status() -> dict:
     """Summary of this node's storage-provider state."""
     return _rpc("tenzro_storageStatus", [])
 
-
 # ── Managed Databases ─────────────────────────────────────────────
 
-
-def list_database_engines() -> dict:
-    """List the database engines this node can serve (with data models,
-    license, sharding model, native-cluster topology)."""
-    return _rpc("tenzro_listDatabaseEngines", [])
-
-
-def create_database(database_id: str, engine_id: str, owner_did: str | None = None,
-                    access_policy: dict | None = None, placement: str = "local",
-                    partitions: int = 1, min_replication: int | None = None,
-                    max_replication: int | None = None,
-                    engine_config: dict | None = None,
-                    confidential: bool = False) -> dict:
-    """Register a database this node serves and compute its partition
-    placement over the live cluster.
-
-    Provide either `owner_did` (owner-only access policy) or an explicit
-    `access_policy`. `placement` is local | lan_cluster | network.
-    `min_replication`/`max_replication` set the holders-per-partition policy
-    (node default 2/4). Set `confidential` for encryption at rest.
-    """
-    params = {
-        "database_id": database_id,
-        "engine_id": engine_id,
-        "placement": placement,
-        "partitions": partitions,
-    }
-    if min_replication is not None or max_replication is not None:
-        params["replication"] = {
-            "min_replication": min_replication if min_replication is not None else 2,
-            "max_replication": max_replication if max_replication is not None else 4,
-        }
-    if owner_did is not None:
-        params["owner_did"] = owner_did
-    if access_policy is not None:
-        params["access_policy"] = access_policy
-    if engine_config is not None:
-        params["engine_config"] = engine_config
-    if confidential:
-        params["confidential"] = confidential
-    return _rpc("tenzro_createDatabase", params)
-
-
-def get_database(database_id: str) -> dict:
-    """Look up a database descriptor by id."""
-    return _rpc("tenzro_getDatabase", {"database_id": database_id})
-
-
-def list_databases() -> dict:
-    """List every database this node serves."""
-    return _rpc("tenzro_listDatabases", [])
-
-
-def list_database_partitions(database_id: str) -> dict:
-    """List every partition placement of a database."""
-    return _rpc("tenzro_listDatabasePartitions",
-                {"database_id": database_id})
-
-
-def get_database_partition(database_id: str, partition_index: int) -> dict:
-    """Return the placement of one partition."""
-    return _rpc("tenzro_getDatabasePartition", {
-        "database_id": database_id,
-        "partition_index": partition_index,
-    })
-
-
-def issue_database_connection(database_id: str, caller_did: str,
-                              bearer_did: str | None = None, write: bool = False,
-                              ttl_secs: int | None = None,
-                              capability: str | None = None) -> dict:
-    """Mint a managed-database connection credential scoped to one database.
-
-    Returns the bearer token a developer presents on every query.
-    """
-    params = {
-        "database_id": database_id,
-        "caller_did": caller_did,
-        "write": write,
-    }
-    if bearer_did is not None:
-        params["bearer_did"] = bearer_did
-    if ttl_secs is not None:
-        params["ttl_secs"] = ttl_secs
-    if capability is not None:
-        params["capability"] = capability
-    return _rpc("tenzro_issueDatabaseConnection", params)
-
-
-def database_query(database_id: str, caller_did: str, body: dict,
-                   partition_index: int = 0, write: bool = False,
-                   capability: str | None = None, consistency: str | None = None) -> dict:
-    """Run an engine-dialect query against a database partition.
-
-    `body` is the engine dialect ({sql, params} for Postgres, {op, ...} for
-    Qdrant/Lance/Tantivy, {command: [...]} for Valkey). `consistency` is the
-    write acknowledgement level — 'quorum' (default) or 'all'; ignored on the
-    read path. When this node holds the target partition the result carries
-    served_here=true and the engine result; otherwise it carries the holder
-    endpoints.
-    """
-    params = {
-        "database_id": database_id,
-        "caller_did": caller_did,
-        "body": body,
-        "partition_index": partition_index,
-        "write": write,
-    }
-    if capability is not None:
-        params["capability"] = capability
-    if consistency is not None:
-        params["consistency"] = consistency
-    return _rpc("tenzro_databaseQuery", params)
-
-
-def authorize_database_read(database_id: str, caller_did: str,
-                            capability: str | None = None) -> dict:
-    """Check — without side effects — whether caller_did may read the
-    database. Returns {authorized, reason}."""
-    params = {"database_id": database_id, "caller_did": caller_did}
-    if capability is not None:
-        params["capability"] = capability
-    return _rpc("tenzro_authorizeDatabaseRead", params)
-
-
-def rescale_database(database_id: str, caller_did: str, placement: str,
-                     partitions: int | None = None, min_replication: int | None = None,
-                     max_replication: int | None = None,
-                     capability: str | None = None) -> dict:
-    """Grow or shrink a database along the local → LAN-cluster → network
-    continuum in place. Gated on the write action. `min_replication` and
-    `max_replication` must be supplied together; omitted, the database's
-    current policy is kept."""
-    params = {
-        "database_id": database_id,
-        "caller_did": caller_did,
-        "placement": placement,
-    }
-    if partitions is not None:
-        params["partitions"] = partitions
-    if min_replication is not None and max_replication is not None:
-        params["replication"] = {
-            "min_replication": min_replication,
-            "max_replication": max_replication,
-        }
-    if capability is not None:
-        params["capability"] = capability
-    return _rpc("tenzro_rescaleDatabase", params)
-
-
-def drop_database(database_id: str) -> dict:
-    """Remove a database and all its partition placements."""
-    return _rpc("tenzro_dropDatabase", {"database_id": database_id})
-
-
-# ── Compute Rental ────────────────────────────────────────────────
-
-
-def compute_book_rental(renter: str, total_epochs: int) -> dict:
-    """Book a fixed-term compute rental against this provider."""
-    return _rpc("tenzro_computeBookRental", {
-        "renter": renter,
-        "total_epochs": total_epochs,
-    })
-
-
-def compute_settle_epoch(rental_id: str, proof_valid: bool = True) -> dict:
-    """Settle one epoch of an active compute rental, gated on the
-    availability proof."""
-    return _rpc("tenzro_computeSettleEpoch", {
-        "rental_id": rental_id,
-        "proof_valid": proof_valid,
-    })
-
-
-def compute_get_rental(rental_id: str) -> dict:
-    """Look up a compute rental by id."""
-    return _rpc("tenzro_computeGetRental", {"rental_id": rental_id})
-
-
-def compute_set_pricing(mode: str = "dynamic", capacity: str = "0",
-                        min_rate: str | None = None, max_rate: str | None = None) -> dict:
-    """Set the per-epoch compute pricing policy."""
-    params = {"mode": mode, "capacity": capacity}
-    if min_rate is not None:
-        params["min_rate"] = min_rate
-    if max_rate is not None:
-        params["max_rate"] = max_rate
-    return _rpc("tenzro_computeSetPricing", params)
-
-
-def compute_status() -> dict:
-    """Summary of this node's compute-rental state."""
-    return _rpc("tenzro_computeStatus", [])
-
-
 # ── MoE Expert Sharding ───────────────────────────────────────────
-
 
 def moe_shard_map(model_id: str) -> dict:
     """Return the expert-shard map for a MoE model across known providers."""
     return _rpc("tenzro_moeShardMap", {"model_id": model_id})
-
 
 def moe_plan_dispatch(model_id: str, routings: list,
                       allow_cold: bool = False) -> dict:
@@ -9112,16 +2923,13 @@ def moe_plan_dispatch(model_id: str, routings: list,
         "allow_cold": allow_cold,
     })
 
-
 def moe_replication_policy() -> dict:
     """Return the current replication policy used by shard-view consumers."""
     return _rpc("tenzro_moeReplicationPolicy", [])
 
-
 def moe_catalog_shape(model_id: str) -> dict:
     """Return the catalog-side MoE topology for a model."""
     return _rpc("tenzro_moeCatalogShape", {"model_id": model_id})
-
 
 def moe_prepare_experts(model_id: str, layer: int, experts: list | None = None,
                         include_gate: bool = True, quant=None) -> dict:
@@ -9140,16 +2948,13 @@ def moe_prepare_experts(model_id: str, layer: int, experts: list | None = None,
         params["quant"] = quant
     return _rpc("tenzro_moePrepareExperts", params)
 
-
 def moe_prepare_status(job_id: str) -> dict:
     """Poll an expert-preparation job for its state and prepared blob URIs."""
     return _rpc("tenzro_moePrepareStatus", {"job_id": job_id})
 
-
 def moe_expert_status() -> dict:
     """Resident experts / gates with residency tier, footprint, and GPU flag."""
     return _rpc("tenzro_moeExpertStatus", [])
-
 
 def moe_forward(model_id: str, layer: int, d_model: int, hidden: list) -> dict:
     """Run one distributed MoE layer forward.
@@ -9165,110 +2970,32 @@ def moe_forward(model_id: str, layer: int, d_model: int, hidden: list) -> dict:
         "hidden": hidden,
     })
 
-
 # ── Local Discovery & Cluster ─────────────────────────────────────
-
-
-def local_peers() -> dict:
-    """Peer IDs discovered on this node's local network segment via mDNS."""
-    return _rpc("tenzro_localPeers", [])
-
-
-def node_reachability() -> dict:
-    """This node's sustained connectivity tier."""
-    return _rpc("tenzro_nodeReachability", [])
-
 
 def node_profile() -> dict:
     """The local node's hardware self-profile and derived serving values."""
     return _rpc("tenzro_nodeProfile", [])
 
-
-def cluster_plan(model: dict, members: list,
-                 user_forced: bool = False) -> dict:
-    """Deterministic cluster placement for a model across candidate members."""
-    return _rpc("tenzro_clusterPlan", {
-        "model": model,
-        "members": members,
-        "user_forced": user_forced,
-    })
-
-
-def cluster_preview(model_id: str, force_cluster: bool = False,
-                    force_single: bool = False) -> dict:
-    """Preview placement for a downloaded model from the node's live view.
-
-    Unlike cluster_plan, needs no manual dimensions or member list: the node
-    derives the model shape from the GGUF header and discovers LAN members from
-    gossip. Returns the fit decision, discovered members, any rejected members
-    (with reasons), and the proposed per-member layer stages. Call before
-    serve_model.
-    """
-    return _rpc("tenzro_clusterPreview", {
-        "model_id": model_id,
-        "user_forced": force_cluster,
-        "force_single": force_single,
-    })
-
-
 COMMANDS = {
+    "get_beacon": lambda args: get_beacon(
+        int(args[0]) if args else None, int(args[1]) if len(args) > 1 else None),
+    "get_da_object": lambda args: get_da_object(args[0]),
+    "get_da_retention": lambda args: get_da_retention(),
+    "get_fee_market": lambda args: get_fee_market(),
     # Wallet & Balance
     "join_network": lambda args: join_as_micro_node(
         args[0] if args else "Tenzro User",
         args[1] if len(args) > 1 else "cli",
     ),
-    "create_account": lambda args: create_account(args[0] if args else "ed25519"),
-    "create_wallet": lambda args: create_wallet(),
+    "list_bridge_routes": lambda args: list_bridge_routes(),
+    "get_bridge_route": lambda args: get_bridge_route(args[0], args[1]),
     "get_balance": lambda args: get_balance(args[0]),
     "balance": lambda args: get_balance(args[0]),
-    "send": lambda args: send_transaction(
-        args[0],
-        args[1],
-        int(args[2]),
-        approval_id=args[3] if len(args) > 3 else None,
-    ),
-    "faucet": lambda args: request_faucet(args[0]),
-    # Saga workflows + DID envelope verification
-    "workflow_open": lambda args: workflow_open(args[0], args[1], args[2]),
-    "workflow_execute": lambda args: workflow_step_execute(args[0], int(args[1])),
-    "workflow_verify": lambda args: workflow_step_verify(args[0], int(args[1])),
-    "workflow_compensate": lambda args: workflow_step_compensate(
-        args[0], int(args[1]), len(args) > 2 and args[2].lower() in ("1", "true", "yes")
-    ),
-    "workflow_finalize": lambda args: workflow_finalize(args[0]),
-    "get_workflow": lambda args: get_workflow(args[0]),
-    "get_workflow_saga": lambda args: get_workflow_saga(args[0]),
-    "get_workflow_lifecycle": lambda args: get_workflow_lifecycle(args[0]),
-    "get_workflow_receipt": lambda args: get_workflow_receipt(args[0]),
-    "get_workflow_metrics": lambda args: get_workflow_operational_metrics(args[0]),
-    "list_workflow_receipts": lambda args: list_workflow_receipts(int(args[0]) if args else None),
-    "list_workflows_by_creator": lambda args: list_workflows_by_creator(args[0]),
-    "list_workflows_by_participant": lambda args: list_workflows_by_participant(args[0]),
-    "list_workflows_by_status": lambda args: list_workflows_by_status(args[0]),
-    "mirror_workflow_to_canton": lambda args: mirror_workflow_to_canton(args[0]),
+    # DID envelope verification
     "verify_envelope": lambda args: verify_did_envelope(args[0]),
     # Capital Intent (regulated capital allocation) + Reserve attestations
-    "capital_intent_open": lambda args: capital_intent_open(json.loads(args[0])),
-    "capital_intent_quote": lambda args: capital_intent_quote(
-        args[0], args[1], args[2], int(args[3]), int(args[4])
-    ),
-    "capital_intent_assign": lambda args: capital_intent_assign(
-        args[0],
-        solver_did=(args[1] if len(args) > 1 and args[1] else None),
-        auto=(len(args) > 2 and args[2].lower() in ("1", "true", "yes")),
-        payer=(args[3] if len(args) > 3 and args[3] else None),
-        payee=(args[4] if len(args) > 4 and args[4] else None),
-    ),
-    "capital_intent_execute": lambda args: capital_intent_execute(args[0], json.loads(args[1])),
-    "capital_intent_verify": lambda args: capital_intent_verify(args[0]),
-    "capital_intent_compensate": lambda args: capital_intent_compensate(args[0]),
-    "capital_intent_settle": lambda args: capital_intent_settle(
-        args[0], payee=(args[1] if len(args) > 1 and args[1] else None)
-    ),
-    "get_capital_intent": lambda args: get_capital_intent(args[0]),
     "submit_reserve_attestation": lambda args: submit_reserve_attestation(json.loads(args[0])),
     "get_reserve": lambda args: get_reserve(args[0]),
-    "attested_mint": lambda args: attested_mint(args[0], args[1], args[2], args[3]),
     # Node Status
     "status": lambda args: get_status(),
     "health": lambda args: get_health(),
@@ -9280,8 +3007,6 @@ COMMANDS = {
     "register_identity": lambda args: register_identity(args[0]),
     "resolve_did": lambda args: resolve_did(args[0]),
     "resolve_did_document": lambda args: resolve_did_document(args[0]),
-    "set_username": lambda args: set_username(args[0], args[1]),
-    "resolve_username": lambda args: resolve_username(args[0]),
     "revoke_did": lambda args: revoke_did(
         args[0], args[1], args[2] if len(args) > 2 else "revoked",
     ),
@@ -9290,51 +3015,23 @@ COMMANDS = {
     "enroll_passkey": lambda args: enroll_passkey(
         args[0],
         args[1],
-        args[2],
+        json.loads(args[2]),
         args[3] if len(args) > 3 else None,
         int(args[4]) if len(args) > 4 else 0,
     ),
-    "add_passkey": lambda args: add_passkey(
-        args[0],
-        args[1],
-        args[2],
-        args[3] if len(args) > 3 else None,
-    ),
-    "list_passkeys": lambda args: list_passkeys(args[0]),
-    "remove_passkey": lambda args: remove_passkey(args[0], args[1]),
-    "sign_with_passkey": lambda args: sign_with_passkey(
-        args[0],
-        args[1],
-        json.loads(args[2]),
-        args[3],
-        args[4] if len(args) > 4 else None,
-    ),
-    "set_passkey_policy": lambda args: set_passkey_policy(args[0], args[1]),
-    "get_passkey_policy": lambda args: get_passkey_policy(args[0]),
+    "get_keystore": lambda args: get_keystore(args[0], json.loads(args[1]) if len(args) > 1 else None),
+    "resolve_credential": lambda args: resolve_credential(args[0], args[1] if len(args) > 1 else None),
     # Browser-launch passkey auth sessions
     "create_passkey_session": lambda args: create_passkey_session(
         args[0],
         args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-        int(args[3]) if len(args) > 3 else 0,
+        int(args[2]) if len(args) > 2 else 0,
+        args[3] if len(args) > 3 else None,
         args[4] if len(args) > 4 else None,
         args[5] if len(args) > 5 else None,
         args[6] if len(args) > 6 else None,
-        args[7] if len(args) > 7 else None,
     ),
     "get_passkey_session": lambda args: get_passkey_session(args[0]),
-    # MPC distributed key generation (operator: admin-token-gated)
-    "mpc_keygen": lambda args: mpc_keygen(
-        args[0],
-        args[1].split(","),
-        int(args[2]),
-        args[3],
-        args[4],
-        json.loads(args[5]) if len(args) > 5 and args[5] else None,
-    ),
-    "mpc_keygen_status": lambda args: mpc_keygen_status(
-        args[0] if len(args) > 0 else None
-    ),
     # Verification
     "verify_zk_proof": lambda args: verify_zk_proof(
         args[0],
@@ -9344,48 +3041,26 @@ COMMANDS = {
     "verify_transaction": lambda args: verify_transaction(args[0], args[1], args[2]),
     "verify_settlement": lambda args: verify_settlement(args[0], args[1], args[2]),
     "verify_inference": lambda args: verify_inference(args[0], args[1], args[2]),
-    # API Keys (operator: admin-token-gated)
-    "create_api_key": lambda args: create_api_key(
-        args[0],
-        args[1].split(",") if len(args) > 1 and args[1] else None,
-        args[2] if len(args) > 2 else None,
-        args[3] if len(args) > 3 else "subject",
-    ),
-    "list_api_keys": lambda args: list_api_keys(),
-    "revoke_api_key": lambda args: revoke_api_key(args[0]),
-    # API Keys (subject: X-Tenzro-Api-Key-gated)
-    "list_my_api_keys": lambda args: list_my_api_keys(),
-    "revoke_my_api_key": lambda args: revoke_my_api_key(args[0]),
+    # Node access
+    "access_challenge": lambda args: access_challenge(args[0], args[1]),
+    "get_access_policy": lambda args: get_access_policy(),
+    "set_access_policy": lambda args: set_access_policy(open(args[0]).read()),
+    "preview_access": lambda args: preview_access(args[0], args[1], args[2] if len(args) > 2 else None),
+    "list_access_tokens": lambda args: list_access_tokens(),
+    "revoke_access_token": lambda args: revoke_access_token(args[0]),
     # Token
     "total_supply": lambda args: total_supply(),
     "token_balance": lambda args: token_balance(args[0]),
-    "get_price": lambda args: get_price(
-        args[0] if args else "",
-        json.loads(args[1]) if len(args) > 1 else None,
-    ),
     # Token Registry & Contracts
-    "create_token": lambda args: create_token(
-        args[0], args[1], args[2], args[3],
-        int(args[4]) if len(args) > 4 else 18,
-        "--mintable" in args,
-        "--burnable" in args,
-    ),
     "get_token_info": lambda args: get_token_info(symbol=args[0]),
     "list_tokens": lambda args: list_tokens(
         args[0] if args else None,
         int(args[1]) if len(args) > 1 else 50,
     ),
     "get_token_balance": lambda args: get_token_balance_all_vms(args[0]),
-    "cross_vm_transfer": lambda args: cross_vm_transfer(
-        args[0], args[1], args[2], args[3], args[4], args[5],
-    ),
-    "deploy_contract": lambda args: deploy_contract(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else None,
-        int(args[4]) if len(args) > 4 else 3_000_000,
-    ),
+    "deploy_contract": lambda args: deploy_contract(json.loads(args[0])),
     # Models
-    "list_models": lambda args: list_models(),
+    "list_models": lambda args: list_models(len(args) > 0 and args[0].lower() == "true"),
     "chat": lambda args: chat(args[0], " ".join(args[1:]) if len(args) > 1 else args[1]),
     "list_model_endpoints": lambda args: list_model_endpoints(),
     "route_intent": lambda args: route_intent(
@@ -9410,285 +3085,37 @@ COMMANDS = {
     "verify_payment": lambda args: verify_payment(
         args[0], args[1], args[2], args[3], int(args[4]), args[5], args[6],
     ),
-    # Delegation
-    "set_delegation": lambda args: set_delegation_scope(
-        args[0], int(args[1]), int(args[2]),
-    ),
-    # Task Marketplace
-    "post_task": lambda args: post_task(
-        args[0], args[1], args[2], int(args[3]),
-        args[4],                                                 # poster address
-        input_text=args[5] if len(args) > 5 else "",
-    ),
-    "list_tasks": lambda args: list_tasks(
-        args[0] if args else None,
-        args[1] if len(args) > 1 else None,
-    ),
-    "get_task": lambda args: get_task(args[0]),
-    "cancel_task": lambda args: cancel_task(args[0]),
-    "quote_task": lambda args: quote_task(
-        args[0],                                                 # task_id
-        args[1],                                                 # provider address
-        int(args[2]),                                            # price_wei
-        args[3] if len(args) > 3 else None,                      # model_id
-        int(args[4]) if len(args) > 4 else None,                 # confidence
-        int(args[5]) if len(args) > 5 else None,                 # estimated_duration_secs
-    ),
+    # Network Duties
+    "list_duties": lambda args: list_duties(),
+    "get_duty": lambda args: get_duty(args[0]),
     # Agent Templates
-    "list_agent_templates": lambda args: list_agent_templates(
-        args[0] if args else None,
-    ),
-    "register_agent_template": lambda args: register_agent_template(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else None,
-    ),
-    "get_agent_template": lambda args: get_agent_template(args[0]),
-    "spawn_agent_from_template": lambda args: spawn_agent_from_template(
-        args[0], args[1],
-        args[2].split(",") if len(args) > 2 else None,
-        args[3] if len(args) > 3 else None,
-    ),
-    "rate_agent_template": lambda args: rate_agent_template(
-        args[0], int(args[1]),
-        args[2] if len(args) > 2 else None,
-    ),
-    "search_agent_templates": lambda args: search_agent_templates(
-        " ".join(args) if args else "",
-    ),
-    "get_agent_template_stats": lambda args: get_agent_template_stats(args[0]),
     # Skills Registry
-    "list_skills": lambda args: list_skills(
-        args[0] if args else None,
-        args[1] if len(args) > 1 else None,
-    ),
-    "register_skill": lambda args: register_skill(
-        args[0], args[1], args[2], args[3], int(args[4]),
-        args[5].split(",") if len(args) > 5 else None,
-    ),
-    "search_skills": lambda args: search_skills(
-        " ".join(args) if args else "",
-    ),
-    "use_skill": lambda args: use_skill(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-        args[3] if len(args) > 3 else None,
-    ),
-    "spawn_agent_with_skill": lambda args: spawn_agent_with_skill(
-        args[0], args[1], args[2],
-        args[3].split(",") if len(args) > 3 else None,
-    ),
-    "get_skill": lambda args: get_skill(args[0]),
-    "update_skill": lambda args: update_skill(
-        args[0],
-        args[1] if len(args) > 1 else None,
-    ),
-    "get_skill_usage": lambda args: get_skill_usage(args[0]),
-    "get_tool_usage": lambda args: get_tool_usage(args[0]),
     # Tools Registry
-    "register_tool": lambda args: register_tool(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else "mcp",
-    ),
-    "list_tools": lambda args: list_tools(
-        args[0] if args else None,
-    ),
-    "get_tool": lambda args: get_tool(args[0]),
-    "search_tools": lambda args: search_tools(
-        " ".join(args) if args else "",
-    ),
-    "use_tool": lambda args: use_tool(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else None,
-    ),
-    "update_tool": lambda args: update_tool(args[0]),
     # Agent Spawning & Swarm
-    "register_agent": lambda args: register_agent(
-        args[0], args[1],
-        args[2].split(",") if len(args) > 2 else None,
-    ),
-    "spawn_agent": lambda args: spawn_agent(
-        args[0], args[1],
-        args[2].split(",") if len(args) > 2 else None,
-    ),
-    "run_agent_task": lambda args: run_agent_task(args[0], " ".join(args[1:])),
-    "create_swarm": lambda args: create_swarm(args[0], args[1:]),
-    "get_swarm_status": lambda args: get_swarm_status(args[0]),
-    "terminate_swarm": lambda args: terminate_swarm(args[0]),
-    "list_agents": lambda args: list_agents(),
-    "send_agent_message": lambda args: send_agent_message(args[0], args[1], " ".join(args[2:])),
-    "delegate_task": lambda args: delegate_task(args[0], " ".join(args[1:])),
     "discover_models": lambda args: discover_models(args[0] if args else None),
-    "discover_agents": lambda args: discover_agents(args[0] if args else None),
-    "fund_agent": lambda args: fund_agent(args[0], int(args[1])),
-    # Task Marketplace (Extended)
-    "assign_task": lambda args: assign_task(args[0], args[1]),
-    "complete_task": lambda args: complete_task(args[0], " ".join(args[1:])),
-    "update_task": lambda args: update_task(args[0]),
     # Agent Template (Extended)
-    "update_agent_template": lambda args: update_agent_template(args[0]),
-    "run_agent_template": lambda args: run_agent_template(
-        args[0], int(args[1]) if len(args) > 1 else 10,
-    ),
-    "download_agent_template": lambda args: download_agent_template(args[0]),
-    "spawn_agent_template": lambda args: spawn_agent_template(
-        args[0], args[1],
-        args[2] if len(args) > 2 else None,
-    ),
     # Bridge
-    "bridge_tokens": lambda args: bridge_tokens(
-        args[0], args[1], args[2], int(args[3]), args[4], args[5],
-    ),
     # Staking & Providers
-    "stake": lambda args: stake_tokens(
-        int(args[0]),
-        args[1] if len(args) > 1 else "validator",
-        args[2].split(",") if len(args) > 2 and args[2] else None,
-        int(args[3]) if len(args) > 3 and args[3] else None,
-        args[4] if len(args) > 4 and args[4] else None,
-    ),
-    "unstake": lambda args: unstake_tokens(int(args[0])),
-    "register_provider": lambda args: register_provider(
-        args[0],
-        args[1].split(",") if len(args) > 1 and args[1] else None,
-        int(args[2]) if len(args) > 2 and args[2] else None,
-        args[3] if len(args) > 3 and args[3] else None,
-    ),
+    "role_stakes": lambda args: role_stakes(args[0] if args else None),
     "provider_stats": lambda args: provider_stats(),
     # NFT Collections
-    "create_nft_collection": lambda args: create_nft_collection(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else "erc721",
-    ),
-    "mint_nft": lambda args: mint_nft(args[0], args[1], args[2], args[3]),
-    "mint_nft_batch": lambda args: mint_nft_batch(
-        args[0], args[1],
-        args[2].split(","), args[3].split(","),
-    ),
-    "transfer_nft": lambda args: transfer_nft(args[0], args[1], args[2], args[3]),
-    "get_nft_owner": lambda args: get_nft_owner(args[0], args[1]),
-    "get_nft_balance": lambda args: get_nft_balance(args[0], args[1]),
-    "get_nft_collection": lambda args: get_nft_collection(args[0]),
-    "list_nft_collections": lambda args: list_nft_collections(
-        int(args[0]) if args else 50,
-    ),
-    # Bridge (Extended)
-    "bridge_quote": lambda args: bridge_quote(
-        args[0], args[1], args[2], int(args[3]),
-        args[4] if len(args) > 4 else None,
-    ),
-    "bridge_execute": lambda args: bridge_execute(
-        args[0], args[1], args[2], int(args[3]), args[4], args[5],
-        args[6] if len(args) > 6 else None,
-    ),
-    "bridge_status": lambda args: bridge_status(
-        args[0], args[1] if len(args) > 1 else None,
-    ),
-    "bridge_with_hook": lambda args: bridge_with_hook(
-        args[0], args[1], args[2], int(args[3]),
-        args[4], args[5], args[6],
-        "--no-revert" not in args,
-    ),
-    # ERC-7802 Crosschain
-    "crosschain_mint": lambda args: crosschain_mint(
-        args[0], args[1], args[2], args[3],
-        args[4] if len(args) > 4 else None,
-        int(args[5]) if len(args) > 5 else None,
-    ),
-    "crosschain_burn": lambda args: crosschain_burn(
-        args[0], args[1], int(args[2]), args[3],
-    ),
-    "authorize_bridge": lambda args: authorize_bridge(
-        args[0], args[1],
-        int(args[2]) if len(args) > 2 else None,
-        int(args[3]) if len(args) > 3 else None,
-    ),
-    "list_authorized_bridges": lambda args: list_authorized_bridges(),
-    # Treasury multisig
-    "treasury_add_withdrawer": lambda args: treasury_add_withdrawer(args[0]),
-    "treasury_remove_withdrawer": lambda args: treasury_remove_withdrawer(args[0]),
-    "treasury_set_withdrawal_threshold": lambda args: treasury_set_withdrawal_threshold(
-        int(args[0]),
-    ),
-    "treasury_approve_withdrawal": lambda args: treasury_approve_withdrawal(
-        args[0], args[1], args[2], args[3], args[4], args[5],
-        args[6] if len(args) > 6 else "ed25519",
-    ),
-    "treasury_execute_withdrawal": lambda args: treasury_execute_withdrawal(
-        args[0], args[1], args[2],
-    ),
-    "treasury_get_pending_withdrawal": lambda args: treasury_get_pending_withdrawal(
-        args[0],
-    ),
     # ERC-3643 Compliance
-    "check_compliance": lambda args: check_compliance(
-        args[0], args[1], args[2], int(args[3]),
-    ),
-    "register_compliance": lambda args: register_compliance(
-        args[0],
-        "--kyc" in args,
-        int(args[args.index("--min-tier") + 1]) if "--min-tier" in args else 1,
-        "--accredited" in args,
-    ),
-    "freeze_address": lambda args: freeze_address(args[0], args[1], args[2]),
-    "unfreeze_address": lambda args: unfreeze_address(args[0], args[1]),
-    "recover_tokens": lambda args: recover_tokens(
-        args[0], args[1], args[2], int(args[3]), args[4],
-    ),
-    "add_identity_claim": lambda args: add_identity_claim(
-        args[0], args[1], args[2], args[3],
-        args[4] if len(args) > 4 else "",
-    ),
-    "add_trusted_issuer": lambda args: add_trusted_issuer(
-        args[0], args[1], args[2].split(","),
-    ),
-    "list_trusted_issuers": lambda args: list_trusted_issuers(),
     # Identity (Extended)
-    "import_identity": lambda args: import_identity(args[0], args[1]),
     "register_machine_identity": lambda args: register_machine_identity(
         args[0],
-        args[1].split(",") if len(args) > 1 else None,
+        args[1],
+        args[2].split(","),
+        args[3],
     ),
-    "add_service": lambda args: add_service(args[0], args[1], args[2], args[3]),
-    "add_credential": lambda args: add_credential(args[0], args[1], args[2], args[3]),
     "list_identities": lambda args: list_identities(args[0] if args else None),
-    # Payments (Extended)
-    "pay_mpp": lambda args: pay_mpp(args[0]),
-    "pay_x402": lambda args: pay_x402(args[0]),
-    "payment_gateway_info": lambda args: payment_gateway_info(),
-    "list_x402_schemes": lambda args: list_x402_schemes(),
-    # x402 Bazaar
-    "x402_protocol_info": lambda args: x402_protocol_info(),
-    "x402_register_resource": lambda args: x402_register_resource(
-        args[0], args[1], args[2], args[3],
-        args[4] if len(args) > 4 else "tenzro-hybrid",
-        args[5] if len(args) > 5 else "tenzro",
-        args[6] if len(args) > 6 else "TNZO",
+    "get_model_provenance": lambda args: get_model_provenance(
+        args[0], args[1] if len(args) > 1 else None,
     ),
-    "x402_discover_resources": lambda args: x402_discover_resources(
-        args[0] if args else None,
-        args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-        args[3] if len(args) > 3 else None,
-    ),
-    "x402_deregister_resource": lambda args: x402_deregister_resource(
-        args[0], args[1],
-    ),
-    "x402_verify_offer": lambda args: x402_verify_offer(json.loads(args[0])),
-    "x402_payment_id": lambda args: x402_payment_id(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-    ),
-    "list_payment_sessions": lambda args: list_payment_sessions(
-        "--all" in args,
-    ),
-    "get_payment_receipt": lambda args: get_payment_receipt(args[0]),
+    "submit_trust_record": lambda args: submit_trust_record(json.loads(args[0])),
     # Network & Node (Extended)
     "peer_count": lambda args: peer_count(),
     "syncing": lambda args: syncing(),
     "hardware_profile": lambda args: get_hardware_profile(),
-    "list_accounts": lambda args: list_accounts(),
     "get_finalized_block": lambda args: get_finalized_block(),
     "export_config": lambda args: export_config(),
     # Transaction (Extended)
@@ -9698,22 +3125,13 @@ COMMANDS = {
         args[0], int(args[1]) if len(args) > 1 else 50,
     ),
     # Settlement (Extended)
-    "settle": lambda args: settle(json.loads(args[0]) if args else {}),
-    "get_settlement": lambda args: get_settlement(args[0]),
+    "settle": lambda args: settle(
+        args[0], args[1], json.loads(args[2]), args[3] if len(args) > 3 else None,
+    ),
     # create_escrow: payer payee amount_wei [asset] [expires_at_ms] [release]
     # (uses ambient OAuth/DPoP — set TENZRO_BEARER_JWT + TENZRO_DPOP_PROOF)
-    "create_escrow": lambda args: create_escrow(
-        args[0], args[1], int(args[2]),
-        args[3] if len(args) > 3 else "TNZO",
-        int(args[4]) if len(args) > 4 else 0,
-        args[5] if len(args) > 5 else "timeout",
-    ),
     # release_escrow: payer escrow_id_hex [proof_data_hex]
-    "release_escrow": lambda args: release_escrow(
-        args[0], args[1], args[2] if len(args) > 2 else "",
-    ),
     # refund_escrow: payer escrow_id_hex
-    "refund_escrow": lambda args: refund_escrow(args[0], args[1]),
     # get_escrow: escrow_id_hex
     "get_escrow": lambda args: get_escrow(args[0]),
     "open_payment_channel": lambda args: open_payment_channel(
@@ -9725,8 +3143,6 @@ COMMANDS = {
     "register_model_endpoint": lambda args: register_model_endpoint(args[0], args[1]),
     "get_model_endpoint": lambda args: get_model_endpoint(args[0]),
     "unregister_model_endpoint": lambda args: unregister_model_endpoint(args[0]),
-    "download_model": lambda args: download_model(args[0], args[1] if len(args) > 1 else None),
-    "get_download_progress": lambda args: get_download_progress(args[0]),
     "serve_model": lambda args: serve_model(
         args[0],
         args[1].lower() in ("1", "true", "yes") if len(args) > 1 else False,
@@ -9736,39 +3152,11 @@ COMMANDS = {
     "stop_model": lambda args: stop_model(args[0]),
     "delete_model": lambda args: delete_model(args[0]),
     # Token (Extended)
-    "swap_token": lambda args: swap_token(args[0], args[1], int(args[2]), args[3]),
-    "agent_pay_for_inference": lambda args: agent_pay_for_inference(
-        args[0], args[1], int(args[2]),
-    ),
-    "wrap_tnzo": lambda args: wrap_tnzo(args[0], int(args[1]),
-        args[2] if len(args) > 2 else "evm",
-    ),
     # Governance
-    "list_proposals": lambda args: list_proposals(),
-    "create_proposal": lambda args: create_proposal(args[0], args[1]),
-    "vote": lambda args: vote(args[0], args[1]),
+    "list_proposals": lambda args: list_proposals(args[0] if args else None),
     "get_voting_power": lambda args: get_voting_power(args[0]),
-    "delegate_voting_power": lambda args: delegate_voting_power(args[0], args[1]),
-    # Canton / DAML
-    "list_canton_domains": lambda args: list_canton_domains(),
-    "list_daml_contracts": lambda args: list_daml_contracts(
-        json.loads(args[0]) if args else [],
-        json.loads(args[1]) if len(args) > 1 else None,
-    ),
-    "submit_daml_create": lambda args: submit_daml_create(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else {},
-    ),
-    "submit_daml_exercise": lambda args: submit_daml_exercise(
-        args[0], args[1], args[2],
-        json.loads(args[3]) if len(args) > 3 else {},
-    ),
     # Provider Management (Extended)
     "set_role": lambda args: set_role(args[0]),
-    "set_provider_schedule": lambda args: set_provider_schedule(
-        json.loads(args[0]) if args else {},
-    ),
-    "get_provider_schedule": lambda args: get_provider_schedule(),
     "set_provider_pricing": lambda args: set_provider_pricing(
         json.loads(args[0]) if args else {},
     ),
@@ -9809,14 +3197,6 @@ COMMANDS = {
         int(args[0]) if args else 100,
     ),
     "get_event_status": lambda args: get_event_status(),
-    "register_webhook": lambda args: register_webhook(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else None,
-        args[4] if len(args) > 4 else None,
-        args[5] if len(args) > 5 else "",
-    ),
-    "list_webhooks": lambda args: list_webhooks(args[0], args[1]),
-    "delete_webhook": lambda args: delete_webhook(args[0], args[1]),
     # SLA Fault Detector
     "sla_issue_probe": lambda args: sla_issue_probe(
         args[0], int(args[1]), int(args[2]), int(args[3]),
@@ -9826,234 +3206,23 @@ COMMANDS = {
     # Snapshot (State Sync)
     "list_snapshots": lambda args: list_snapshots(),
     "get_snapshot_manifest": lambda args: get_snapshot_manifest(int(args[0])),
-    "get_snapshot_chunk": lambda args: get_snapshot_chunk(
-        int(args[0]), int(args[1]),
-    ),
     # ── EIP-7702 ──
-    "eip7702_signing_hash": lambda args: eip7702_signing_hash(
-        int(args[0]), args[1], int(args[2]),
-    ),
-    "eip7702_build_designator": lambda args: eip7702_build_designator(args[0]),
-    "eip7702_parse_designator": lambda args: eip7702_parse_designator(args[0]),
-    "eip7702_protocol_info": lambda args: eip7702_protocol_info(),
     # ── Permit2 ──
-    "permit2_domain_separator": lambda args: permit2_domain_separator(int(args[0])),
-    "permit2_digest": lambda args: permit2_digest(
-        int(args[0]), args[1], args[2], args[3], args[4], args[5], int(args[6]),
-        args[7] if len(args) > 7 else None,
-        args[8] if len(args) > 8 else None,
-    ),
     "permit2_verify_and_consume": lambda args: permit2_verify_and_consume(
         int(args[0]), args[1], args[2], args[3], args[4], args[5], int(args[6]), args[7],
         args[8] if len(args) > 8 else None,
         args[9] if len(args) > 9 else None,
     ),
     "permit2_nonce_used": lambda args: permit2_nonce_used(args[0], args[1]),
-    # ── Secure-Mint ──
-    "set_secure_mint_policy": lambda args: set_secure_mint_policy(
-        args[0], args[1], args[2], args[3], args[4], int(args[5]), int(args[6]),
-        args[7] if len(args) > 7 else None,
-    ),
-    "get_secure_mint_policy": lambda args: get_secure_mint_policy(args[0]),
-    "clear_secure_mint_policy": lambda args: clear_secure_mint_policy(args[0]),
-    "secure_mint_check": lambda args: secure_mint_check(args[0], args[1]),
-    "secure_mint_apply": lambda args: secure_mint_apply(args[0], args[1]),
-    "secure_mint_record_burn": lambda args: secure_mint_record_burn(args[0], args[1]),
-    # ── Stable-asset issuance (issuer-agnostic, on the reserve floor) ──
-    "register_stable_asset": lambda args: register_stable_asset(
-        args[0], args[1], args[2],
-        args[3] if isinstance(args[3], dict) else json.loads(args[3]),
-        args[4],
-        args[5] if isinstance(args[5], list) else json.loads(args[5]),
-        args[6],
-    ),
-    "get_stable_asset": lambda args: get_stable_asset(args[0], args[1]),
-    "mint_stable_asset": lambda args: mint_stable_asset(args[0], args[1], args[2]),
-    "redeem_stable_asset": lambda args: redeem_stable_asset(args[0], args[1], args[2]),
     # ── Institutional primitives ──
     "urwa_is_kill_switched": lambda args: urwa_is_kill_switched(args[0]),
     "urwa_get_frozen_tokens": lambda args: urwa_get_frozen_tokens(args[0], args[1]),
-    "urwa_set_frozen_tokens": lambda args: urwa_set_frozen_tokens(
-        args[0], args[1], args[2], args[3] if len(args) > 3 else None
-    ),
-    "urwa_trigger_kill_switch": lambda args: urwa_trigger_kill_switch(
-        args[0],
-        args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-    ),
-    "urwa_clear_kill_switch": lambda args: urwa_clear_kill_switch(args[0]),
-    "ivms101_hash": lambda args: ivms101_hash(json.loads(args[0])),
-    "attested_clock_now": lambda args: attested_clock_now(),
-    "signed_agent_card_canonical_hash": lambda args: signed_agent_card_canonical_hash(
-        json.loads(args[0])
-    ),
-    "wormhole_ntt_list_chains": lambda args: wormhole_ntt_list_chains(),
     "quote_bridge_fee_in_tnzo": lambda args: quote_bridge_fee_in_tnzo(
         args[0], args[1], args[2]
     ),
-    "list_bridge_sponsorship_pools": lambda args: list_bridge_sponsorship_pools(),
-    "set_bridge_fee_rate": lambda args: set_bridge_fee_rate(
-        args[0], args[1], args[2],
-        int(args[3]) if len(args) > 3 else 100,
-        int(args[4]) if len(args) > 4 else 60_000,
-    ),
-    "sponsor_bridge_fee": lambda args: sponsor_bridge_fee(
-        args[0], args[1], args[2], args[3], args[4], args[5],
-        int(args[6]), int(args[7]), args[8],
-        args[9] if len(args) > 9 else "governance",
-    ),
-    "set_sponsorship_refill_threshold": lambda args: set_sponsorship_refill_threshold(
-        args[0], int(args[1])
-    ),
-    "get_bridge_analytics": lambda args: get_bridge_analytics(),
-    "list_bridge_analytics": lambda args: list_bridge_analytics(
-        args[0] if args else None
-    ),
-    "workflow_set_step_deadline": lambda args: workflow_set_step_deadline(
-        args[0], int(args[1]), json.loads(args[2])
-    ),
-    # ── Hyperlane ──
-    "hyperlane_list_chains": lambda args: hyperlane_list_chains(),
-    "hyperlane_quote_dispatch": lambda args: hyperlane_quote_dispatch(
-        int(args[0]), int(args[1]), args[2], args[3],
-        args[4] if len(args) > 4 else None,
-        args[5] if len(args) > 5 else None,
-    ),
-    "hyperlane_dispatch": lambda args: hyperlane_dispatch(
-        int(args[0]), int(args[1]), args[2], args[3],
-        args[4] if len(args) > 4 else None,
-        args[5] if len(args) > 5 else None,
-    ),
-    "hyperlane_get_message": lambda args: hyperlane_get_message(args[0]),
-    # ── Axelar ──
-    "axelar_list_chains": lambda args: axelar_list_chains(),
-    "axelar_call_contract": lambda args: axelar_call_contract(
-        args[0], args[1], args[2], args[3],
-        args[4] if len(args) > 4 else None,
-        args[5] if len(args) > 5 else None,
-    ),
-    "axelar_pay_gas": lambda args: axelar_pay_gas(
-        args[0], args[1], args[2], args[3], args[4], args[5],
-    ),
-    "axelar_get_message": lambda args: axelar_get_message(args[0]),
-    # ── Babylon ──
-    "babylon_register_finality_provider": lambda args: babylon_register_finality_provider(
-        args[0], args[1], int(args[2]),
-    ),
-    "babylon_get_finality_provider": lambda args: babylon_get_finality_provider(args[0]),
-    "babylon_list_finality_providers": lambda args: babylon_list_finality_providers(),
-    "babylon_total_stake_for_provider": lambda args: babylon_total_stake_for_provider(args[0]),
-    "babylon_submit_finality_signature": lambda args: babylon_submit_finality_signature(
-        args[0], args[1], args[2],
-    ),
-    "babylon_list_delegations": lambda args: babylon_list_delegations(args[0]),
     # ── CAIP discovery ──
-    "caip2": lambda args: caip2(),
-    "caip10": lambda args: caip10(args[0]),
-    "caip19": lambda args: caip19(
-        args[0],
-        args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-        args[3] if len(args) > 3 else None,
-    ),
     # ── Ecosystem: Solana ──
-    "solana_swap": lambda args: solana_swap(
-        args[0], args[1], int(args[2]),
-        int(args[3]) if len(args) > 3 else 100,
-    ),
-    "solana_get_price": lambda args: solana_get_price(args[0]),
-    "solana_stake": lambda args: solana_stake(float(args[0]), args[1]),
-    "solana_get_yield": lambda args: solana_get_yield(
-        args[0] if args else None,
-    ),
-    "solana_get_balance": lambda args: solana_get_balance(args[0]),
-    "solana_get_token_accounts": lambda args: solana_get_token_accounts(
-        args[0],
-    ),
-    "solana_transfer": lambda args: solana_transfer(
-        args[0], args[1], int(args[2]),
-    ),
-    "solana_get_token_info": lambda args: solana_get_token_info(args[0]),
-    "solana_get_nft": lambda args: solana_get_nft(args[0]),
-    "solana_get_nfts_by_owner": lambda args: solana_get_nfts_by_owner(
-        args[0],
-    ),
-    "solana_get_slot": lambda args: solana_get_slot(),
-    "solana_get_tps": lambda args: solana_get_tps(),
-    "solana_get_transaction": lambda args: solana_get_transaction(args[0]),
-    "solana_resolve_domain": lambda args: solana_resolve_domain(args[0]),
     # ── Ecosystem: Ethereum ──
-    "eth_get_price_chainlink": lambda args: eth_get_price_chainlink(
-        args[0] if args else None,
-    ),
-    "eth_get_gas_price_ext": lambda args: eth_get_gas_price_ext(),
-    "eth_estimate_gas_ext": lambda args: eth_estimate_gas_ext(
-        args[0],
-        args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-    ),
-    "eth_get_fee_history": lambda args: eth_get_fee_history(
-        int(args[0]) if args else 10,
-    ),
-    "eth_get_erc20_balance": lambda args: eth_get_erc20_balance(
-        args[0], args[1],
-    ),
-    "eth_get_tx": lambda args: eth_get_tx(args[0]),
-    "eth_get_block_info": lambda args: eth_get_block_info(
-        args[0] if args else None,
-    ),
-    "eth_get_receipt": lambda args: eth_get_receipt(args[0]),
-    "eth_resolve_ens": lambda args: eth_resolve_ens(args[0]),
-    "eth_lookup_ens": lambda args: eth_lookup_ens(args[0]),
-    "eth_call_contract": lambda args: eth_call_contract(args[0], args[1]),
-    "eth_encode_function": lambda args: eth_encode_function(
-        args[0], json.loads(args[1]) if len(args) > 1 else [],
-    ),
-    "eth_register_agent_8004": lambda args: eth_register_agent_8004(
-        args[0],
-        args[1].split(",") if len(args) > 1 else [],
-        args[2] if len(args) > 2 else "",
-    ),
-    "eth_lookup_agent_8004": lambda args: eth_lookup_agent_8004(args[0]),
-    "eth_get_attestation": lambda args: eth_get_attestation(
-        args[0], args[1] if len(args) > 1 else None,
-    ),
-    # ── Ecosystem: LayerZero ──
-    "lz_quote_fee": lambda args: lz_quote_fee(
-        int(args[0]), int(args[1]), args[2],
-        args[3] if len(args) > 3 else None,
-    ),
-    "lz_send_message": lambda args: lz_send_message(
-        int(args[0]), int(args[1]), args[2], args[3],
-        args[4] if len(args) > 4 else None,
-    ),
-    "lz_track_message": lambda args: lz_track_message(args[0]),
-    "lz_oft_quote": lambda args: lz_oft_quote(
-        int(args[0]), int(args[1]), int(args[2]),
-        args[3] if len(args) > 3 else None,
-    ),
-    "lz_oft_send": lambda args: lz_oft_send(
-        int(args[0]), int(args[1]), int(args[2]), args[3],
-        args[4] if len(args) > 4 else None,
-    ),
-    "lz_list_chains": lambda args: lz_list_chains(),
-    "lz_get_chain_rpc": lambda args: lz_get_chain_rpc(args[0]),
-    "lz_list_dvns": lambda args: lz_list_dvns(
-        args[0] if args else None,
-    ),
-    "lz_get_deployments": lambda args: lz_get_deployments(
-        args[0] if args else None,
-    ),
-    "lz_transfer_quote": lambda args: lz_transfer_quote(
-        args[0], args[1], args[2], int(args[3]),
-    ),
-    "lz_transfer_build": lambda args: lz_transfer_build(args[0]),
-    "lz_stargate_quote": lambda args: lz_stargate_quote(
-        args[0], args[1], args[2], int(args[3]),
-    ),
-    "lz_stargate_send": lambda args: lz_stargate_send(
-        args[0], args[1], args[2], int(args[3]), args[4],
-    ),
     # ── Ecosystem: Chainlink ──
     "chainlink_get_price": lambda args: chainlink_get_price(
         args[0] if args else "ETH/USD",
@@ -10061,15 +3230,6 @@ COMMANDS = {
     "chainlink_list_feeds": lambda args: chainlink_list_feeds(
         args[0] if args else "ethereum",
     ),
-    "ccip_get_fee": lambda args: ccip_get_fee(
-        args[0], args[1],
-        int(args[2]) if len(args) > 2 else 0,
-    ),
-    "ccip_send_message": lambda args: ccip_send_message(
-        args[0], args[1], args[2], args[3],
-    ),
-    "ccip_track_message": lambda args: ccip_track_message(args[0]),
-    "ccip_get_supported_chains": lambda args: ccip_get_supported_chains(),
     "vrf_request_random": lambda args: vrf_request_random(
         int(args[0]) if args else 1,
     ),
@@ -10078,79 +3238,14 @@ COMMANDS = {
     "ds_list_feeds": lambda args: ds_list_feeds(),
     "por_get_reserve": lambda args: por_get_reserve(args[0]),
     "por_list_feeds": lambda args: por_list_feeds(),
-    # ── Ecosystem: Canton ──
-    "canton_submit_command": lambda args: canton_submit_command(
-        args[0], args[1], args[2],
-        json.loads(args[3]) if len(args) > 3 else None,
-    ),
-    "canton_list_contracts_ext": lambda args: canton_list_contracts(
-        args[0] if args else None,
-        args[1] if len(args) > 1 else None,
-    ),
-    "canton_get_events": lambda args: canton_get_events(args[0]),
-    "canton_get_transaction": lambda args: canton_get_transaction(args[0]),
-    "canton_allocate_party": lambda args: canton_allocate_party(args[0]),
-    "canton_list_parties": lambda args: canton_list_parties(),
-    "canton_list_domains_ext": lambda args: canton_list_domains_ext(),
-    "canton_get_health": lambda args: canton_get_health(),
-    "canton_get_balance_ext": lambda args: canton_get_balance_ext(
-        args[0], args[1] if len(args) > 1 else None,
-    ),
-    "canton_transfer": lambda args: canton_transfer(
-        args[0], args[1], args[2],
-        args[3] if len(args) > 3 else "TNZO",
-    ),
-    "canton_create_asset": lambda args: canton_create_asset(
-        args[0], args[1], args[2],
-    ),
-    "canton_dvp_settle": lambda args: canton_dvp_settle(
-        args[0], args[1], args[2], args[3],
-    ),
-    "canton_upload_dar": lambda args: canton_upload_dar(args[0]),
-    "canton_get_fee_schedule": lambda args: canton_get_fee_schedule(
-        args[0] if args else None,
-    ),
-    # ── Canton 3.5+ JSON Ledger API extension wrappers ──
-    "canton_health": lambda args: canton_health(),
-    "canton_version": lambda args: canton_version(),
-    "canton_list_packages": lambda args: canton_list_packages(),
-    "canton_get_my_user": lambda args: canton_get_my_user(),
-    "canton_coin_balance": lambda args: canton_coin_balance(),
-    "canton_connected_synchronizers": lambda args: canton_connected_synchronizers(),
-    "canton_upload_dar_rpc": lambda args: canton_upload_dar_rpc(args[0]),
-    "canton_fee_schedule_rpc": lambda args: canton_fee_schedule_rpc(),
-    "canton_get_transaction_rpc": lambda args: canton_get_transaction_rpc(args[0]),
-    "canton_allocate_party_rpc": lambda args: canton_allocate_party_rpc(args[0], args[1] if len(args) > 1 else None),
-    "canton_grant_user_rights": lambda args: canton_grant_user_rights(args[0], args[1] if len(args) > 1 else None, args[2] if len(args) > 2 else True, args[3] if len(args) > 3 else False),
-    "canton_list_user_rights": lambda args: canton_list_user_rights(args[0] if len(args) > 0 else None),
-    "canton_get_my_analytics": lambda args: canton_get_my_analytics(),
-    "canton_list_api_key_analytics": lambda args: canton_list_api_key_analytics(args[0] if len(args) > 0 else None),
-    # ── Ecosystem: deBridge ──
-    "debridge_search_tokens": lambda args: debridge_search_tokens(args[0], args[1] if len(args) > 1 else None),
-    "debridge_get_chains": lambda args: debridge_get_chains(),
-    "debridge_get_instructions": lambda args: debridge_get_instructions(),
-    "debridge_create_tx": lambda args: debridge_create_tx(args[0], args[1], args[2], args[3], args[4], args[5]),
-    "debridge_same_chain_swap": lambda args: debridge_same_chain_swap(args[0], args[1], args[2], args[3]),
     # ── Crypto ──
-    "sign_message": lambda args: sign_message(args[0]),
     "verify_signature": lambda args: verify_signature(args[0], args[1], args[2]),
-    "encrypt_data": lambda args: encrypt_data(args[0], args[1]),
-    "decrypt_data": lambda args: decrypt_data(args[0], args[1], args[2]),
-    "derive_key": lambda args: derive_key(args[0]),
-    "generate_keypair": lambda args: generate_keypair(
-        args[0] if args else "ed25519",
-    ),
-    "hash_sha256": lambda args: hash_sha256(args[0]),
-    "hash_keccak256": lambda args: hash_keccak256(args[0]),
-    "x25519_key_exchange": lambda args: x25519_key_exchange(args[0], args[1]),
     # ── TEE ──
     "detect_tee": lambda args: detect_tee(),
     "get_tee_attestation": lambda args: get_tee_attestation(
         args[0] if args else None,
     ),
     "verify_tee_attestation": lambda args: verify_tee_attestation(args[0], args[1]),
-    "seal_data": lambda args: seal_data(args[0], args[1]),
-    "unseal_data": lambda args: unseal_data(args[0], args[1]),
     "list_tee_providers": lambda args: list_tee_providers(),
     # ── ZK ──
     "create_zk_proof": lambda args: create_zk_proof(
@@ -10158,158 +3253,24 @@ COMMANDS = {
         json.loads(args[1]) if len(args) > 1 else {},
     ),
     "list_zk_circuits": lambda args: list_zk_circuits(),
-    # ── Custody ──
-    "create_mpc_wallet_advanced": lambda args: create_mpc_wallet_advanced(
-        int(args[0]) if args else 2,
-        int(args[1]) if len(args) > 1 else 3,
-        args[2] if len(args) > 2 else "ed25519",
-    ),
-    "export_keystore": lambda args: export_keystore(args[0], args[1]),
-    "import_keystore": lambda args: import_keystore(args[0], args[1]),
-    "get_key_shares": lambda args: get_key_shares(args[0]),
-    "rotate_keys": lambda args: rotate_keys(args[0]),
-    "set_spending_limits": lambda args: set_spending_limits(
-        args[0], float(args[1]), float(args[2]),
-    ),
-    "get_spending_limits": lambda args: get_spending_limits(args[0]),
-    "authorize_session": lambda args: authorize_session(
-        args[0], args[1], int(args[2]),
-        args[3].split(",") if len(args) > 3 else [],
-    ),
-    "revoke_session": lambda args: revoke_session(args[0], args[1]),
     # ── App registry + settlement authorization ──
-    "register_app": lambda args: register_app(
-        args[0], args[1], args[2],
-        json.loads(args[3]), int(args[4]), args[5],
-        args[6] if len(args) > 6 else None,
-        (args[7].lower() != "false") if len(args) > 7 else True,
-    ),
-    "set_app_status": lambda args: set_app_status(
-        args[0], args[1].lower() != "false", args[2],
-    ),
-    "get_app": lambda args: get_app(args[0]),
-    "list_apps": lambda args: list_apps(),
-    "settle_authorized": lambda args: settle_authorized(
-        args[0], int(args[1]), args[2], args[3], args[4],
-        args[5], int(args[6]), args[7], args[8],
-    ),
-    "get_settle_authorized_outcome": lambda args: get_settle_authorized_outcome(
-        args[0], args[1],
-    ),
     # ── Contract ABI ──
-    "encode_function": lambda args: encode_function(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else [],
-    ),
-    "decode_result": lambda args: decode_result(
-        args[0],
-        json.loads(args[1]) if len(args) > 1 else [],
-    ),
     # ── OAuth 2.1 + DPoP Onboarding ──
-    "onboard_human": lambda args: onboard_human(args[0], args[1] if len(args) > 1 else None),
-    "onboard_delegated_agent": lambda args: onboard_delegated_agent(args[0], args[1], args[2], args[3] if len(args) > 3 else None),
-    "onboard_autonomous_agent": lambda args: onboard_autonomous_agent(args[0], args[1] if len(args) > 1 else None),
-    "refresh_token": lambda args: refresh_token(args[0], args[1] if len(args) > 1 else None),
-    "link_wallet_for_auth": lambda args: link_wallet_for_auth(
-        args[0],
-        args[1] if len(args) > 1 else None,
-        args[2] if len(args) > 2 else None,
-        int(args[3]) if len(args) > 3 else None,
+    "onboard_human": lambda args: onboard_human(
+        args[0], args[1], args[2], json.loads(args[3]), args[4] if len(args) > 4 else None
     ),
+    "onboard_delegated_agent": lambda args: onboard_delegated_agent(args[0], args[1], args[2], args[3] if len(args) > 3 else None),
+    "onboard_autonomous_agent": lambda args: onboard_autonomous_agent(args[0], args[1], args[2] if len(args) > 2 else None),
+    "refresh_token": lambda args: refresh_token(args[0], args[1]),
     "revoke_jwt": lambda args: revoke_jwt(
         args[0], args[1], args[2] if len(args) > 2 else "revoked",
     ),
-    "list_pending_approvals": lambda args: list_pending_approvals(args[0]),
-    "decide_approval": lambda args: decide_approval(
-        args[0], args[1], args[2], args[3] if len(args) > 3 else None
-    ),
-    "get_approval": lambda args: get_approval(args[0]),
     # ── AP2 (Agent Payments Protocol) ──
-    "ap2_protocol_info": lambda args: ap2_protocol_info(),
-    "ap2_sign_mandate": lambda args: ap2_sign_mandate(
-        args[0], json.loads(args[1]), args[2]
-    ),
-    "ap2_verify_mandate": lambda args: ap2_verify_mandate(json.loads(args[0])),
-    "ap2_validate_mandate_pair": lambda args: ap2_validate_mandate_pair(
-        json.loads(args[0]),
-        json.loads(args[1]),
-        bool(json.loads(args[2])) if len(args) > 2 else False,
-    ),
-    "ap2_create_session": lambda args: ap2_create_session(
-        args[0], args[1], args[2], int(args[3]),
-        args[4] if len(args) > 4 else "TNZO",
-    ),
-    "ap2_authorize_payment": lambda args: ap2_authorize_payment(
-        args[0], int(args[1]),
-    ),
-    "ap2_execute_payment": lambda args: ap2_execute_payment(args[0], args[1]),
-    "ap2_cancel_session": lambda args: ap2_cancel_session(args[0]),
-    "ap2_get_session": lambda args: ap2_get_session(args[0]),
-    "ap2_list_agent_sessions": lambda args: ap2_list_agent_sessions(args[0]),
-    "ap2_list_mandates": lambda args: ap2_list_mandates(args[0]),
+    "governance_get": lambda args: governance_get(args[0], args[1]),
     # ── ERC-8004 (Trustless Agents Registry — full Jan 2026 revision surface) ──
-    "erc8004_encode_register": lambda args: erc8004_encode_register(),
-    "erc8004_encode_register_with_uri": lambda args: erc8004_encode_register_with_uri(args[0]),
-    "erc8004_encode_register_with_metadata": lambda args: erc8004_encode_register_with_metadata(
-        args[0], args[1],
-    ),
-    "erc8004_encode_get_agent": lambda args: erc8004_encode_get_agent(args[0]),
-    "erc8004_decode_get_agent": lambda args: erc8004_decode_get_agent(args[0]),
-    "erc8004_encode_set_agent_uri": lambda args: erc8004_encode_set_agent_uri(
-        args[0], args[1],
-    ),
-    "erc8004_encode_set_agent_wallet": lambda args: erc8004_encode_set_agent_wallet(
-        args[0], args[1], int(args[2]), args[3],
-    ),
-    "erc8004_encode_set_metadata": lambda args: erc8004_encode_set_metadata(
-        args[0], args[1], args[2],
-    ),
-    "erc8004_encode_get_metadata": lambda args: erc8004_encode_get_metadata(
-        args[0], args[1],
-    ),
-    "erc8004_decode_get_metadata": lambda args: erc8004_decode_get_metadata(args[0]),
-    "erc8004_encode_get_agent_uri": lambda args: erc8004_encode_get_agent_uri(args[0]),
-    "erc8004_encode_get_agent_wallet": lambda args: erc8004_encode_get_agent_wallet(args[0]),
-    "erc8004_encode_feedback": lambda args: erc8004_encode_feedback(
-        args[0], int(args[1]), args[2],
-    ),
-    "erc8004_encode_get_feedback": lambda args: erc8004_encode_get_feedback(
-        args[0], int(args[1]),
-    ),
-    "erc8004_encode_get_feedback_count": lambda args: erc8004_encode_get_feedback_count(args[0]),
-    "erc8004_encode_revoke_feedback": lambda args: erc8004_encode_revoke_feedback(
-        args[0], args[1],
-    ),
-    "erc8004_encode_append_response": lambda args: erc8004_encode_append_response(
-        args[0], args[1], args[2],
-    ),
-    "erc8004_encode_is_feedback_revoked": lambda args: erc8004_encode_is_feedback_revoked(
-        args[0], args[1],
-    ),
-    "erc8004_encode_get_feedback_responses": lambda args: erc8004_encode_get_feedback_responses(
-        args[0], args[1],
-    ),
-    "erc8004_encode_validation_request": lambda args: erc8004_encode_validation_request(
-        args[0], args[1], args[2], args[3],
-    ),
-    "erc8004_encode_validation_response": lambda args: erc8004_encode_validation_response(
-        args[0], int(args[1]), args[2], args[3],
-        args[4] if len(args) > 4 else "",
-    ),
-    "erc8004_encode_get_validation": lambda args: erc8004_encode_get_validation(args[0]),
-    # ── Wormhole ──
-    "wormhole_chain_id": lambda args: wormhole_chain_id(args[0]),
-    "wormhole_parse_vaa_id": lambda args: wormhole_parse_vaa_id(args[0]),
-    "wormhole_bridge": lambda args: wormhole_bridge(
-        args[0], args[1], args[2], int(args[3]), args[4], args[5],
-    ),
-    # ── CCT (Chainlink Cross-Chain Token) ──
-    "cct_list_pools": lambda args: cct_list_pools(),
-    "cct_get_pool": lambda args: cct_get_pool(args[0]),
     # ── Multi-modal: forecast / vision / text-embed / segment / text-segment /
     #    detect / transcribe / video ──
     "list_forecast_catalog": lambda args: list_forecast_catalog(),
-    "list_forecast_models": lambda args: list_forecast_models(),
     "forecast": lambda args: forecast(
         args[0],
         json.loads(args[1]),
@@ -10318,14 +3279,12 @@ COMMANDS = {
         int(args[4]) if len(args) > 4 and args[4] else None,
     ),
     "list_vision_catalog": lambda args: list_vision_catalog(),
-    "list_vision_models": lambda args: list_vision_models(),
     "vision_embed": lambda args: vision_embed(
         args[0], args[1],
         args[2].lower() != "false" if len(args) > 2 else True,
     ),
     "vision_similarity": lambda args: vision_similarity(json.loads(args[0]), json.loads(args[1])),
     "list_text_embedding_catalog": lambda args: list_text_embedding_catalog(),
-    "list_text_embedding_models": lambda args: list_text_embedding_models(),
     "text_embed": lambda args: text_embed(
         args[0],
         json.loads(args[1]),
@@ -10333,23 +3292,24 @@ COMMANDS = {
         args[3].lower() == "true" if len(args) > 3 and args[3] else False,
     ),
     "list_segmentation_catalog": lambda args: list_segmentation_catalog(),
-    "list_segmentation_models": lambda args: list_segmentation_models(),
     "segment": lambda args: segment(args[0], args[1], json.loads(args[2])),
     "list_text_segmentation_catalog": lambda args: list_text_segmentation_catalog(),
-    "list_text_segmentation_models": lambda args: list_text_segmentation_models(),
     "text_segment": lambda args: text_segment(
         args[0], args[1], args[2],
         box_prompt=json.loads(args[3]) if len(args) > 3 and args[3] else None,
         score_threshold=float(args[4]) if len(args) > 4 and args[4] else 0.5,
     ),
     "list_detection_catalog": lambda args: list_detection_catalog(),
-    "list_detection_models": lambda args: list_detection_models(),
+    "list_rerank_catalog": lambda args: list_rerank_catalog(),
+    "speak": lambda args: speak(args[0], args[1], args[2] if len(args) > 2 and args[2] else None),
+    "rerank": lambda args: rerank(args[0], json.loads(args[1]) if args[1].lstrip().startswith("{") else args[1],
+                                  json.loads(args[2]),
+                                  int(args[3]) if len(args) > 3 and args[3] else None),
     "detect": lambda args: detect(
         args[0], args[1],
         float(args[2]) if len(args) > 2 else 0.5,
     ),
     "list_audio_catalog": lambda args: list_audio_catalog(),
-    "list_audio_models": lambda args: list_audio_models(),
     "transcribe": lambda args: transcribe(
         args[0], args[1],
         args[2] if len(args) > 2 and args[2] else None,
@@ -10357,7 +3317,6 @@ COMMANDS = {
         float(args[4]) if len(args) > 4 and args[4] else None,
     ),
     "list_video_catalog": lambda args: list_video_catalog(),
-    "list_video_models": lambda args: list_video_models(),
     "video_embed": lambda args: video_embed(
         args[0], args[1],
         args[2].lower() == "true" if len(args) > 2 and args[2] else False,
@@ -10365,114 +3324,54 @@ COMMANDS = {
     ),
     # ── Multi-modal load / unload (surface symmetry) ──
     "load_forecast_model": lambda args: load_forecast_model(
-        args[0], args[1],
-        catalog_id=args[2] if len(args) > 2 and args[2] else None,
-        context_length=int(args[3]) if len(args) > 3 and args[3] else None,
-        max_horizon=int(args[4]) if len(args) > 4 and args[4] else None,
-        output_name=args[5] if len(args) > 5 and args[5] else None,
-        batch_size=int(args[6]) if len(args) > 6 and args[6] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_forecast_model": lambda args: unload_forecast_model(args[0]),
     "load_vision_model": lambda args: load_vision_model(
-        args[0], args[1],
-        catalog_id=args[2] if len(args) > 2 and args[2] else None,
-        input_size=int(args[3]) if len(args) > 3 and args[3] else None,
-        embedding_dim=int(args[4]) if len(args) > 4 and args[4] else None,
-        normalization=args[5] if len(args) > 5 and args[5] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_vision_model": lambda args: unload_vision_model(args[0]),
     "load_text_embedding_model": lambda args: load_text_embedding_model(
-        args[0],
-        path=args[1] if len(args) > 1 and args[1] else None,
-        tokenizer_path=args[2] if len(args) > 2 and args[2] else None,
-        family=args[3] if len(args) > 3 and args[3] else None,
-        catalog_id=args[4] if len(args) > 4 and args[4] else None,
-        embedding_dim=int(args[5]) if len(args) > 5 and args[5] else None,
-        max_sequence_length=int(args[6]) if len(args) > 6 and args[6] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_text_embedding_model": lambda args: unload_text_embedding_model(args[0]),
-    "load_text_segmentation_model": lambda args: load_text_segmentation_model(args[0]),
+    "load_text_segmentation_model": lambda args: load_text_segmentation_model(
+        args[0], args[1] if len(args) > 1 and args[1] else None,
+    ),
     "unload_text_segmentation_model": lambda args: unload_text_segmentation_model(args[0]),
     "load_segmentation_model": lambda args: load_segmentation_model(
-        args[0], args[1], args[2],
-        family=args[3] if len(args) > 3 and args[3] else None,
-        input_size=int(args[4]) if len(args) > 4 and args[4] else None,
-        catalog_id=args[5] if len(args) > 5 and args[5] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_segmentation_model": lambda args: unload_segmentation_model(args[0]),
     "load_detection_model": lambda args: load_detection_model(
-        args[0], args[1],
-        family=args[2] if len(args) > 2 and args[2] else None,
-        input_size=int(args[3]) if len(args) > 3 and args[3] else None,
-        num_classes=int(args[4]) if len(args) > 4 and args[4] else None,
-        catalog_id=args[5] if len(args) > 5 and args[5] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_detection_model": lambda args: unload_detection_model(args[0]),
     "load_audio_model": lambda args: load_audio_model(
-        args[0], args[1], args[2],
-        tokenizer_path=args[3] if len(args) > 3 and args[3] else None,
-        preprocessor_path=args[4] if len(args) > 4 and args[4] else None,
-        vocab_path=args[5] if len(args) > 5 and args[5] else None,
-        catalog_id=args[6] if len(args) > 6 and args[6] else None,
-        family=args[7] if len(args) > 7 and args[7] else None,
-        max_audio_seconds=int(args[8]) if len(args) > 8 and args[8] else None,
-        whisper_variant=args[9] if len(args) > 9 and args[9] else None,
-        source_lang=args[10] if len(args) > 10 and args[10] else None,
-        target_lang=args[11] if len(args) > 11 and args[11] else None,
+        args[0], args[1] if len(args) > 1 and args[1] else None,
     ),
     "unload_audio_model": lambda args: unload_audio_model(args[0]),
     "load_video_model": lambda args: load_video_model(
         args[0], args[1],
         num_frames=int(args[2]) if len(args) > 2 and args[2] else None,
+        visibility=args[3] if len(args) > 3 and args[3] else None,
     ),
     "unload_video_model": lambda args: unload_video_model(args[0]),
     # ── Agent memory tier ──
-    "memory_grant": lambda args: memory_grant(
-        args[0], args[1],
-        kind=args[2] if len(args) > 2 and args[2] else "granted",
-        source=args[3] if len(args) > 3 and args[3] else "controller",
-        metadata=json.loads(args[4]) if len(args) > 4 and args[4] else None,
-    ),
-    "memory_recall": lambda args: memory_recall(
-        args[0], args[1],
-        mode=args[2] if len(args) > 2 and args[2] else "hybrid",
-        limit=int(args[3]) if len(args) > 3 and args[3] else 10,
-        kind=args[4] if len(args) > 4 and args[4] else None,
-    ),
-    "memory_archive": lambda args: memory_archive(args[0], args[1]),
-    "list_memory_records": lambda args: list_memory_records(
-        args[0],
-        limit=int(args[1]) if len(args) > 1 and args[1] else None,
-        kind=args[2] if len(args) > 2 and args[2] else None,
-    ),
-    # ── AgentBond (Spec 9) ──
+    # ── AgentBond ──
     "get_agent_bond": lambda args: get_agent_bond(args[0]),
     "list_agent_bonds_by_controller": lambda args: list_agent_bonds_by_controller(args[0]),
-    "post_agent_bond": lambda args: post_agent_bond(
-        args[0], args[1], args[2], int(args[3]),
-    ),
-    "increase_agent_bond": lambda args: increase_agent_bond(
-        args[0], args[1], int(args[2]),
-    ),
-    "withdraw_agent_bond": lambda args: withdraw_agent_bond(args[0], args[1]),
-    # ── Insurance (Spec 9) ──
-    "file_insurance_claim": lambda args: file_insurance_claim(
-        args[0], args[1], args[2], int(args[3]), int(args[4]),
-        json.loads(args[5]) if len(args) > 5 else None,
-        args[6] if len(args) > 6 else None,
-    ),
+    # ── Insurance ──
     "list_insurance_claims": lambda args: list_insurance_claims(),
     "get_insurance_claim": lambda args: get_insurance_claim(args[0]),
     "get_insurance_pool_balance": lambda args: get_insurance_pool_balance(),
-    # ── Adaptive Burn (Spec 8) ──
+    # ── Adaptive Burn ──
     "bind_device": lambda args: bind_device(
         args["identity_did"], args["label"], args["attestation_object_b64"]
     ),
     "mirror_settlement": lambda args: mirror_settlement(
-        args["interaction_id"], args["targets"], args.get("primary_committed", True)
+        args["from"], args["interaction"], args["targets"], args.get("primary_committed", True)
     ),
-    "get_interaction": lambda args: get_interaction(args["interaction_id"]),
-    "verify_interaction": lambda args: verify_interaction(args["interaction"]),
     "settlement_networks": lambda args: settlement_networks(),
     "route_payment": lambda args: route_payment(
         args["amount_wei"], args.get("asset"), args.get("tnzo_micro_usd")
@@ -10496,83 +3395,21 @@ COMMANDS = {
     "get_supply_metrics": lambda args: get_supply_metrics(),
     "get_burn_rate_recommendation": lambda args: get_burn_rate_recommendation(),
     "list_adaptive_burn_proposals": lambda args: list_adaptive_burn_proposals(),
-    # ── SeedAgent (Spec 10) ──
-    "get_treasury_earmark": lambda args: get_treasury_earmark(
-        args[0] if args else None,
-    ),
-    "get_seed_agent_charter": lambda args: get_seed_agent_charter(args[0]),
-    "list_seed_agent_charters": lambda args: list_seed_agent_charters(),
-    "list_seed_agents": lambda args: list_seed_agents(
-        args[0] if args else None,
-    ),
-    "get_network_activity": lambda args: get_network_activity(
-        args[0] if args else None,
-        args[1].lower() == "true" if len(args) > 1 else False,
-    ),
-    # ── ERC-7683 cross-chain intent settler (Spec 4) ──
-    "get_7683_order": lambda args: get_7683_order(args[0]),
-    "list_7683_orders": lambda args: list_7683_orders(
-        state=args[0] if len(args) > 0 and args[0] else None,
-        dest_chain=int(args[1]) if len(args) > 1 and args[1] else None,
-        limit=int(args[2]) if len(args) > 2 and args[2] else None,
-    ),
-    "record_fill_7683": lambda args: record_fill_7683(
-        order_id=args[0],
-        origin_chain_id=int(args[1]),
-        origin_settler=args[2],
-        filler=args[3],
-        recipient=args[4],
-        fill_tx_hash=args[5],
-        filled_at_ms=int(args[6]),
-        proof_route=args[7],
-        outputs=json.loads(args[8]),
-    ),
-    "get_fill_7683": lambda args: get_fill_7683(args[0], int(args[1])),
-    "list_fills_7683": lambda args: list_fills_7683(),
     # ── Escrow listing ──
     "list_escrows_by_payer": lambda args: list_escrows_by_payer(args[0]),
     "list_escrows_by_payee": lambda args: list_escrows_by_payee(args[0]),
-    # prepaid_deposit: renter amount_wei [asset]
-    "prepaid_deposit": lambda args: prepaid_deposit(
-        args[0], int(args[1]), args[2] if len(args) > 2 else "TNZO",
-    ),
-    # prepaid_withdraw: renter amount_wei [asset]
-    "prepaid_withdraw": lambda args: prepaid_withdraw(
-        args[0], int(args[1]), args[2] if len(args) > 2 else "TNZO",
-    ),
-    # prepaid_balance: renter [asset]
-    "prepaid_balance": lambda args: prepaid_balance(
-        args[0], args[1] if len(args) > 1 else "TNZO",
-    ),
     # ── Validator registry (read-only) ──
     "get_validator_state": lambda args: get_validator_state(args[0]),
     "list_validators": lambda args: list_validators(args[0] if args else None),
     "list_active_validators": lambda args: list_active_validators(),
-    # ── Tenzro Train (read-side inspection) ──
-    "training_list_runs": lambda args: training_list_runs(),
-    "training_get_run": lambda args: training_get_run(args[0]),
-    "training_get_receipt": lambda args: training_get_receipt(args[0]),
-    "training_get_sealed_manifest": lambda args: training_get_sealed_manifest(args[0]),
-    "get_trainer_daemon_status": lambda args: get_trainer_daemon_status(),
-    # ── Burn quota & mempool (Specs 3 + 6) ──
-    "get_burn_quota": lambda args: get_burn_quota(),
+    # ── Mempool ──
     "get_mempool_stats": lambda args: get_mempool_stats(),
     "get_mempool_lane": lambda args: get_mempool_lane(args[0]),
     "get_account_contention": lambda args: get_account_contention(args[0]),
-    # ── DA offload (Spec 7) ──
+    # ── DA offload ──
     "get_da_backends": lambda args: get_da_backends(),
     "verify_da_pointer": lambda args: verify_da_pointer(json.loads(args[0])),
-    # ── Receipts & principal chain (Spec 5) ──
-    "get_receipt_principal_chain": lambda args: get_receipt_principal_chain(args[0]),
-    "list_receipts_by_actor": lambda args: list_receipts_by_actor(args[0]),
-    "list_receipts_by_controller": lambda args: list_receipts_by_controller(args[0]),
-    "summarize_controller": lambda args: summarize_controller(
-        args[0],
-        int(args[1]) if len(args) > 1 else None,
-        int(args[2]) if len(args) > 2 else None,
-    ),
     # ── Agent lifecycle & kill-switch ──
-    "get_agent_lifecycle": lambda args: get_agent_lifecycle(args[0]),
     "list_kill_switch_by_agent": lambda args: list_kill_switch_by_agent(args[0]),
     "list_kill_switch_by_controller": lambda args: list_kill_switch_by_controller(args[0]),
     "get_kill_switch_receipt": lambda args: get_kill_switch_receipt(args[0]),
@@ -10581,24 +3418,10 @@ COMMANDS = {
         args[0] if len(args) > 0 and args[0] else None,
         args[1] if len(args) > 1 and args[1] else None,
     ),
-    "get_provider_reputation": lambda args: get_provider_reputation(args[0]),
     # ── Provenance & disputes ──
     "get_provenance": lambda args: get_provenance(args[0]),
-    "get_dispute": lambda args: get_dispute(args[0]),
-    "list_disputes_by_channel": lambda args: list_disputes_by_channel(args[0]),
     # ── Agent JWKs, daily spend, capability attestations ──
-    "list_agent_jwks": lambda args: list_agent_jwks(),
-    "get_agent_jwk": lambda args: get_agent_jwk(args[0]),
-    "get_agent_daily_spend": lambda args: get_agent_daily_spend(args[0]),
-    "list_capabilities": lambda args: list_capabilities(),
-    "get_capability_attestations": lambda args: get_capability_attestations(
-        args[0],
-        args[1].lower() == "true" if len(args) > 1 else False,
-    ),
-    "get_agent_capability_attestations": lambda args:
-        get_agent_capability_attestations(args[0]),
-    "find_best_agent_for_capability": lambda args:
-        find_best_agent_for_capability(args[0]),
+    "get_agent_terms": lambda args: get_agent_terms(args[0]),
     # ── Storage Market ──
     "storage_store_object": lambda args: storage_store_object(
         args[0],
@@ -10607,11 +3430,6 @@ COMMANDS = {
         int(args[3]) if len(args) > 3 else 4,
         int(args[4]) if len(args) > 4 else 2,
     ),
-    "storage_open_deal": lambda args: storage_open_deal(
-        args[0], args[1], int(args[2]), int(args[3])
-    ),
-    "storage_charge_epoch": lambda args: storage_charge_epoch(args[0]),
-    "storage_get_deal": lambda args: storage_get_deal(args[0]),
     "storage_set_pricing": lambda args: storage_set_pricing(
         args[0] if len(args) > 0 and args[0] else "dynamic",
         args[1] if len(args) > 1 else "0",
@@ -10620,63 +3438,6 @@ COMMANDS = {
     ),
     "storage_status": lambda args: storage_status(),
     # ── Managed Databases ──
-    "list_database_engines": lambda args: list_database_engines(),
-    "create_database": lambda args: create_database(
-        args[0], args[1],
-        owner_did=args[2] if len(args) > 2 and args[2] else None,
-        placement=args[3] if len(args) > 3 and args[3] else "local",
-        partitions=int(args[4]) if len(args) > 4 and args[4] else 1,
-        min_replication=int(args[5]) if len(args) > 5 and args[5] else None,
-        max_replication=int(args[6]) if len(args) > 6 and args[6] else None,
-        engine_config=json.loads(args[7]) if len(args) > 7 and args[7] else None,
-        confidential=(args[8].lower() in ("1", "true", "yes"))
-        if len(args) > 8 else False,
-    ),
-    "get_database": lambda args: get_database(args[0]),
-    "list_databases": lambda args: list_databases(),
-    "list_database_partitions": lambda args: list_database_partitions(args[0]),
-    "get_database_partition": lambda args: get_database_partition(
-        args[0], int(args[1])
-    ),
-    "issue_database_connection": lambda args: issue_database_connection(
-        args[0], args[1],
-        bearer_did=args[2] if len(args) > 2 and args[2] else None,
-        write=(args[3].lower() in ("1", "true", "yes")) if len(args) > 3 else False,
-        ttl_secs=int(args[4]) if len(args) > 4 and args[4] else None,
-    ),
-    "database_query": lambda args: database_query(
-        args[0], args[1], json.loads(args[2]),
-        partition_index=int(args[3]) if len(args) > 3 else 0,
-        write=(args[4].lower() in ("1", "true", "yes")) if len(args) > 4 else False,
-    ),
-    "authorize_database_read": lambda args: authorize_database_read(
-        args[0], args[1],
-        capability=args[2] if len(args) > 2 and args[2] else None,
-    ),
-    "rescale_database": lambda args: rescale_database(
-        args[0], args[1], args[2],
-        partitions=int(args[3]) if len(args) > 3 and args[3] else None,
-        min_replication=int(args[4]) if len(args) > 4 and args[4] else None,
-        max_replication=int(args[5]) if len(args) > 5 and args[5] else None,
-        capability=args[6] if len(args) > 6 and args[6] else None,
-    ),
-    "drop_database": lambda args: drop_database(args[0]),
-    # ── Compute Rental ──
-    "compute_book_rental": lambda args: compute_book_rental(
-        args[0], int(args[1])
-    ),
-    "compute_settle_epoch": lambda args: compute_settle_epoch(
-        args[0],
-        args[1].lower() in ("1", "true", "yes") if len(args) > 1 else True,
-    ),
-    "compute_get_rental": lambda args: compute_get_rental(args[0]),
-    "compute_set_pricing": lambda args: compute_set_pricing(
-        args[0] if len(args) > 0 and args[0] else "dynamic",
-        args[1] if len(args) > 1 else "0",
-        args[2] if len(args) > 2 and args[2] else None,
-        args[3] if len(args) > 3 and args[3] else None,
-    ),
-    "compute_status": lambda args: compute_status(),
     # ── MoE Expert Sharding ──
     "moe_shard_map": lambda args: moe_shard_map(args[0]),
     "moe_plan_dispatch": lambda args: moe_plan_dispatch(
@@ -10703,21 +3464,8 @@ COMMANDS = {
         json.loads(args[3]) if len(args) > 3 else [],
     ),
     # ── Local Discovery & Cluster ──
-    "local_peers": lambda args: local_peers(),
-    "node_reachability": lambda args: node_reachability(),
     "node_profile": lambda args: node_profile(),
-    "cluster_plan": lambda args: cluster_plan(
-        json.loads(args[0]),
-        json.loads(args[1]),
-        args[2].lower() in ("1", "true", "yes") if len(args) > 2 else False,
-    ),
-    "cluster_preview": lambda args: cluster_preview(
-        args[0],
-        args[1].lower() in ("1", "true", "yes") if len(args) > 1 else False,
-        args[2].lower() in ("1", "true", "yes") if len(args) > 2 else False,
-    ),
 }
-
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
@@ -10746,7 +3494,6 @@ def main():
     except Exception as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

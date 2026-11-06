@@ -2,7 +2,7 @@
 name: tenzroclaw
 version: 0.1.0
 author: Tenzro Network
-description: TenzroClaw — OpenClaw skill for the Tenzro Network. Create wallets, send transactions, check balances, register identities, manage credentials and services, set usernames, set delegation scopes, exercise GDPR Article 17 right-to-erasure (forget_identity), make payments via AP2 v0.2 (sign + verify + validate-pair), MPP, x402 v1, Stripe SPT (SharedPaymentToken), ERC-8004 (Jan 2026 revision) Trustless Agents Registry (22 surfaces across IdentityRegistry, ReputationRegistry, ValidationRegistry), run AI inference, manage model endpoints, bridge tokens cross-chain, verify proofs, post and manage tasks on the decentralized AI task marketplace, publish and discover agent templates, spawn agents from templates, manage agent swarms, create and manage ERC-20 tokens, deploy smart contracts, transfer tokens across VMs, register and invoke tools/skills, manage settlement and escrow, participate in governance, interact with Canton/DAML, store and retrieve erasure-coded tenant files, resolve a node's DID Document to every address it answers on, discover and invoke any of the node's ~900 JSON-RPC methods through the universal gateway, and request testnet tokens.
+description: TenzroClaw — OpenClaw skill for the Tenzro Network. Create wallets, send transactions, check balances, register identities, manage credentials and services, set delegation scopes, exercise GDPR Article 17 right-to-erasure (forget_identity), make payments via AP2 v0.2 (sign + verify + validate-pair), MPP, x402 v1, Stripe SPT (SharedPaymentToken), ERC-8004 (Jan 2026 revision) Trustless Agents Registry (22 surfaces across IdentityRegistry, ReputationRegistry, ValidationRegistry), run AI inference, manage model endpoints, bridge tokens cross-chain, verify proofs, read network duties, look up tokens across VMs, deploy smart contracts, transfer tokens across VMs, manage settlement and escrow, participate in governance, resolve a node's DID Document to every address it answers on, and discover and invoke any JSON-RPC method the node serves through the universal gateway.
 tags:
   - blockchain
   - ai
@@ -15,23 +15,13 @@ tags:
   - bridge
   - inference
   - web3
-  - task_marketplace
-  - agent_marketplace
-  - swarm
   - autonomous_agents
   - tokens
   - contracts
-  - erc20
   - multi_vm
-  - usernames
-  - skill_usage
-  - tool_usage
-  - tools_registry
   - settlement
   - escrow
   - governance
-  - canton
-  - daml
   - evm
   - file_storage
   - erasure_coding
@@ -47,11 +37,10 @@ You can interact with the Tenzro blockchain network using its JSON-RPC, Web API,
 
 | Service  | URL                             | Description                                  |
 | -------- | ------------------------------- | -------------------------------------------- |
-| JSON-RPC | `https://rpc.tenzro.xyz`        | EVM-compatible JSON-RPC (port 8545)          |
-| Web API  | `https://api.tenzro.xyz`        | REST verification and status API (port 8080) |
-| Faucet   | `https://api.tenzro.xyz/faucet` | Testnet TNZO token faucet                    |
-| MCP      | `https://mcp.tenzro.xyz/mcp`    | Model Context Protocol server (port 3001)    |
-| A2A      | `https://a2a.tenzro.xyz`        | Agent-to-Agent protocol (port 3002)          |
+| JSON-RPC | `https://rpc.tenzro.com`        | EVM-compatible JSON-RPC (port 8545)          |
+| Web API  | `https://api.tenzro.com`        | REST verification and status API (port 8080) |
+| MCP      | `https://mcp.tenzro.com/mcp`    | Model Context Protocol server (port 3001)    |
+| A2A      | `https://a2a.tenzro.com`        | Agent-to-Agent protocol (port 3002)          |
 
 For local development, replace the hostnames with `localhost` and use the ports shown above.
 
@@ -63,22 +52,20 @@ For local development, replace the hostnames with `localhost` and use the ports 
 
 Read operations (block lookups, balances, agent cards, etc.) need no authentication.
 
-Write operations use **OAuth 2.1 + DPoP** (RFC 6749 successor + RFC 9449) on top of Ed25519/Secp256k1 transaction signatures. Onboarding mints an HS256 JWT access token (1h TTL) and an opaque refresh token (30d TTL); the access token is sent as `Authorization: Bearer <token>` and, when DPoP-bound, accompanied by a fresh DPoP proof in the `DPoP` header signed by the holder key whose RFC 7638 thumbprint (`jkt`) was supplied at onboarding.
+Write operations use **OAuth 2.1 + DPoP** (RFC 6749 successor + RFC 9449) on top of Ed25519/Secp256k1 transaction signatures. Onboarding mints an ES256 JWT access token (1h TTL) and an opaque refresh token (30d TTL); the access token is sent as `Authorization: Bearer <token>` and, when DPoP-bound, accompanied by a fresh DPoP proof in the `DPoP` header signed by the holder key whose RFC 7638 thumbprint (`jkt`) was supplied at onboarding.
 
 ### Onboarding RPCs
 
-- `tenzro_onboardHuman` — provisions a `did:tenzro:human:*` identity, MPC wallet, and access + refresh tokens.
+- `tenzro_onboardHuman` — provisions a `did:tenzro:human:*` identity, hardware-bound wallet, and access + refresh tokens.
 - `tenzro_onboardDelegatedAgent` — issues an agent identity bound to a controller DID with a delegation scope.
 - `tenzro_onboardAutonomousAgent` — issues a fully autonomous agent identity backed by a TNZO bond.
-- `tenzro_participate` — convenience one-call human onboarding (used by CLI/desktop); returns the same session bundle.
 
 Each call returns `{ identity, wallet, access_token, refresh_token, expires_in, refresh_token_expires_in, dpop_bound, authorization_details, ... }`.
 
 ### Refresh and bridge RPCs
 
-- `tenzro_refreshToken` — exchange a refresh token for a new access token (refresh tokens are not rotated).
-- `tenzro_linkWalletForAuth` — mint a fresh access + refresh token pair against an existing MPC wallet (e.g. one created via `tenzro_createWallet` or `tenzro_importIdentity`).
-- `tenzro_revokeJwt` / `tenzro_revokeDid` — revoke a single JWT by `jti` or cascade-invalidate every JWT minted under a DID.
+- `tenzro_refreshToken` — exchange a refresh token for a new access token and a new refresh token. The request carries a DPoP proof from the key the refresh token is bound to and no access token; each refresh token is good for one exchange.
+- `tenzro_revokeJwt` / `tenzro_revokeIdentity` — revoke a single JWT by `jti` or cascade-invalidate every JWT minted under a DID.
 
 ### Delegation and AS metadata RPCs
 
@@ -105,53 +92,17 @@ All RPC calls use `POST` with `Content-Type: application/json`. The request body
 }
 ```
 
-### Create an Account
+### Create a Wallet
 
-Generate a plain keypair and derive its address. The private key is
-returned once, in the response, and the node keeps no copy — store it
-yourself. `key_type` accepts `ed25519` (default) or `secp256k1`.
+Create a wallet bound to a key held in your own hardware: a passkey for a
+human, a TPM 2.0 or Secure Enclave for a machine. The private key never
+leaves the device and the node never sees it.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
-    "method": "tenzro_createAccount",
-    "params": {"key_type": "ed25519"},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "address": "0x<40 hex chars — 20-byte address>",
-    "public_key": "0x<hex>",
-    "private_key": "0x<hex>",
-    "key_type": "Ed25519"
-  },
-  "id": 1
-}
-```
-
-Use this when you want to hold the key. For custody split across shares,
-use the MPC wallet below.
-
-### Create an MPC Wallet
-
-Generate a Tenzro 2-of-3 threshold MPC wallet. No seed phrase, no
-private key in user custody — the keystore holds shares, the node never
-sees a full key.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_createWallet",
     "params": {"key_type": "ed25519"},
     "id": 1
   }'
@@ -175,14 +126,14 @@ curl -X POST https://rpc.tenzro.xyz \
 }
 ```
 
-The 32-byte hex `address` is the canonical form used by `eth_getBalance`,
-the faucet, and all transaction RPCs. The `display_address` is a
+The 32-byte hex `address` is the canonical form used by `eth_getBalance`
+and all transaction RPCs. The `display_address` is a
 human-friendly base58 alias (informational).
 
 ### Check Balance
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -218,11 +169,11 @@ Also available via EVM-compatible method:
 ### Send Transaction
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
-    "method": "eth_sendRawTransaction",
+    "method": "tenzro_sendRawTransaction",
     "params": {
       "from": "0x<sender>",
       "to": "0x<recipient>",
@@ -248,7 +199,7 @@ curl -X POST https://rpc.tenzro.xyz \
 ### Get Block Height
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tenzro_blockNumber","params":{},"id":1}'
 ```
@@ -256,7 +207,7 @@ curl -X POST https://rpc.tenzro.xyz \
 ### Get Block by Number
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tenzro_getBlock","params":{"height":0},"id":1}'
 ```
@@ -266,25 +217,25 @@ Use `"params":["latest"]` for the most recent block.
 ### Get Chain ID
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_chainId","params":{},"id":1}'
 ```
 
-Default chain ID is `0x539` (1337).
+The answer is the chain id the network's genesis sets: `0x3444` (13380) on the preview network.
 
 ### Get Node Info
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tenzro_nodeInfo","params":{},"id":1}'
+  -d '{"jsonrpc":"2.0","method":"tenzro_getNodeStatus","params":{},"id":1}'
 ```
 
 ### Get Token Supply
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tenzro_totalSupply","params":{},"id":1}'
 ```
@@ -292,7 +243,7 @@ curl -X POST https://rpc.tenzro.xyz \
 ### List Registered Models
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tenzro_listModels","params":{"category":"text"},"id":1}'
 ```
@@ -306,7 +257,7 @@ Optionally filter by `category` (text, image, audio, video, text_image, text_aud
 Tenzro uses decentralized identifiers (DIDs) for both humans and machines.
 
 - Human DID format: `did:tenzro:human:<uuid>`
-- Machine DID format: `did:tenzro:machine:<controller>:<uuid>` or `did:tenzro:machine:<uuid>` (autonomous)
+- Machine DID format: `did:tenzro:machine:<controller>:<uuid>` or `did:tenzro:machine:<device-key-id>` (autonomous)
 
 ### Register Identity (human, machine, or autonomous)
 
@@ -315,7 +266,7 @@ Tenzro uses decentralized identifiers (DIDs) for both humans and machines.
 #### Human
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -335,7 +286,7 @@ curl -X POST https://rpc.tenzro.xyz \
 Requires the controller's DID and a list of capabilities. An optional `delegation_scope` constrains spending and operations the machine may perform on the controller's behalf.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -363,7 +314,7 @@ The DID is issued with prefix `did:tenzro:machine:<controller-uuid>:<uuid>`. Amo
 Self-sovereign machine identity with no human owner. Capabilities required.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -376,7 +327,7 @@ curl -X POST https://rpc.tenzro.xyz \
   }'
 ```
 
-The DID is issued with prefix `did:tenzro:machine:<uuid>` (no controller segment).
+The DID is issued with prefix `did:tenzro:machine:<device-key-id>` (no controller segment).
 
 #### Response (all types)
 
@@ -386,19 +337,18 @@ The DID is issued with prefix `did:tenzro:machine:<uuid>` (no controller segment
   "result": {
     "did": "did:tenzro:<type>:<uuid>",
     "identity_type": "<type>",
-    "status": "registered",
-    "private_key": "<hex — only when keypair was auto-generated>"
+    "status": "registered"
   },
   "id": 1
 }
 ```
 
-For all three types, optionally pass `"public_key": "<hex>"` + `"key_type": "ed25519"` (or `"secp256k1"`) to register an existing keypair instead of having the node generate one. When `public_key` is supplied, no `private_key` is returned.
+For all three types, pass the public half of your hardware-held key as `"public_key": "<hex>"`; the node never generates or returns a private key.
 
 ### Resolve Identity
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -430,7 +380,7 @@ curl -X POST https://rpc.tenzro.xyz \
 ### Resolve DID Document (W3C Standard)
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -443,10 +393,10 @@ curl -X POST https://rpc.tenzro.xyz \
 ### Join as MicroNode
 
 Join the Tenzro Network as a full participant — zero-install. Auto-provisions a TDIP DID,
-MPC wallet, and all 10 network capabilities in a single RPC call.
+hardware-bound wallet, and all 10 network capabilities in a single RPC call.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -486,17 +436,16 @@ curl -X POST https://rpc.tenzro.xyz \
       "governance": true
     },
     "network": {
-      "rpc": "https://rpc.tenzro.xyz",
-      "mcp": "https://mcp.tenzro.xyz/mcp",
-      "a2a": "https://a2a.tenzro.xyz"
+      "rpc": "https://rpc.tenzro.com",
+      "mcp": "https://mcp.tenzro.com/mcp",
+      "a2a": "https://a2a.tenzro.com"
     },
     "is_micro_node": true,
-    "chain_id": 1337
+    "chain_id": 13380
   }
 }
 ```
 
-Falls back to `tenzro_participate` for nodes that don't yet support `tenzro_joinAsMicroNode`.
 
 **Python (tenzro_rpc.py):**
 
@@ -507,136 +456,14 @@ print(result["identity"]["did"])    # did:tenzro:human:<uuid>
 print(result["wallet"]["address"])  # 0x<hex>
 ```
 
-### Set Username
+### Agent Terms
 
-Attach a human-readable username to a DID. Usernames are unique across the network.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_setUsername",
-    "params": {"did": "did:tenzro:human:<uuid>", "username": "alice"},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "did": "did:tenzro:human:<uuid>",
-    "username": "alice",
-    "status": "set"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import set_username
-result = set_username("did:tenzro:human:abc-123", "alice")
-print(result["username"])  # "alice"
-```
-
-### Resolve Username
-
-Look up a DID by its username.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_resolveUsername",
-    "params": {"username": "alice"},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "did": "did:tenzro:human:<uuid>",
-    "username": "alice",
-    "display_name": "Alice"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import resolve_username
-result = resolve_username("alice")
-print(result["did"])  # did:tenzro:human:<uuid>
-```
-
-### Set Delegation Scope
-
-Define spending limits, allowed operations, payment protocols, and chains for a machine identity.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_setDelegationScope",
-    "params": {
-      "machine_did": "did:tenzro:machine:<controller>:<uuid>",
-      "max_transaction_value": 10000000,
-      "max_daily_spend": 100000000,
-      "allowed_operations": ["InferenceRequest", "Transfer"],
-      "allowed_payment_protocols": ["mpp", "x402", "native"],
-      "allowed_chains": ["tenzro", "base", "ethereum"]
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "machine_did": "did:tenzro:machine:<controller>:<uuid>",
-    "delegation_scope": {
-      "max_transaction_value": 10000000,
-      "max_daily_spend": 100000000,
-      "allowed_operations": ["InferenceRequest", "Transfer"],
-      "allowed_payment_protocols": ["mpp", "x402", "native"],
-      "allowed_chains": ["tenzro", "base", "ethereum"]
-    },
-    "status": "updated"
-  },
-  "id": 1
-}
-```
-
----
-
-## Payments
-
-Tenzro supports three payment protocols:
-
-- **MPP** (Machine Payments Protocol) — session-based streaming payments, ideal for per-token AI inference billing
-- **x402** (Coinbase HTTP 402) — stateless one-shot payments, ideal for API calls and data downloads
-- **native** — direct TNZO transfer on the Tenzro ledger
+An agent's spending limits, allowed operations, payment protocols, counterparties and chains are its consensus Terms, approved by its root with a passkey or hardware key (`SetAgentTerms`). Read them, the root kind and the spend against them with `tenzro_getAgentTerms`.
 
 ### Create Payment Challenge
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -673,7 +500,7 @@ curl -X POST https://rpc.tenzro.xyz \
 ### Verify Payment
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -705,12 +532,6 @@ curl -X POST https://rpc.tenzro.xyz \
 }
 ```
 
-### List Payment Protocols
-
-> **Note:** This is available as an MCP tool (`list_payment_protocols`) on the MCP server at `https://mcp.tenzro.xyz/mcp`, not as a JSON-RPC method.
-
-Supported protocols: **MPP** (session-based streaming), **x402** (stateless one-shot), **native** (direct TNZO transfer).
-
 ---
 
 ## AI Models & Inference
@@ -718,7 +539,7 @@ Supported protocols: **MPP** (session-based streaming), **x402** (stateless one-
 ### List Models
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -759,7 +580,7 @@ Load levels: `idle` (0%), `available` (1-50%), `busy` (51-80%), `near_capacity` 
 Send a chat completion request to a served AI model on the network.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -806,7 +627,7 @@ Use `tenzro_listModels` or `tenzro_listModelEndpoints` to discover available mod
 ### List Model Endpoints
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -848,12 +669,12 @@ Load levels: `idle` (0%), `available` (1-50%), `busy` (51-80%), `near_capacity` 
 
 ## Network Provider Discovery
 
-Tenzro uses a decentralized provider registry — nodes that serve AI models or TEE services broadcast a `ProviderAnnouncement` every 60 seconds on the `tenzro/providers` gossipsub topic. All peers merge incoming announcements into their local `network_providers` cache, so any node can discover every provider without a central registry.
+Tenzro uses a decentralized provider registry — nodes that serve AI models or TEE services broadcast a `ProviderAnnouncement` every 60 seconds on the `tenzro/providers` gossip topic. All peers merge incoming announcements into their local `network_providers` cache, so any node can discover every provider without a central registry.
 
 ### List Network Providers
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -866,7 +687,7 @@ curl -X POST https://rpc.tenzro.xyz \
 Optionally filter by provider type:
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -876,159 +697,105 @@ curl -X POST https://rpc.tenzro.xyz \
   }'
 ```
 
-**Provider types:** `llm` (language models), `tee` (trusted execution environments), `general`
+**Provider types:** `ai` (every model class), `tee`, `storage`, `compute`, `general`
+
+The listing comes a page at a time: `limit` (default 50, at most 200) and
+`cursor` (the `next_cursor` of the page before). `next_cursor` is `null` on the
+last page.
 
 **Response:**
 
 ```json
 {
   "jsonrpc": "2.0",
-  "result": [
-    {
-      "peer_id": "12D3KooW...",
-      "provider_address": "0x<hex>",
-      "provider_type": "ai",
-      "served_models": ["gemma4-9b", "qwen3.5-0.8b"],
-      "capabilities": ["inference", "chat"],
-      "rpc_endpoint": "http://10.128.0.5:8545",
-      "status": "active",
-      "is_local": false
-    }
-  ],
+  "result": {
+    "providers": [
+      {
+        "endpoint_id": "<iroh endpoint id, hex>",
+        "provider_address": "0x<hex>",
+        "provider_type": "ai",
+        "served_models": ["gemma4-9b", "qwen3.5-0.8b"],
+        "key_required_models": [],
+        "capabilities": ["inference"],
+        "status": "active",
+        "region": "eu",
+        "jurisdiction": "DE",
+        "model_load": [],
+        "load_as_of_ms": 1761400000000,
+        "hardware_tier": "datacenter_gpu",
+        "identity_anchor": "tpm",
+        "source": "network"
+      }
+    ],
+    "next_cursor": null
+  },
   "id": 1
 }
 ```
 
-The `is_local` field indicates whether the entry represents the local node itself. Provider announcements are refreshed every 60 seconds; entries expire after 120 seconds if not refreshed.
+`source` is `local` for the node answering and `network` for a peer. Nodes that
+serve delegated agents follow the model providers, by identity only
+(`machine_did`, `operator_did`, `capabilities`, `live`). Provider announcements
+are refreshed every 60 seconds; entries expire after 120 seconds if not
+refreshed.
 
 **Python (tenzro_rpc.py):**
 
 ```python
 from tools.tenzro_rpc import call_rpc
-providers = call_rpc("tenzro_listProviders", {})
-ai_providers = call_rpc("tenzro_listProviders", {"provider_type": "ai"})
-for p in providers:
-    print(p["peer_id"], p["provider_type"], p["served_models"])
+page = call_rpc("tenzro_listProviders", {"provider_type": "ai", "limit": 50})
+for p in page["providers"]:
+    print(p["endpoint_id"], p["provider_type"], p["served_models"])
+# page["next_cursor"], when set, is the cursor for the next page
 ```
 
 ---
 
 ## Cross-Chain Bridge
 
-### Bridge Tokens
+TNZO moves to and from other chains only over governed routes: a
+CCIP-compatible envelope for Ethereum, Base, Arbitrum and Solana, IBC,
+Bitcoin deposits and contract routes. Every route enforces committee attestations, a circuit
+breaker, per-transfer and per-epoch caps, and the supply invariant.
 
-Bridge tokens between Tenzro, Ethereum, Solana, and Base via LayerZero, Chainlink CCIP, or deBridge.
+### List Routes
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_bridgeTokens",
-    "params": {
-      "source_chain": "tenzro",
-      "dest_chain": "ethereum",
-      "asset": "TNZO",
-      "amount": 1000000000000000000,
-      "sender": "0x<sender_address>",
-      "recipient": "0x<recipient_address>"
-    },
-    "id": 1
-  }'
+  -d '{"jsonrpc": "2.0", "method": "tenzro_listBridgeRoutes", "params": {}, "id": 1}'
 ```
 
-**Response:**
+Each route reports its caps, what it has minted this epoch, the TNZO locked
+for it, what is outstanding on the other chain, and whether it is paused.
 
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "transfer_id": "<uuid>",
-    "source_tx_hash": "0x<hash>",
-    "adapter": "layerzero",
-    "status": "pending",
-    "estimated_time_secs": 300,
-    "fee": "0.001 TNZO"
-  },
-  "id": 1
-}
-```
+### Send TNZO Out
 
-### Get Bridge Routes
+An outbound transfer is a `Bridge` transaction the holder's wallet signs
+(`{"Bridge":{"op":{"outbound":{"target_chain","recipient","amount"}}}}`).
+The amount locks in the route's vault and the route queues the outbound
+message its committee attests on the other chain. `bridge_outbound` sends it
 
-> **Note:** This is available as an MCP tool (`get_bridge_routes`) on the MCP server at `https://mcp.tenzro.xyz/mcp`, not as a JSON-RPC method.
+### Deliver an Inbound Transfer
 
-Returns available bridge routes between two chains, including estimated fees, time, and which adapter handles the route.
-
-### List Bridge Adapters
-
-> **Note:** This is available as an MCP tool (`list_bridge_adapters`) on the MCP server at `https://mcp.tenzro.xyz/mcp`, not as a JSON-RPC method.
-
-Returns all registered bridge adapters: LayerZero, Chainlink CCIP, deBridge, Canton.
+Relayers submit the route committee's signed delivery as a `Bridge`
+inbound transaction from their own wallet. The recipient is credited only
+within the route's caps and outstanding supply, once.
 
 ---
 
 ## Token Registry & Contracts
 
-Tenzro has a unified token registry spanning all VMs (EVM, SVM, DAML). Tokens created via the factory are automatically registered and addressable across all VMs using the Sei V2 pointer model (no bridge risk, no liquidity fragmentation).
-
-### Create Token
-
-Create an ERC-20 token via the factory and register it in the unified token registry.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_createToken",
-    "params": {
-      "name": "My Token",
-      "symbol": "MYT",
-      "creator": "0x<creator_address>",
-      "initial_supply": "1000000000000000000000",
-      "decimals": 18,
-      "mintable": false,
-      "burnable": false
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "token_id": "<hex>",
-    "name": "My Token",
-    "symbol": "MYT",
-    "decimals": 18,
-    "initial_supply": "1000000000000000000000",
-    "evm_address": "0x<hex>",
-    "status": "created"
-  },
-  "id": 1
-}
-```
-
-The `decimals` field defaults to 18 if omitted. Set `mintable: true` to allow minting beyond the initial supply. Set `burnable: true` to allow token burning.
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import create_token
-result = create_token("My Token", "MYT", "0x<creator>", "1000000000000000000000")
-print(result["token_id"], result["evm_address"])
-```
+A token is created by a `Token` transaction its issuer signs; the same
+transaction type carries `mint`, `burn`, `transfer` and the issuer's
+compliance controls. Tenzro has a unified token registry spanning all VMs (EVM, SVM). Tokens created via the factory are automatically registered and addressable across all VMs using the Sei V2 pointer model (no bridge risk, no liquidity fragmentation).
 
 ### Get Token Info
 
 Look up a token by symbol, EVM address, or token ID.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -1054,7 +821,6 @@ Also accepts `"evm_address": "0x<hex>"` or `"token_id": "<hex>"` instead of `sym
     "token_type": "Erc20",
     "evm_address": "0x<hex>",
     "svm_mint": null,
-    "daml_template_id": null,
     "tempo_address": null,
     "creator": "0x<hex>"
   },
@@ -1076,7 +842,7 @@ result = get_token_info(symbol="MYT")
 List registered tokens in the unified registry, optionally filtered by VM type.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -1086,7 +852,7 @@ curl -X POST https://rpc.tenzro.xyz \
   }'
 ```
 
-**VM type filter:** `evm`, `svm`, `daml`, `native`. Omit for all tokens. Max `limit` is 100.
+**VM type filter:** `evm`, `svm`, `native`. Omit for all tokens. Max `limit` is 100.
 
 **Response:**
 
@@ -1123,7 +889,7 @@ result = list_tokens(vm_type="evm")  # EVM tokens only
 Get TNZO balance across all VMs with decimal conversion for each VM representation.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -1146,8 +912,7 @@ curl -X POST https://rpc.tenzro.xyz \
       "display": "100.000000 TNZO"
     },
     "evm_wtnzo": { "balance": "100000000000000000000", "decimals": 18 },
-    "svm_wtnzo": { "balance": "100000000000", "decimals": 9 },
-    "daml_holding": { "amount": "100.000000000000000000" }
+    "svm_wtnzo": { "balance": "100000000000", "decimals": 9 }
   },
   "id": 1
 }
@@ -1163,98 +928,50 @@ result = get_token_balance_all_vms("0x<address>")
 print(result["native"]["display"])  # "100.000000 TNZO"
 ```
 
-### Cross-VM Transfer
+### Calls across VMs
 
-Transfer tokens atomically between VMs using the Sei V2 pointer model. No bridge risk.
+Every VM reads the same balance of a token, so nothing is wrapped or bridged
+between VMs. A transfer, in one VM or across several, is one contract-call
+transaction: an ordered list of calls, each naming its VM, the code it calls
+and its calldata. Either every call takes effect or none does, and the gas is
+the sum over the calls.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
+  -H "Authorization: DPoP <jwt>" -H "DPoP: <proof>" \
   -d '{
     "jsonrpc": "2.0",
-    "method": "tenzro_crossVmTransfer",
     "params": {
-      "token": "TNZO",
-      "amount": "1000000000000000000",
-      "from_vm": "evm",
-      "to_vm": "svm",
-      "from_address": "0x<evm_address>",
-      "to_address": "0x<svm_address>"
+      "from": "0x<address>",
+      "to": "0x<address>",
+      "value": 0,
+      "gas_limit": 500000,
+      "tx_type": {"ContractCall": {"calls": [
+        {"vm": "evm", "to": [/* 20-byte ERC-20 contract */], "value": 0, "data": [/* transfer(address,uint256) */]},
+        {"vm": "svm", "to": [/* 32-byte SPL Token program */], "value": 0, "data": [/* [n] [accounts] [instruction] */]}
+      ]}}
     },
     "id": 1
   }'
 ```
 
-**VM types:** `evm`, `svm`, `daml`, `native`. The `token` field accepts a symbol (e.g. `"TNZO"`) or token ID.
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "token": "TNZO",
-    "amount": "1000000000000000000",
-    "from_vm": "evm",
-    "to_vm": "svm",
-    "status": "transferred"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import cross_vm_transfer
-result = cross_vm_transfer("TNZO", "1000000000000000000", "evm", "svm", "0xfrom", "0xto")
-```
+The token interfaces are the EVM's ERC-20 and the SVM's SPL Token program
+(`Transfer` for wTNZO, `TransferChecked` with the mint for any token).
 
 ### Deploy Contract
 
-Deploy smart contract bytecode to EVM, SVM, or DAML via the MultiVmRuntime.
+Deploy smart contract bytecode to EVM or SVM via the MultiVmRuntime.
+
+A deployment is a `ContractDeploy` transaction the deployer signs on its own hardware, submitted with `tenzro_deployContract` (the same fields as `tenzro_sendRawTransaction`). The signature covers the code, the constructor arguments, the nonce, the chain and the sender; the contract is created when a block executes it, at the address its receipt reports. From the CLI:
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_deployContract",
-    "params": {
-      "vm_type": "evm",
-      "bytecode": "0x<hex_bytecode>",
-      "deployer": "0x<deployer_address>",
-      "constructor_args": "0x<hex_args>",
-      "gas_limit": 3000000
-    },
-    "id": 1
-  }'
+tenzro contract deploy --bytecode 0x<hex_bytecode> --args 0x<hex_args>
 ```
 
-**VM types:** `evm`, `svm`, `daml`. The `constructor_args` field is optional (ABI-encoded constructor arguments). Default `gas_limit` is 3,000,000. Max contract size is 24,576 bytes.
+**Response:** `{"tx_hash": "0x…", "status": "admitted"}`.
 
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "address": "0x<contract_address>",
-    "gas_used": 1234567,
-    "vm_type": "evm",
-    "status": "deployed"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import deploy_contract
-result = deploy_contract("evm", "0x<bytecode>", "0x<deployer>")
-print(result["address"])  # deployed contract address
-```
+**Python (tenzro_rpc.py):** `deploy_contract(signed_tx)` submits a transaction signed elsewhere.
 
 ---
 
@@ -1263,7 +980,7 @@ print(result["address"])  # deployed contract address
 ### Node Status
 
 ```bash
-curl https://api.tenzro.xyz/status
+curl https://api.tenzro.com/status
 ```
 
 **Response:**
@@ -1282,34 +999,13 @@ curl https://api.tenzro.xyz/status
 ### Health Check
 
 ```bash
-curl https://api.tenzro.xyz/health
-```
-
-### Request Testnet Tokens
-
-Request TNZO from the faucet (rate-limited to one request per address every 24 hours). The node sets the per-request amount and reports it as `amount_wei`.
-
-```bash
-curl -X POST https://api.tenzro.xyz/faucet \
-  -H "Content-Type: application/json" \
-  -d '{"address": "0x<your_address>"}'
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "tx_hash": "0x<hash>",
-  "amount": "100 TNZO",
-  "message": "Tokens dispensed successfully"
-}
+curl https://api.tenzro.com/health
 ```
 
 ### Verify ZK Proof
 
 ```bash
-curl -X POST https://api.tenzro.xyz/verify/zk-proof \
+curl -X POST https://api.tenzro.com/verify/zk-proof \
   -H "Content-Type: application/json" \
   -d '{
     "proof_bytes": "<hex>",
@@ -1323,7 +1019,7 @@ Tenzro uses Plonky3 STARKs over the KoalaBear field as its sole ZK proof system.
 ### Verify TEE Attestation
 
 ```bash
-curl -X POST https://api.tenzro.xyz/verify/tee-attestation \
+curl -X POST https://api.tenzro.com/verify/tee-attestation \
   -H "Content-Type: application/json" \
   -d '{
     "vendor": "intel_tdx",
@@ -1336,7 +1032,7 @@ Supported vendors: `intel_tdx`, `amd_sev_snp`, `aws_nitro`.
 ### Verify Transaction Signature
 
 ```bash
-curl -X POST https://api.tenzro.xyz/verify/transaction \
+curl -X POST https://api.tenzro.com/verify/transaction \
   -H "Content-Type: application/json" \
   -d '{
     "tx_hash": "<hex>",
@@ -1348,7 +1044,7 @@ curl -X POST https://api.tenzro.xyz/verify/transaction \
 ### Verify Settlement Receipt
 
 ```bash
-curl -X POST https://api.tenzro.xyz/verify/settlement \
+curl -X POST https://api.tenzro.com/verify/settlement \
   -H "Content-Type: application/json" \
   -d '{
     "receipt_id": "<id>",
@@ -1362,7 +1058,7 @@ curl -X POST https://api.tenzro.xyz/verify/settlement \
 ### Verify Inference Result
 
 ```bash
-curl -X POST https://api.tenzro.xyz/verify/inference \
+curl -X POST https://api.tenzro.com/verify/inference \
   -H "Content-Type: application/json" \
   -d '{
     "model_id": "<model>",
@@ -1374,670 +1070,15 @@ curl -X POST https://api.tenzro.xyz/verify/inference \
 
 ---
 
-## Task Marketplace
+## Network Duties
 
-The decentralized AI task marketplace lets agents and users post tasks for fulfillment, with TNZO escrow-based payment.
-
-### Post a Task
+A duty is work the chain pays the first prover for: a route's settlement-lock reconciliation each epoch, or the install of a voided agent grant on another chain. Its reward sits in a keyless vault; the transaction that proves the work pays it. Task markets for agents and machines run in harnesses over escrows, not on chain.
 
 ```bash
-curl -X POST https://rpc.tenzro.xyz \
+curl -X POST https://rpc.tenzro.com \
   -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_postTask",
-    "params": {
-      "title": "Review this Rust code",
-      "description": "Please review the following Rust code for correctness and safety issues...",
-      "task_type": "code_review",
-      "max_price": "50000000000000000000",
-      "input": "fn main() { ... }",
-      "priority": "normal"
-    },
-    "id": 1
-  }'
+  -d '{"jsonrpc": "2.0", "method": "tenzro_listDuties", "params": {}, "id": 1}'
 ```
-
-**Task types:** `inference`, `code_review`, `data_analysis`, `content_generation`, `agent_execution`, `translation`, `research`, `custom:<name>`
-
-**Response:**
-
-```json
-{
-  "result": {
-    "task_id": "uuid-...",
-    "status": "open",
-    "poster": "0x...",
-    "max_price": "50000000000000000000",
-    "created_at": 1234567890
-  }
-}
-```
-
-### List Tasks
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_listTasks",
-    "params": {
-      "status": "open",
-      "task_type": "inference",
-      "max_price": "100000000000000000000",
-      "limit": 20,
-      "offset": 0
-    },
-    "id": 1
-  }'
-```
-
-### Get Task
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_getTask",
-    "params": {"task_id": "uuid-..."},
-    "id": 1
-  }'
-```
-
-### Cancel Task
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_cancelTask",
-    "params": {"task_id": "uuid-..."},
-    "id": 1
-  }'
-```
-
-### Submit a Quote
-
-Providers submit quotes to fulfill a task.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_quoteTask",
-    "params": {
-      "task_id": "uuid-...",
-      "provider": "0x<provider-address>",
-      "price": "40000000000000000000",
-      "model_id": "qwen3-0.6b",
-      "estimated_duration_secs": 30,
-      "confidence": 95
-    },
-    "id": 1
-  }'
-```
-
----
-
-## Agent Template Marketplace
-
-The decentralized agent marketplace lets providers publish reusable AI agent templates for discovery, download, and deployment.
-
-### List Agent Templates
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_listAgentTemplates",
-    "params": {
-      "free_only": true,
-      "limit": 20,
-      "offset": 0
-    },
-    "id": 1
-  }'
-```
-
-**Filter options:** `template_type` (`autonomous`, `tool_agent`, `orchestrator`, `specialist`, `multi_modal`), `creator`, `tag`, `free_only`, `status`
-
-### Register an Agent Template
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_registerAgentTemplate",
-    "params": {
-      "name": "Rust Code Reviewer",
-      "description": "Reviews Rust code for safety, correctness, and idioms",
-      "template_type": "specialist",
-      "system_prompt": "You are an expert Rust developer. Review the provided code for...",
-      "tags": ["rust", "code-review", "security"],
-      "pricing": {"type": "free"}
-    },
-    "id": 1
-  }'
-```
-
-**Pricing options:**
-
-- `{"type": "free"}` — Free to use
-- `{"type": "per_execution", "price": "1000000000000000000"}` — Fixed price per run
-- `{"type": "per_token", "price_per_token": "1000000000"}` — Per token processed
-- `{"type": "subscription", "monthly_rate": "10000000000000000000"}` — Monthly subscription
-
-### Get Agent Template
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_getAgentTemplate",
-    "params": {"template_id": "uuid-..."},
-    "id": 1
-  }'
-```
-
-### Spawn Agent from Template
-
-Instantiate a new agent from a marketplace template.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_spawnAgentFromTemplate",
-    "params": {
-      "template_id": "uuid-...",
-      "name": "my-reviewer"
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "agent_id": "<uuid>",
-    "template_id": "uuid-...",
-    "name": "my-reviewer",
-    "status": "active"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import spawn_agent_from_template
-result = spawn_agent_from_template("t-1", "my-reviewer")
-print(result["agent_id"])
-```
-
-### Rate Agent Template
-
-Rate an agent template (1-5 stars) with an optional text review.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_rateAgentTemplate",
-    "params": {
-      "template_id": "uuid-...",
-      "rating": 5,
-      "review": "Excellent code reviewer"
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "template_id": "uuid-...",
-    "rating": 5,
-    "status": "rated"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import rate_agent_template
-result = rate_agent_template("t-1", 5, "Excellent code reviewer")
-```
-
-### Search Agent Templates
-
-Search agent templates by free-text query.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_searchAgentTemplates",
-    "params": {
-      "query": "code review",
-      "limit": 20
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": [
-    {
-      "template_id": "uuid-...",
-      "name": "Rust Code Reviewer",
-      "description": "Reviews Rust code for safety"
-    }
-  ],
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import search_agent_templates
-results = search_agent_templates("code review")
-```
-
-### Get Agent Template Stats
-
-Get usage statistics for an agent template.
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_getAgentTemplateStats",
-    "params": {"template_id": "uuid-..."},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "template_id": "uuid-...",
-    "spawn_count": 150,
-    "average_rating": 4.5,
-    "total_reviews": 30,
-    "revenue_wei": "50000000000000000000"
-  },
-  "id": 1
-}
-```
-
-**Python (tenzro_rpc.py):**
-
-```python
-from tools.tenzro_rpc import get_agent_template_stats
-stats = get_agent_template_stats("t-1")
-print(stats["spawn_count"], stats["average_rating"])
-```
-
----
-
-## Agent Spawning & Swarm Orchestration
-
-Tenzro agents can autonomously spawn child agents, form swarms, and run agentic execution loops with built-in LLM tool-calling.
-
-### Register an Agent
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_registerAgent",
-    "params": {
-      "name": "orchestrator-1",
-      "creator": "0x<address>",
-      "capabilities": ["nlp", "code", "data"]
-    },
-    "id": 1
-  }'
-```
-
-`creator` accepts both Solana-base58 and `0x`-hex EVM addresses; the runtime provisions an MPC wallet bound to that owner. Optional fields:
-
-- `tenzro_did`: bind this agent to a previously registered TDIP machine DID. Use this to combine the kill-switch lifecycle FSM (`tenzro_suspendAgent` / `tenzro_resumeAgent`) with the AAP/RAR delegation scope set during machine identity registration.
-- `kind`: `"autonomous"` for self-acting agents (no human-in-the-loop). Default is interactive.
-
-**Response:**
-
-```json
-{
-  "result": {
-    "agent_id": "<uuid>",
-    "wallet_address": "0x<hex>",
-    "status": "active"
-  }
-}
-```
-
-### Spawn a Child Agent
-
-Spawn a sub-agent under a parent (max 50 children per parent):
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_spawnAgent",
-    "params": {
-      "parent_id": "<parent-agent-uuid>",
-      "name": "data-analyst",
-      "capabilities": ["data", "nlp"]
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "agent_id": "<child-uuid>",
-    "parent_id": "<parent-uuid>",
-    "name": "data-analyst"
-  }
-}
-```
-
-### Run an Agentic Task Loop
-
-The agent calls an LLM with built-in tools (`spawn_agent`, `delegate_task`, `collect_results`, `complete`) and executes them iteratively until the task is complete or the step limit is reached:
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_runAgentTask",
-    "params": {
-      "agent_id": "<agent-uuid>",
-      "task": "Analyze the latest network stats and summarize key metrics",
-      "inference_url": "http://localhost:8080/v1/chat/completions"
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "agent_id": "<uuid>",
-    "result": "Network stats summary: ..."
-  }
-}
-```
-
-### Create a Swarm
-
-Create a pool of coordinated agents under an orchestrator:
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_createSwarm",
-    "params": {
-      "orchestrator_id": "<orchestrator-uuid>",
-      "members": [
-        {"name": "researcher", "capabilities": ["nlp", "data"]},
-        {"name": "coder", "capabilities": ["code"]},
-        {"name": "reviewer", "capabilities": ["code", "nlp"]}
-      ],
-      "max_members": 10,
-      "task_timeout_secs": 300,
-      "parallel": true
-    },
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "swarm_id": "<swarm-uuid>",
-    "orchestrator_id": "<orchestrator-uuid>"
-  }
-}
-```
-
-### Get Swarm Status
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_getSwarmStatus",
-    "params": {"swarm_id": "<swarm-uuid>"},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "swarm_id": "<uuid>",
-    "orchestrator_id": "<uuid>",
-    "status": "idle",
-    "member_count": 3,
-    "members": [
-      {
-        "agent_id": "<uuid>",
-        "role": "researcher",
-        "status": "Idle",
-        "result": null
-      },
-      {
-        "agent_id": "<uuid>",
-        "role": "coder",
-        "status": "Working",
-        "result": null
-      }
-    ]
-  }
-}
-```
-
-Swarm lifecycle statuses: `idle`, `working`, `completed`. Member statuses: `Idle`, `Working`, `Completed`, `Failed`.
-
-### Terminate a Swarm
-
-```bash
-curl -X POST https://rpc.tenzro.xyz \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tenzro_terminateSwarm",
-    "params": {"swarm_id": "<swarm-uuid>"},
-    "id": 1
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "swarm_id": "<uuid>",
-    "status": "terminated"
-  }
-}
-```
-
----
-
-## Multi-Party Workflows on Canton
-
-Multi-party workflows let an agent originate a structured, multi-stakeholder process: a typed lifecycle, an obligations table per counterparty, an approvals graph governed by a small policy DSL, an optional fee route, and an optional privacy domain — all hash-chained into auditable receipts and (optionally) mirrored into Canton's Daml runtime.
-
-State changes are written exclusively through privileged-VM selectors (`0x01000040`–`0x0100004B`) dispatched as signed transactions. The endpoints below are read-only — they query workflow state, receipts, fee routes, privacy domains, and operational metrics. Every one of them takes named params.
-
-### Get a Workflow
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_getWorkflow",
-  "params":{"workflow_id":"0x<workflow_id_hex>"}
-}'
-```
-
-Returns `null` when the id is unknown.
-
-### List Workflows by Participant
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_listWorkflowsByParticipant",
-  "params":{"did":"did:tenzro:human:abc..."}
-}'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "did": "did:tenzro:human:abc...",
-    "count": 3,
-    "truncated": false,
-    "workflow_ids": ["0x<hex>", "0x<hex>", "0x<hex>"]
-  }
-}
-```
-
-Sibling lookups take a different key each: `tenzro_listWorkflowsByCreator` takes `creator_did`, `tenzro_listWorkflowsByStatus` takes `status`. Both return the same shape.
-
-### Get Workflow Receipt
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_getWorkflowReceipt",
-  "params":{"receipt_id":"0x<receipt_id_hex>"}
-}'
-```
-
-### Walk Receipt Hash-Chain
-
-Receipts form a per-workflow hash chain, walked backwards from the head via `prev_receipt`. `max` bounds the walk and defaults to 256:
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_listWorkflowReceipts",
-  "params":{"workflow_id":"0x<workflow_id_hex>", "max":100}
-}'
-```
-
-### Get Fee Route
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_getFeeRoute",
-  "params":{"fee_route_id":"0x<fee_route_id_hex>"}
-}'
-```
-
-`tenzro_listFeeRoutes` takes no params and returns every registered route.
-
-### Preview Fee-Route Payouts
-
-Computes per-recipient payouts for a gross amount in wei using basis-point splits (truncation; remainder added to the last recipient). `gross_wei` is a decimal string:
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_computeFeeRoutePayouts",
-  "params":{"fee_route_id":"0x<fee_route_id_hex>", "gross_wei":"1000000000000000000"}
-}'
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "fee_route_id": "0x<hex>",
-    "gross_wei": "1000000000000000000",
-    "payouts": [
-      {
-        "recipient_did": "did:tenzro:...",
-        "label": "originator",
-        "amount_wei": "..."
-      }
-    ]
-  }
-}
-```
-
-This is a preview only; settlement payouts move through the consensus-mediated escrow primitive, not this RPC.
-
-### Get Privacy Domain
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_getPrivacyDomain",
-  "params":{"domain_id":"0x<domain_id_hex>"}
-}'
-```
-
-`tenzro_listPrivacyDomainsForDid` takes a `did` and lists the domains it belongs to.
-
-### Operational Metrics
-
-Returns a snapshot of workflow / obligation / approval counts by status, signatures collected, Canton mirrors, fee-route count, and privacy-domain count. Takes no params:
-
-```bash
-curl -X POST https://rpc.tenzro.xyz -H "Content-Type: application/json" -d '{
-  "jsonrpc":"2.0","id":1,"method":"tenzro_getWorkflowOperationalMetrics",
-  "params":[]
-}'
-```
-
-The same metrics are exposed in Prometheus text format at `https://api.tenzro.xyz/metrics` and graphed by `deploy/monitoring/grafana-workflow-dashboard.json` (UID `tenzro-workflow`).
 
 ---
 
@@ -2048,9 +1089,8 @@ The same metrics are exposed in Prometheus text format at `https://api.tenzro.xy
 The fastest way to get started on the Tenzro Network — no prior setup required:
 
 1. Call `tenzro_joinAsMicroNode` with a display name
-2. Receive a TDIP DID, MPC wallet address, 10 network capabilities, and chain ID
-3. Optionally call `POST /faucet` to get testnet TNZO
-4. Start using all network features immediately
+2. Receive a TDIP DID, hardware-bound wallet address, 10 network capabilities, and chain ID
+3. Start using all network features immediately
 
 ```python
 from tools.tenzro_rpc import join_as_micro_node
@@ -2064,36 +1104,32 @@ CLI equivalent:
 python tenzro_rpc.py join_network "Alice"
 ```
 
-Falls back to `tenzro_participate` on older nodes.
 
 ---
 
-### 1. Create wallet and get testnet tokens
+### 1. Create a wallet and fund it
 
-1. Call `tenzro_createWallet` to provision a 2-of-3 MPC wallet (returns
    `wallet_id` + 32-byte hex `address` + base58 `display_address`)
-2. Call `POST /faucet` with the 32-byte hex `address` to get testnet TNZO
+2. Fund the `address` with a transfer from an account that holds TNZO
 3. Call `tenzro_getBalance` (or `eth_getBalance`) to confirm the balance
 
 ### 2. Register identity and send payment
 
 1. Call `tenzro_registerIdentity` with a display name
-2. Call `tenzro_createWallet` to provision the MPC wallet
-3. Call `POST /faucet` for testnet tokens
-4. Call `tenzro_signAndSendTransaction` (server-custodial) or, for self-custody,
+3. Fund the wallet with a transfer from an account that holds TNZO
    sign both legs (Ed25519 + ML-DSA-65) locally and submit via
-   `eth_sendRawTransaction` — the node never holds the secret
+   `tenzro_sendRawTransaction` — the node never holds the secret
 
 ### 3. Create agent with delegation scope
 
 1. Register a human identity: `tenzro_registerIdentity` with `identity_type: "human"`
 2. Register a machine identity: `tenzro_registerIdentity` with `identity_type: "machine"` and `controller_did`
-3. Set delegation scope: `tenzro_setDelegationScope` with spending limits, allowed operations, protocols, and chains
+3. Approve the agent's Terms with the root's passkey (`SetAgentTerms`): spending limits, allowed operations, protocols, and chains
 4. Resolve the machine DID to verify: `tenzro_resolveIdentity`
 
-### 4. Pay for a resource with x402
+### 4. Pay for a resource
 
-1. Create a payment challenge: `tenzro_createPaymentChallenge` with protocol `x402`, resource, amount, asset, and recipient
+1. Create a payment challenge: `tenzro_createPaymentChallenge` with resource, amount, asset, and recipient
 2. Sign the challenge and submit: `tenzro_verifyPayment` with challenge_id, signature, and payer info
 3. Receive the receipt confirming settlement
 
@@ -2103,11 +1139,10 @@ Falls back to `tenzro_participate` on older nodes.
 2. List endpoints: `tenzro_listModelEndpoints` to find running model services
 3. Send a request: `tenzro_chat` with model ID and message
 
-### 6. Bridge tokens cross-chain
+### 6. Send TNZO to another chain
 
-1. Check available routes via MCP `get_bridge_routes` tool with source and destination chains
-2. List adapters via MCP `list_bridge_adapters` tool to see available bridge providers
-3. Execute bridge: `tenzro_bridgeTokens` with chain pair, asset, amount, sender, and recipient
+1. Check the governed route: `tenzro_listBridgeRoutes` (caps, usage, supply, paused)
+2. Send it: a `Bridge` outbound transaction the holder's wallet signs (`bridge_outbound`)
 
 ### 7. Verify a proof
 
@@ -2116,32 +1151,23 @@ Falls back to `tenzro_participate` on older nodes.
 
 ### 8. Create a token and transfer across VMs
 
-1. Create a token: `tenzro_createToken` with name, symbol, creator, and initial supply
+1. Create a token: a `Token` create transaction the issuer signs
 2. Look up the token: `tenzro_getToken` with the symbol to get its token ID and EVM address
-3. Check balances across VMs: `tenzro_getTokenBalance` to see native, EVM, SVM, and DAML balances
-4. Transfer between VMs: `tenzro_crossVmTransfer` with token, amount, source/dest VM, and addresses
+3. Check balances across VMs: `tenzro_getTokenBalance` to see native, EVM and SVM balances
+4. Transfer between VMs: a contract-call transaction whose calls use each VM's token interface
 5. List all tokens: `tenzro_listTokens` to browse the full registry
 
 ### 9. Deploy a smart contract
 
-1. Prepare contract bytecode (compiled Solidity, BPF program, or DAML archive)
-2. Deploy: `tenzro_deployContract` with vm_type, bytecode, deployer address, and optional constructor args
-3. The response contains the deployed contract address and gas used
+1. Prepare EVM creation code (compiled Solidity)
+2. Sign a `ContractDeploy` transaction with the deployer's hardware key and submit it with `tenzro_deployContract`
+3. The response carries the transaction hash; the receipt reports the contract address once a block executes it
 
-### 10. Post a task and get it fulfilled
+### 10. Pay for work on delivery
 
-1. Call `tenzro_postTask` with title, description, task type, max price, and input
-2. Check task status via `tenzro_getTask` — status starts as `open`
-3. Providers submit quotes via `tenzro_quoteTask`; task transitions to `assigned` when the poster calls `tenzro_assignTask`
-4. Track completion via `tenzro_getTask` — status becomes `completed` with output populated
-5. Cancel if needed via `tenzro_cancelTask` (only while `open` or `assigned`)
-
-### 11. Publish and discover agent templates
-
-1. Register an agent template: `tenzro_registerAgentTemplate` with name, description, template type, system prompt, and pricing
-2. Browse available templates: `tenzro_listAgentTemplates` with optional filters (free_only, template_type, tag)
-3. Get template details: `tenzro_getAgentTemplate` to retrieve the full template including system prompt and capabilities
-4. Deploy a template: use the `system_prompt` field from the template as the AI agent's system instructions
+1. Agree the work in a task market a harness runs over the public RPC
+2. Fund one escrow per milestone (`CreateEscrow` with a `reference` the harness gives), released by you or by the panel the task names
+3. Check delivery evidence with `tenzro_verifyEvidence` before releasing
 
 ---
 
@@ -2176,21 +1202,15 @@ Web API errors return HTTP status codes with JSON body:
 }
 ```
 
-Faucet rate-limit errors return HTTP 429 with a `message` field indicating cooldown time.
-
 ---
 
 ## MCP Integration
 
-If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Protocol for richer tool-based integration. The MCP server exposes tools across 10 categories:
+If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Protocol for richer tool-based integration. The node's MCP server exposes tools including:
 
 **Wallet & Ledger:**
 
 - `get_balance` — Query TNZO balance by address
-- `create_wallet` — Provision a self-custody Tenzro 2-of-3 MPC wallet (32-byte address)
-- `send_transaction` — Send a TNZO transfer (server-custodial path)
-- `send_self_custody_transaction` — Submit a self-custody transfer: the caller signs both legs (Ed25519 + ML-DSA-65) locally and passes the pre-signed hex material (`signature`, `public_key`, `pq_signature`, `pq_public_key`, `timestamp`); the tool forwards to `eth_sendRawTransaction` and the node never holds the secret
-- `request_faucet` — Request testnet tokens (24h cooldown; the node sets the amount)
 - `get_block` — Get block by height from storage
 - `get_block_range` — Batch-fetch a contiguous range of blocks for catch-up sync (max 256/call; returns `nextHeight` + `moreAvailable` for pagination across pruning gaps)
 - `get_transaction` — Look up transaction by hash
@@ -2199,57 +1219,30 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 **Identity & Delegation:**
 
 - `register_identity` — Register human or machine DID via TDIP
-- `register_machine_identity` — Register a machine identity controlled by a human DID
-- `import_identity` — Import an existing identity by DID and private key
 - `resolve_did` — Resolve DID to identity info, delegation scope
-- `list_identities` — List all registered identities on the node
-- `add_service` — Add a service endpoint to a DID document (requires a subject- or controller-signed DID envelope)
-- `add_credential` — Add a verifiable credential to an identity (requires an issuer-signed DID envelope; optional durable issuer proof)
-- `add_identity_claim` — Add a compliance claim to an address (trusted issuer only; requires an issuer-signed DID envelope)
-- `add_trusted_issuer` — Register a trusted claim issuer (operator admin token required)
-- `list_trusted_issuers` — List registered trusted claim issuers
-- `set_delegation_scope` — Set spending limits, allowed operations/protocols/chains for machine identities
 
 **Payments:**
 
 - `create_payment_challenge` — Create payment challenge (MPP, x402, or native)
 - `verify_payment` — Verify payment credential and settle on-chain
-- `pay_mpp` — Pay for a resource using MPP (Machine Payments Protocol)
-- `pay_x402` — Pay for a resource using x402 (HTTP 402 Payment Protocol)
-- `payment_gateway_info` — Get supported payment protocols, networks, and assets
-- `list_payment_sessions` — List active MPP payment sessions
-- `get_payment_receipt` — Get details of a payment receipt
-- `list_payment_protocols` — List supported payment protocols and their features
 
 **AI Models & Inference:**
 
 - `list_models` — List available AI models, filter by category or name
-- `chat_completion` — Send chat completion to a served model
-- `inference_request` — Send an inference request to a model
-- `route_intent` — Select a model from a use case plus budget, quality floor and cost-quality knob instead of naming one. Returns the model, tier, estimated cost, fallback chain, the difficulty cluster the prompt landed in, that model's observed error rate there, and the winning provider's address and endpoint when the offer came from another operator. Discovery only, though the per-DID budget gate and the wallet-balance ceiling still apply
 - `chat_by_intent` — Select and run in one call. Dispatch is pinned to the offer that was scored, so the price quoted is the price settled and the provider share goes to the address that offer named; the decision comes back under `route`
 - `record_route_outcome` — Report how a routed call turned out (`resolved` / `escalated` / `failed`) so per-cluster error rates reflect what happened. In practice this carries `escalated`; the other two are recorded from the dispatch itself
 - `route_difficulty_stats` — Read the cluster map and a model's per-cluster outcome counters. An operator diagnostic; `enabled` false means the node routes on declared metadata alone
 - `list_model_endpoints` — List running model service endpoints with URLs and status
-- `register_model_endpoint` — Register a model service endpoint
-- `get_model_endpoint` — Get details of a specific model endpoint
-- `unregister_model_endpoint` — Unregister a model service endpoint
-- `download_model` — Download a model's weights: peer-first over iroh blobs (BLAKE3-verified on transfer), falling back to HuggingFace, checked against the canonical hash record before load
-- `get_download_progress` — Get download progress for a model
-- `get_model_hash` — Get a model's content-addressed hash record (BLAKE3 root + SHA-256 + per-file manifest hash) by `model_id`
-- `list_model_hashes` — List every recorded model hash
-- `record_model_hash` — Record a model's content-addressed hash (first-recorder-wins)
-- `serve_model` — Start serving a model for inference (auto-clusters when it exceeds one host; `force_cluster` / `force_single` override placement, `visibility` sets who may call it — `"network"` (default) announces it and lets any caller pay per call with no key even on a gated node, `"gated"` serves only API-key holders under a pre-agreed policy and is not announced, `"private"` keeps it local/LAN-only)
+- `get_model_provenance` — Get a model's provenance by name (Hub repository or model id) or manifest root: its content-addressed manifests, the origins that observed each, and whether they agree (`verified`); optional `file` adds that file's Merkle inclusion proof
 - `stop_model` — Stop serving a model
-- `delete_model` — Delete a downloaded model
 - `discover_models` — Discover AI models available on the network
 - `get_router_metrics` — Read the inference router's live metrics: requests routed, hedges dispatched, hedges won, deadline-exceeded requests
 
 **Cross-Chain Bridge:**
 
-- `bridge_tokens` — Bridge tokens between Tenzro, Ethereum, Solana, Base
-- `get_bridge_routes` — Get available routes between two chains with fees
-- `list_bridge_adapters` — List registered adapters (LayerZero, Chainlink CCIP, deBridge, Canton)
+- `list_bridge_routes` — Every governed route with caps, usage and supply
+- `get_bridge_route` — One route by transport and external chain
+- `bridge_outbound` — Send TNZO out (holder-signed)
 
 **Verification:**
 
@@ -2257,128 +1250,42 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 
 **Staking & Providers:**
 
-- `stake_tokens` — Stake TNZO tokens as Validator, ModelProvider, or TeeProvider
-- `unstake_tokens` — Unstake TNZO tokens (initiates unbonding period)
-- `register_provider` — Register as a provider with optional staking
 - `get_provider_stats` — Get provider statistics: served models, inferences, staking totals
-- `list_providers` — List all providers discovered via gossipsub; filter by provider_type (ai, tee, storage, compute, database, cloud, general). `ai` covers every model class — text, multimodal, image, video, audio. `llm` is accepted as a legacy alias for `ai`.
-- `set_role` — Set the node role (Validator, ModelProvider, TeeProvider, LightClient)
-- `set_provider_schedule` — Set provider availability schedule
-- `get_provider_schedule` — Get the current provider schedule
+- `list_providers` — List the providers discovered via gossip, a page at a time (`limit`, `cursor`); filter by provider_type (ai, tee, storage, compute, database, cloud, general). `ai` covers every model class — text, multimodal, image, video, audio.
 - `set_provider_pricing` — Set provider pricing configuration
 - `get_provider_pricing` — Get the current provider pricing
 
-**Task Marketplace:**
+**Network Duties:**
 
-- `post_task` — Post a task to the decentralized AI task marketplace with TNZO escrow payment
-- `list_tasks` — List marketplace tasks with optional filters (status, type, max_price, limit, offset)
-- `get_task` — Get full details of a specific task by ID
-- `cancel_task` — Cancel an open task posted by the caller
-- `quote_task` — Submit a fulfillment quote for an open task (price, model, confidence, estimated duration)
-- `assign_task` — Assign a task to a specific provider/agent
-- `complete_task` — Submit the output for a completed task (triggers on-chain TNZO settlement)
-- `update_task` — Update an existing task
+- `list_duties` — Open network duties the chain pays the first prover for
+- `get_duty` — One duty by id
 
 **Tokens & Contracts:**
 
-- `create_token` — Create ERC-20 token via factory, register in unified registry
 - `get_token_info` — Lookup token by symbol, EVM address, or token ID
 - `list_tokens` — List registered tokens with optional VM type filter
 - `get_token_balance` — Get TNZO balance across all VMs with decimal conversion
-- `cross_vm_transfer` — Atomic cross-VM token transfer (TNZO pointer model)
-- `wrap_tnzo` — Wrap native TNZO to a VM representation
-- `swap_token` — Swap one token for another
-- `deploy_contract` — Deploy bytecode to EVM/SVM/DAML via MultiVmRuntime
-
-**Agent Marketplace:**
-
-- `list_agent_templates` — Browse reusable AI agent templates, filter by type/tags/pricing/status
-- `register_agent_template` — Publish a new agent template to the marketplace with pricing model
-- `get_agent_template` — Get full details of an agent template by ID
-- `update_agent_template` — Update an existing agent template
-- `spawn_agent_from_template` — Spawn a new agent from a marketplace template
-- `spawn_agent_template` — Spawn with identity and wallet provisioning
-- `run_agent_template` — Run an agent spawned from a template
-- `download_agent_template` — Download an agent template for local use
-- `rate_agent_template` — Rate an agent template (1-5 stars) with optional review
-- `search_agent_templates` — Search agent templates by free-text query
-- `get_agent_template_stats` — Get usage statistics (spawn count, ratings, revenue)
-
-**Agent Management:**
-
-- `register_agent` — Register a new AI agent with identity and wallet
-- `list_agents` — List all registered agents
-- `spawn_agent` — Spawn a sub-agent from a parent agent
-- `send_agent_message` — Send a message between agents
-- `run_agent_task` — Run an autonomous task via the agentic execution loop
-- `delegate_task` — Delegate a task to an agent or sub-agent
-- `discover_agents` — Discover agents available on the network
-- `fund_agent` — Fund an agent's wallet with TNZO
-- `agent_pay_for_inference` — Execute the agent payment pipeline for inference
-- `create_swarm` — Create a swarm of agents
-- `get_swarm_status` — Get swarm status
-- `terminate_swarm` — Terminate a swarm
-
-**Skills Registry:**
-
-- `register_skill` — Register a new skill
-- `list_skills` — List skills in the registry
-- `get_skill` — Get details of a specific skill
-- `search_skills` — Search skills by keyword
-- `use_skill` — Invoke a skill by ID
-- `update_skill` — Update an existing skill
-- `get_skill_usage` — Get usage statistics for a skill
-
-**Tools Registry:**
-
-- `register_tool` — Register a new tool (MCP server endpoint)
-- `list_tools` — List registered tools
-- `get_tool` — Get details of a specific tool
-- `search_tools` — Search tools by keyword
-- `use_tool` — Invoke a tool via its MCP endpoint
-- `update_tool` — Update an existing tool
-- `get_tool_usage` — Get usage statistics for a tool
+- `deploy_contract` — Submit a signed `ContractDeploy` transaction (EVM creation code)
 
 **Settlement:**
 
-- `settle` — Submit a settlement request
-- `get_settlement` — Get settlement details by ID
 - `create_escrow` — Create an escrow for a payment
 - `release_escrow` — Release an escrow
-- `prepaid_deposit` — Fund the streaming balance storage deals and compute rentals draw down per epoch
-- `prepaid_withdraw` — Withdraw unspent prepaid streaming balance
-- `prepaid_balance` — Read the prepaid streaming balance
 - `open_payment_channel` — Open a micropayment channel
 - `close_payment_channel` — Close a micropayment channel
 
 **Governance:**
 
-- `list_proposals` — List governance proposals
-- `create_proposal` — Create a governance proposal
-- `vote` — Vote on a proposal (for/against/abstain)
-- `get_voting_power` — Get voting power for an address
-- `delegate_voting_power` — Delegate voting power to another address
-
-**Canton / DAML:**
-
-- `list_canton_domains` — List Canton synchronizer domains
-- `list_daml_contracts` — List DAML contracts
-- `submit_daml_command` — Submit a DAML command to Canton
+- `list_proposals` — List on-chain proposals, newest first (filter by kind)
+- `governance_get` — Read a proposal, enacted policy or grant
+- `get_voting_power` — Get the bonded stake an address votes with
 
 **Network & Node:**
 
 - `get_node_status` — Node health, block height, peers, uptime
-- `peer_count` — Get connected peer count
-- `syncing` — Get sync status
-- `get_hardware_profile` — Get hardware profile (CPU, RAM, GPU, TEE)
-- `list_accounts` — List all accounts/wallets
-- `get_finalized_block` — Get the latest finalized block
-- `export_config` — Export the node configuration
 - `get_transaction` — Get transaction details by hash
-- `get_nonce` — Get nonce for an address
-- `get_transaction_history` — Get transaction history for an address
 
-**EVM Compatibility:**
+**EVM compatibility** (JSON-RPC methods on the RPC endpoint, not MCP tools):
 
 - `eth_blockNumber`, `eth_getBalance`, `eth_getTransactionCount`, `eth_chainId`
 - `eth_gasPrice`, `eth_estimateGas`, `eth_call`, `eth_getCode`
@@ -2386,4 +1293,4 @@ If the Tenzro node has MCP enabled (port 3001), you can use the Model Context Pr
 - `eth_getBlockByNumber`, `eth_getBlockByHash`, `eth_syncing`, `eth_accounts`
 - `net_peerCount`, `net_version`, `net_listening`
 
-Connect to MCP at `https://mcp.tenzro.xyz/mcp` using Streamable HTTP transport.
+Connect to MCP at `https://mcp.tenzro.com/mcp` using Streamable HTTP transport.
